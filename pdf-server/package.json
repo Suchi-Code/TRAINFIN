@@ -1,11 +1,11 @@
 {
   "name": "trainfin-pdf-server",
   "version": "1.0.0",
-  "description": "Puppeteer PDF generation server สำหรับระบบรายงานการฝึกอบรม กฝภ.1 (แทนที่ html2canvas + jsPDF เดิม)",
+  "description": "Puppeteer PDF generation server สำหรับระบบรายงานการฝึกอบรม กฝภ.1",
   "main": "pdf-server.js",
   "scripts": {
     "start": "node pdf-server.js",
-    "postinstall": "puppeteer browsers install chrome"
+    "postinstall": "npx puppeteer browsers install chrome"
   },
   "engines": {
     "node": ">=18"
