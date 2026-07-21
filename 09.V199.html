@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ค่าวัสดุเบ็ดเตล็ด — กฝภ.1</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',sans-serif;background:#f3f4f6;color:#1e2533;font-size:14px;line-height:1.5}
+
+/* ============================================================
+   SITE HEADER
+   ============================================================ */
+.site-header{background:#0f2744;color:#fff;position:sticky;top:0;z-index:200;box-shadow:0 2px 12px rgba(0,0,0,.25)}
+.header-inner{max-width:1060px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.header-title{display:flex;align-items:center;gap:12px}
+.header-icon{width:38px;height:38px;background:#e8a020;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.header-text h1{font-size:15px;font-weight:600;margin:0}
+.header-text p{font-size:11px;color:rgba(255,255,255,.55);margin:2px 0 0}
+.btn-back{padding:6px 14px;border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.8);background:transparent;border-radius:6px;font-family:'Sarabun',sans-serif;font-size:12px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+.btn-back:hover{background:rgba(255,255,255,.1)}
+.btn-print-hdr{padding:6px 16px;background:#e8a020;color:#0f2744;border:none;border-radius:6px;font-family:'Sarabun',sans-serif;font-size:12px;font-weight:700;cursor:pointer}
+.btn-print-hdr:hover{background:#f5c842}
+
+/* ============================================================
+   MAIN LAYOUT
+   ============================================================ */
+.page{max-width:1060px;margin:0 auto;padding:20px 24px 60px}
+
+/* ============================================================
+   INPUT PANEL (like file 08)
+   ============================================================ */
+#input-panel{
+  background:#f0f4f8;border:2px solid #1d5fa8;border-radius:12px;
+  padding:18px 22px;margin-bottom:20px;
+}
+#input-panel h3{margin:0 0 14px;font-size:15px;color:#0f2744;border-bottom:1px solid #c0d0e0;padding-bottom:8px;display:flex;align-items:center;gap:8px}
+.ip-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px 18px}
+.ip-field{display:flex;flex-direction:column;gap:3px}
+.ip-field.wide{grid-column:span 2}
+.ip-field.full{grid-column:span 3}
+.ip-field label{font-size:11px;font-weight:700;color:#4a5568;text-transform:uppercase;letter-spacing:.04em}
+.ip-field input,.ip-field select{
+  padding:6px 10px;border:1.5px solid #c0d0e0;border-radius:6px;
+  font-family:'Sarabun',sans-serif;font-size:14px;background:#fff;color:#1e2533
+}
+.ip-field input:focus,.ip-field select:focus{outline:none;border-color:#1d5fa8}
+.ip-section-title{font-size:13px;font-weight:700;color:#0f2744;margin:14px 0 8px;border-left:3px solid #1d5fa8;padding-left:8px}
+
+/* ============================================================
+   DOCUMENT CONTENT (screen display + print)
+   ============================================================ */
+.doc-wrap{font-family:'Sarabun',sans-serif;font-size:13px;line-height:1.5;color:#000;}
+.doc-title{text-align:center;margin-bottom:0}
+.doc-meta{font-size:13px;line-height:1.7;text-align:center;margin-bottom:12px}
+.hdr-inp{
+  border:none;border-bottom:1px dotted #999;background:transparent;
+  font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;color:#000;
+  text-align:center;padding:1px 4px;outline:none;width:100%;display:block;line-height:1.7;
+}
+.hdr-inp:focus{border-bottom-color:#1d5fa8;background:#f0f7ff}
+@media print{.hdr-inp{border-bottom:none!important;background:transparent!important}}
+.doc-table{width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:10px}
+.doc-table th,.doc-table td{border:1px solid #000;padding:5px 7px;vertical-align:top}
+.doc-table th{background:#e8ecf5;font-weight:700;text-align:center;white-space:nowrap}
+.doc-table td.tc{text-align:center}
+.doc-table td.tr{text-align:right;white-space:nowrap}
+.doc-table td.tl{text-align:left}
+.row-cat td{font-weight:700}
+.row-sub td{font-weight:700;padding-left:16px!important}
+.row-sub2 td{font-weight:600;padding-left:28px!important}
+.row-grand td{font-weight:700;background:#d9e1f2}
+
+/* ============================================================
+   PRINT MEDIA
+   ============================================================ */
+@page{size:A4 portrait;margin:0.5in 0.47in 0 0.47in}
+@media print{
+  .site-header,#input-panel{display:none!important}
+  body{background:#fff!important}
+  .page{max-width:100%!important;padding:0!important;margin:0!important}
+  #doc-display{padding:0!important;border:none!important;border-radius:0!important;background:transparent!important}
+}
+#doc-display{background:#fff;border:1px solid #dde1e9;border-radius:10px;padding:16px 24px;margin-top:4px}
+.btn-save-pdf{background:#1a7a4a;color:#fff;border:none;border-radius:6px;padding:7px 20px;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit}
+.btn-save-pdf:hover{background:#22a05e}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ============================================================
+     SITE HEADER
+     ============================================================ -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-title">
+      <div class="header-icon">📄</div>
+      <div class="header-text">
+        <h1>ค่าวัสดุเบ็ดเตล็ด — แบบพิมพ์</h1>
+        <p>การประปาส่วนภูมิภาค (กปภ.) · กองฝึกอบรมภูมิภาค 1</p>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <a class="btn-back" href="01.Main-Reports.html">← ย้อนกลับ</a>
+      <button class="btn-print-hdr" onclick="window.print()">🖨 พิมพ์แบบฟอร์ม</button>
+      <button class="btn-save-pdf" onclick="savePdf(this)">💾 บันทึก PDF</button>
+    </div>
+  </div>
+</header>
+
+<div class="page">
+
+<!-- ============================================================
+     INPUT PANEL (read-only display of course info)
+     ============================================================ -->
+<div id="input-panel">
+  <h3>📝 ข้อมูลหลักสูตร</h3>
+
+  <div class="ip-grid">
+    <div class="ip-field wide">
+      <label>ชื่อหลักสูตร</label>
+      <input type="text" id="f_title" placeholder="ระบุชื่อหลักสูตร" readonly>
+    </div>
+    <div class="ip-field">
+      <label>รุ่นที่</label>
+      <input type="text" id="f_run" placeholder="เช่น 1-2/69" readonly>
+    </div>
+    <div class="ip-field">
+      <label>เลขที่รุ่นหลักสูตร</label>
+      <input type="text" id="f_runno" placeholder="เช่น 01320828" readonly>
+    </div>
+    <div class="ip-field">
+      <label>วันที่อบรม (เริ่ม)</label>
+      <input type="date" id="f_date" readonly>
+    </div>
+    <div class="ip-field">
+      <label>วันที่อบรม (สิ้นสุด)</label>
+      <input type="date" id="f_date_end" readonly>
+    </div>
+    <div class="ip-field full">
+      <label>สถานที่</label>
+      <input type="text" id="f_location" placeholder="ระบุสถานที่" readonly>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     DOCUMENT DISPLAY (แสดงตัวอย่างพิมพ์ทันที — ดึงจาก sec=2)
+     ============================================================ -->
+<div id="doc-display"></div>
+
+</div><!-- end .page -->
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+/* ============================================================
+   HELPERS
+   ============================================================ */
+const TH_MON_LONG  = ['','มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+                       'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const TH_MON_SHORT = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
+function fmtDate(d, short){
+  if(!d) return '';
+  const p = d.split('-');
+  if(p.length!==3) return d;
+  const mon = short ? TH_MON_SHORT[parseInt(p[1])] : TH_MON_LONG[parseInt(p[1])];
+  return `${parseInt(p[2])} ${mon} ${parseInt(p[0])+543}`;
+}
+function fmtDateRange(s, e){
+  if(!s && !e) return '';
+  if(!e || s===e) return fmtDate(s);
+  return fmtDate(s) + ' – ' + fmtDate(e);
+}
+function fmtMoney(n){
+  const v = parseFloat(n)||0;
+  return v.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function fmtMoney2(n){
+  const v = parseFloat(n)||0;
+  return v===0 ? '-' : v.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+const gv = id => (document.getElementById(id)?.value?.trim()||'');
+
+/* ============================================================
+   แปลงวันที่จาก Google Sheet ให้เป็น YYYY-MM-DD เสมอ
+   (input[type=date] ต้องการรูปแบบนี้เท่านั้น ไม่งั้นจะโชว์ placeholder mm/dd/yyyy)
+   รองรับ: ISO datetime "2026-06-30T00:00:00.000Z", "2026-06-30 00:00:00",
+           "30/6/2026", "30-6-2026", Date object ที่ถูก serialize เป็น string,
+           และค่าที่ถูกต้องอยู่แล้ว "2026-06-30"
+   ============================================================ */
+function toISODate(v){
+  if(!v) return '';
+  if(v instanceof Date && !isNaN(v)) {
+    return v.getFullYear() + '-' + String(v.getMonth()+1).padStart(2,'0') + '-' + String(v.getDate()).padStart(2,'0');
+  }
+  const s = String(v).trim();
+  if(!s) return '';
+
+  // กรณีตรงอยู่แล้ว: YYYY-MM-DD (ตัดส่วนเวลาออกถ้ามี เช่น ISO datetime)
+  const isoMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+
+  // กรณี D/M/YYYY หรือ DD/MM/YYYY (สลับเป็น D-M-Y ด้วยก็รองรับ)
+  const dmy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if(dmy){
+    const d = dmy[1].padStart(2,'0');
+    const m = dmy[2].padStart(2,'0');
+    let y = parseInt(dmy[3]);
+    if(y > 2400) y -= 543;  // เผื่อเป็น พ.ศ.
+    return `${y}-${m}-${d}`;
+  }
+
+  // กรณีอื่นๆ ลอง parse ด้วย Date constructor เป็น fallback สุดท้าย
+  const parsed = new Date(s);
+  if(!isNaN(parsed)){
+    return parsed.getFullYear() + '-' + String(parsed.getMonth()+1).padStart(2,'0') + '-' + String(parsed.getDate()).padStart(2,'0');
+  }
+  return '';
+}
+
+/* ============================================================
+   ROWS STATE (data only — ไม่มี editable DOM table อีกต่อไป)
+   ============================================================ */
+let editRows = [];   // [{seq,doc,name,branch,taxid,addr,date,acct,val,vat,wht,total}, ...]
+
+function buildAddr(d){
+  const parts = [];
+  if(d.addr1)    parts.push(d.addr1);
+  const sub = [
+    d.tambon   ? 'ต.'+d.tambon   : '',
+    d.amphoe   ? 'อ.'+d.amphoe   : '',
+    d.province ? 'จ.'+d.province : '',
+    d.zip      || ''
+  ].filter(Boolean).join(' ');
+  if(sub) parts.push(sub);
+  return parts.join(' ');
+}
+
+function esc(s){
+  return String(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ============================================================
+   GOOGLE SHEET API (เหมือนไฟล์ 08)
+   ============================================================ */
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbySJROnBMkxFBNyPvET3DC5ihdCz03OPzvi2xXm6cMQpoPFsi2pAiTQAQIVSDUwQNVZ5w/exec';
+
+/* ── Loading overlay helpers (รูปแบบเดียวกับไฟล์ 08) ── */
+function _showLoader09(msg) {
+  let el = document.getElementById('gs09-loader');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'gs09-loader';
+    el.style.cssText = 'position:fixed;inset:0;background:rgba(15,39,68,.55);z-index:9998;display:flex;align-items:center;justify-content:center;';
+    el.innerHTML =
+      '<div style="background:transparent;padding:16px;min-width:200px;max-width:280px;width:90%;' +
+      'font-family:Sarabun,sans-serif;text-align:center;box-sizing:border-box;">' +
+      '<svg width="48" height="48" viewBox="0 0 48 48" style="display:block;margin:0 auto 14px;animation:gs9spin .9s linear infinite;transform-origin:center;filter:drop-shadow(0 0 6px rgba(255,255,255,0.6));">' +
+      '<circle cx="24" cy="24" r="20" fill="none" stroke="#ffffff" stroke-width="4"/>' +
+      '<circle cx="24" cy="24" r="20" fill="none" stroke="#1a56db" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="35 90"/>' +
+      '</svg>' +
+      '<div id="gs09-loader-msg" style="font-size:15px;color:#ffffff;font-weight:600;line-height:1.6;' +
+      'text-shadow:0 2px 4px rgba(0,0,0,0.6), 0 4px 12px rgba(0,0,0,0.3);"></div>' +
+      '</div>';
+    document.head.insertAdjacentHTML('beforeend', '<style>@keyframes gs9spin{to{transform:rotate(360deg)}}</style>');
+    document.body.appendChild(el);
+  }
+  el.style.display = 'flex';
+  const m = document.getElementById('gs09-loader-msg');
+  if (m) m.textContent = msg || 'กำลังโหลด...';
+}
+
+function _hideLoader09() {
+  const el = document.getElementById('gs09-loader');
+  if (el) el.style.display = 'none';
+}
+
+function _showStatus09(msg, type) {
+  const colors = {
+    ok:    ['#d1fae5','#065f46','#10b981'],
+    warn:  ['#fef3c7','#92400e','#f59e0b'],
+    error: ['#fee2e2','#991b1b','#ef4444'],
+  };
+  const [bg, text, border] = colors[type] || colors.ok;
+  let el = document.getElementById('gs09-status');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'gs09-status';
+    el.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);' +
+      'z-index:9999;padding:12px 24px;border-radius:10px;font-family:Sarabun,sans-serif;' +
+      'font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.15);white-space:nowrap;max-width:90vw;';
+    document.body.appendChild(el);
+  }
+  el.style.background = bg;
+  el.style.color      = text;
+  el.style.border     = '1.5px solid ' + border;
+  el.textContent      = msg;
+  el.style.display    = 'block';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
+// เลขข้อของหมวด "ค่าวัสดุเบ็ดเตล็ด" แบบ dynamic ตามไฟล์ 05 (ค่าเริ่มต้น = 2 เหมือนเดิม หากยังไม่มีข้อมูลงบ)
+let MISC_NUM = 2;
+
+// คำนวณเลขข้อหมวดวัสดุเบ็ดเตล็ด จาก toggle ของไฟล์ 05 (spkJson) — เรียงตามลำดับ fuel → office → misc
+// (ต้องตรงลำดับกับ calcSectionNumbers() ในไฟล์ 05 / calcSectionNumbers07() ในไฟล์ 07)
+function computeMiscNumber(budget){
+  if(!budget) return 2;
+  let sp = {};
+  try { sp = typeof budget.spkJson === 'string' ? JSON.parse(budget.spkJson || '{}') : (budget.spkJson || {}); }
+  catch(e) { sp = {}; }
+  const t = sp.toggles || {};
+  let n = 0;
+  if (sp.fuel && sp.fuel.on) n++;      // ก. ค่าน้ำมันเชื้อเพลิงและหล่อลื่น (ถ้าติ๊ก)
+  if (t.office !== false) n++;         // ก. ค่าวัสดุสำนักงาน (ถ้าติ๊ก — ค่าเริ่มต้นติ๊กไว้)
+  n++;                                 // ก. ค่าวัสดุเบ็ดเตล็ด (หมวดนี้เอง)
+  return n;
+}
+
+async function gsApi(action, data, no) {
+  try {
+    let url = GAS_URL + '?action=' + action;
+    if (no) url += '&no=' + encodeURIComponent(no);
+    const opts = data
+      ? { method: 'POST', body: new URLSearchParams({ action, data: JSON.stringify(data) }) }
+      : { method: 'GET' };
+    const res = await fetch(url, opts);
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || 'API error');
+    return json.data;
+  } catch(e) {
+    console.warn('gsApi error:', e);
+    return null;
+  }
+}
+
+/* ============================================================
+   โหลดข้อมูลจาก Google Sheet — key คือ "เลขที่หลักสูตร" (no)
+   ============================================================ */
+async function loadFromGSheet09(no){
+  if(!no){
+    document.getElementById('doc-display').innerHTML =
+      '<div style="text-align:center;padding:40px;color:#888">⚠️ ไม่พบเลขที่หลักสูตร กรุณาเข้าจากหน้ารายการหลักสูตร</div>';
+    return;
+  }
+  _showLoader09('📥 กำลังโหลดข้อมูล');
+  try{
+    const gsRow = await gsApi('getByNo', null, no);
+    console.log('[09] gsRow:', gsRow);
+    if(!gsRow){
+      _hideLoader09();
+      _showStatus09('⚠️ ไม่พบข้อมูลสำหรับเลขที่ ' + no, 'warn');
+      document.getElementById('doc-display').innerHTML =
+        '<div style="text-align:center;padding:40px;color:#888">⚠️ ไม่พบข้อมูลสำหรับเลขที่หลักสูตร ' + esc(no) + '</div>';
+      return;
+    }
+
+    const cr = gsRow.course   || {};
+    const g6 = gsRow.actual06 || {};
+    const bd = gsRow.budget   || null;
+
+    // คำนวณเลขข้อหมวดวัสดุเบ็ดเตล็ดแบบ dynamic ตามไฟล์ 05 (ถ้าไม่มีข้อมูลงบ ใช้ค่าเริ่มต้น 2 เหมือนเดิม)
+    MISC_NUM = computeMiscNumber(bd);
+
+    // ── เติมข้อมูลหลักสูตรลง input-panel (read-only display) ──
+    // วันที่: รองรับหลายตำแหน่งที่อาจมาจาก backend (cr.dateStart/dateEnd เป็นหลัก
+    // แต่กันเหนียวกรณี backend ส่งมาที่ระดับบนสุดของ gsRow หรือใน actual06 แทน)
+    const title    = cr.course    || '';
+    const run      = cr.batch     || '';
+    const runno    = cr.no        || no;
+    const dateS    = toISODate(cr.dateStart || gsRow.dateStart || g6.dateStart || '');
+    const dateE    = toISODate(cr.dateEnd   || gsRow.dateEnd   || g6.dateEnd   || '');
+    const location = cr.location  || '';
+
+    if(document.getElementById('f_title'))    document.getElementById('f_title').value    = title;
+    if(document.getElementById('f_run'))      document.getElementById('f_run').value       = run;
+    if(document.getElementById('f_runno'))    document.getElementById('f_runno').value     = runno;
+    if(document.getElementById('f_date'))     document.getElementById('f_date').value      = dateS;
+    if(document.getElementById('f_date_end')) document.getElementById('f_date_end').value  = dateE;
+    if(document.getElementById('f_location')) document.getElementById('f_location').value  = location;
+
+    // ── กรองเฉพาะรายการ sec=2 (ค่าวัสดุเบ็ดเตล็ด) จาก actual06.rowsJson ──
+    // หมายเหตุ: ไฟล์ 06 บันทึกคอลัมน์ "rowsJson" เป็น JSON string (ไม่ใช่ "rows")
+    // ต้อง parse ก่อนใช้งาน และรองรับกรณี backend คืนมาเป็น array อยู่แล้ว
+    let allRows = [];
+    const rawRows = g6.rowsJson ?? g6.rows ?? [];
+    if(typeof rawRows === 'string'){
+      try{ allRows = JSON.parse(rawRows || '[]'); }catch(e){ allRows = []; console.warn('[09] rowsJson parse error:', e); }
+    } else if(Array.isArray(rawRows)){
+      allRows = rawRows;
+    }
+
+    editRows = allRows.filter(r=>String(r.sec)==='2').map(r=>{
+      // กันเหนียว: ใช้ staff เฉพาะตอนเป็นหมวด 4 (เจ้าหน้าที่) เท่านั้น
+      // ป้องกัน bug เดิมจากไฟล์ 06 ที่ select เจ้าหน้าที่ติดค่า default มาทุกแถว
+      const nameVal = r.name || (String(r.sec)==='4' ? (r.staff||'') : '');
+      return {
+        doc   : r.doc    || '',
+        name  : nameVal,
+        branch: r.branch || '',
+        addr  : r.addr   || buildAddr(r),
+        taxid : r.taxid  || '',
+        date  : r.date   || '',
+        acct  : r.acct   || '',
+        val   : parseFloat(r.val)   || 0,
+        vat   : parseFloat(r.vat)   || 0,
+        wht   : parseFloat(r.wht)   || 0,
+        total : parseFloat(r.total) || ((parseFloat(r.val)||0)+(parseFloat(r.vat)||0)-(parseFloat(r.wht)||0)),
+      };
+    });
+
+    _hideLoader09();
+    if(editRows.length===0){
+      _showStatus09(`⚠️ ไม่พบรายการหมวด ${MISC_NUM} (ค่าวัสดุเบ็ดเตล็ด) สำหรับเลขที่นี้`, 'warn');
+    } else {
+      _showStatus09('✅ โหลดข้อมูลสำเร็จ', 'ok');
+    }
+
+    renderDocDisplay();
+  }catch(e){
+    _hideLoader09();
+    _showStatus09('❌ โหลดไม่สำเร็จ: ' + e.message, 'error');
+    console.error('[09] loadFromGSheet09 error:', e);
+  }
+}
+
+/* ============================================================
+   AUTO-LOAD ON PAGE ENTER — key จาก sessionStorage (ไฟล์ 01 ส่งมา)
+   ============================================================ */
+function autoLoadFromFile01(){
+  let slot={};
+  try{
+    const raw = sessionStorage.getItem('budgetSlotData') || localStorage.getItem('budgetSlotData');
+    if(raw) slot = JSON.parse(raw);
+    else slot = JSON.parse(sessionStorage.getItem('courseData')||'{}');
+  }catch(e){}
+
+  const no = slot.no || slot.courseNo || '';
+  loadFromGSheet09(no);
+}
+
+/* ============================================================
+   BUILD PRINT DOCUMENT HTML
+   ============================================================ */
+function buildDocHtml(){
+  const title    = gv('f_title');
+  const run      = gv('f_run');
+  const runno    = gv('f_runno');
+  const dateStr  = fmtDateRange(gv('f_date'), gv('f_date_end'));
+  const location = gv('f_location');
+
+  // รวบรวมแถวจากข้อมูลที่โหลดมา (editRows เป็น data array แล้ว)
+  const rows = editRows.map((r,i)=>({
+    seq   : i+1,
+    doc   : r.doc||'',
+    name  : r.name||'',
+    branch: r.branch||'',
+    addr  : r.addr||'',
+    taxid : r.taxid||'',
+    date  : r.date||'',
+    acct  : r.acct||'',
+    val   : r.val||0,
+    vat   : r.vat||0,
+    wht   : r.wht||0,
+    total : r.total||0,
+  }));
+
+  let gVal=0,gVat=0,gWht=0,gTotal=0;
+  rows.forEach(r=>{gVal+=r.val;gVat+=r.vat;gWht+=r.wht;gTotal+=r.total;});
+
+  /* ---- แถวข้อมูล ---- */
+  let bodyHtml='';
+  if(rows.length===0){
+    bodyHtml=`<tr><td colspan="7" style="text-align:center;padding:16px;color:#888;font-style:italic;">ไม่มีรายการ</td></tr>`;
+  } else {
+    rows.forEach(r=>{
+      const detailLines=[];
+      if(r.doc)    detailLines.push(r.doc);
+      if(r.name)   detailLines.push(r.name);
+      if(r.branch) detailLines.push(r.branch);
+      if(r.taxid)  detailLines.push('เลขประจำตัวผู้เสียภาษี '+r.taxid);
+      if(r.addr)   detailLines.push(r.addr);
+      if(r.date)   detailLines.push('ลงวันที่ '+fmtDate(r.date));
+      bodyHtml+=`<tr>
+        <td class="tc">${r.seq}</td>
+        <td class="tl" style="line-height:1.55">${detailLines.map(l=>`<div>${l}</div>`).join('')}</td>
+        <td class="tc">${r.acct}</td>
+        <td class="tr">${fmtMoney(r.val)}</td>
+        <td class="tr">${fmtMoney2(r.vat)}</td>
+        <td class="tr">${fmtMoney2(r.wht)}</td>
+        <td class="tr">${fmtMoney(r.total)}</td>
+      </tr>`;
+    });
+  }
+
+  return `<div class="doc-wrap">
+<div class="doc-title">
+  <input class="hdr-inp" id="ph_title" value="">
+  <input class="hdr-inp" id="ph_title" value="รายละเอียดค่าใช้จ่ายกรณีจัดซื้อ / จัดจ้างพัสดุ">
+  <input class="hdr-inp" id="ph_title" value="ที่เกี่ยวกับค่าใช้จ่ายในการบริหารงานที่มีวงเงินฯ ครั้งละไม่เกิน 10,000 บาท">
+</div>
+<div class="doc-meta">
+  <input class="hdr-inp" id="ph_line1" value='หลักสูตร "${title}" รุ่นที่ ${run}'>
+  <input class="hdr-inp" id="ph_line2" value="เลขที่รุ่นหลักสูตร ${runno}${dateStr?' ในวันที่ '+dateStr:''}">
+  <input class="hdr-inp" id="ph_line3" value="${location?'ณ '+location:''}">
+  <input class="hdr-inp" id="ph_line4" value="">
+</div>
+
+<table class="doc-table">
+  <thead>
+    <tr>
+      <th style="width:6%">ลำดับที่</th>
+      <th style="width:44%" class="tl">รายการ</th>
+      <th style="width:10%">รหัสบัญชี</th>
+      <th style="width:10%">มูลค่าสินค้า</th>
+      <th style="width:10%">ภาษีมูลค่าเพิ่ม</th>
+      <th style="width:10%">ภาษีหัก ณ ที่จ่าย</th>
+      <th style="width:10%">จำนวนเงิน</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class="row-cat">
+      <td colspan="7">ก. ค่าดำเนินการฝึกอบรม</td>
+    </tr>
+    <tr class="row-sub">
+      <td colspan="7">${MISC_NUM}. ค่าวัสดุเบ็ดเตล็ด</td>
+    </tr>
+    <tr class="row-sub2">
+      <td colspan="7">${MISC_NUM}.1 ค่าใช้จ่ายอื่นๆ (ว.119)</td>
+    </tr>
+    ${bodyHtml}
+    <tr class="row-grand">
+      <td colspan="3" class="tc">รวมค่าวัสดุเบ็ดเตล็ดทั้งสิ้น</td>
+      <td class="tr">${fmtMoney(gVal)}</td>
+      <td class="tr">${fmtMoney2(gVat)}</td>
+      <td class="tr">${fmtMoney2(gWht)}</td>
+      <td class="tr">${fmtMoney(gTotal)}</td>
+    </tr>
+  </tbody>
+</table>
+</div>`;
+}
+
+function rebuildPreview(){
+  renderDocDisplay();
+}
+
+/* ============================================================
+   RENDER DOCUMENT DIRECTLY ON PAGE (ไม่ต้องกดปุ่มดูตัวอย่าง)
+   ============================================================ */
+function renderDocDisplay(){
+  document.getElementById('doc-display').innerHTML = buildDocHtml();
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+document.addEventListener('DOMContentLoaded', function(){
+  autoLoadFromFile01();
+});
+
+function savePdf(btn){
+  const el = document.getElementById('doc-display');
+  if(!el || !el.innerHTML.trim()){ alert('ไม่พบข้อมูลเอกสาร'); return; }
+
+  const title = gv('f_title') || 'ค่าวัสดุเบ็ดเตล็ด';
+  const run   = gv('f_run')   || '';
+  const runno = gv('f_runno') || '';
+  const safe  = s => s.replace(/[/\\:*?"<>|]/g,'_').trim();
+  const fname = safe(`วัสดุเบ็ดเตล็ด_${title}_รุ่น${run}_${runno}`) || 'sec2_misc';
+
+  btn.disabled = true; btn.textContent = '⏳ กำลังสร้าง...';
+
+  const clone = el.cloneNode(true);
+
+  /* เอากรอบเทาจาง/padding/background ของ #doc-display (สำหรับแสดงผลบนหน้าจอ) ออก
+     ไม่ให้ติดไปใน PDF/พิมพ์ */
+  clone.style.border       = 'none';
+  clone.style.borderRadius = '0';
+  clone.style.background   = 'transparent';
+  clone.style.padding      = '0';
+  clone.style.margin       = '0';
+  clone.style.boxShadow    = 'none';
+
+  /* แปลง input.hdr-inp → div */
+  clone.querySelectorAll('input.hdr-inp').forEach(inp => {
+    const d = document.createElement('div');
+    d.style.cssText = 'font-family:Sarabun,sans-serif;font-size:13px;font-weight:700;color:#000;text-align:center;line-height:1.7;width:100%;';
+    d.textContent = inp.value;
+    inp.parentNode.replaceChild(d, inp);
+  });
+
+  /* แก้ตาราง border */
+  clone.querySelectorAll('table.doc-table').forEach(tbl => {
+    tbl.style.borderCollapse = 'separate';
+    tbl.style.borderSpacing  = '0';
+    tbl.style.width          = '100%';
+    tbl.style.fontSize       = '12.5px';
+  });
+  clone.querySelectorAll('table.doc-table th, table.doc-table td').forEach(cell => {
+    cell.style.border       = 'none';
+    cell.style.borderRight  = '0.5px solid #000';
+    cell.style.borderBottom = '0.5px solid #000';
+    cell.style.padding      = '5px 7px';
+    cell.style.verticalAlign= 'top';
+    cell.style.background   = '#fff';
+  });
+  clone.querySelectorAll('table.doc-table tr').forEach((row, ri) => {
+    Array.from(row.children).forEach((cell, ci) => {
+      if(ci === 0) cell.style.borderLeft = '0.5px solid #000';
+      if(ri === 0) cell.style.borderTop  = '0.5px solid #000';
+    });
+  });
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;background:#fff;font-family:Sarabun,sans-serif;';
+  wrap.appendChild(clone);
+  document.body.appendChild(wrap);
+
+  setTimeout(()=>{
+    const A4_W_IN = 8.27, A4_H_IN = 11.69;
+    const MARGIN_T = 0.5, MARGIN_R = 0.47, MARGIN_B = 0.2, MARGIN_L = 0.47;
+    const SCALE = 2;
+
+    html2canvas(clone, { scale:SCALE, useCORS:true, logging:false, backgroundColor:'#ffffff' }).then(canvas => {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ unit:'in', format:'a4', orientation:'portrait' });
+
+      const pageW  = A4_W_IN;
+      const pageH  = A4_H_IN;
+      const printW = pageW - MARGIN_L - MARGIN_R;          // พื้นที่พิมพ์กว้าง
+      const printH = pageH - MARGIN_T - MARGIN_B;          // พื้นที่พิมพ์สูงต่อหน้า
+
+      const imgW   = canvas.width;
+      const imgH   = canvas.height;
+      const ratio  = printW / (imgW / SCALE);              // px → inch
+      const totalH = (imgH / SCALE) * ratio;               // ความสูงรวมทั้งหมด (inch)
+
+      let yOffset = 0;   // ตำแหน่ง crop ใน inch
+      let page    = 0;
+
+      while(yOffset < totalH){
+        if(page > 0) pdf.addPage();
+
+        // crop canvas ส่วนที่ต้องการ
+        const srcY  = Math.round((yOffset / ratio) * SCALE);   // px ใน canvas
+        const srcH  = Math.round((printH / ratio) * SCALE);    // px ต่อหน้า
+        const slice = document.createElement('canvas');
+        slice.width  = imgW;
+        slice.height = Math.min(srcH, imgH - srcY);
+        const ctx = slice.getContext('2d');
+        ctx.drawImage(canvas, 0, srcY, imgW, slice.height, 0, 0, imgW, slice.height);
+
+        const sliceDataUrl = slice.toDataURL('image/png', 1);
+        const sliceH = (slice.height / SCALE) * ratio;
+        pdf.addImage(sliceDataUrl, 'PNG', MARGIN_L, MARGIN_T, printW, sliceH);
+
+        yOffset += printH;
+        page++;
+      }
+
+      pdf.save(fname + '.pdf');
+    }).finally(()=>{
+      document.body.removeChild(wrap);
+      btn.disabled = false; btn.textContent = '💾 บันทึก PDF';
+    });
+  }, 300);
+}
+</script>
+</body>
+</html>

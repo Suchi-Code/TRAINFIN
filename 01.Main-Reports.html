@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="winter" style="background:#020617;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>รายละเอียดหลักสูตร - กองฝึกอบรมภูมิภาค 1</title>
+
+    <!-- Google Fonts: Prompt -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS & DaisyUI -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Prompt', 'sans-serif'],
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Vanta.js (Three.js Dependencies) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.waves.min.js"></script>
+</head>
+<body class="font-sans bg-slate-950 text-slate-800 antialiased overflow-x-hidden">
+
+    <!-- ═══════════════════════════════════════════════════════
+         แถบด้านบน (topbar) — สไตล์เดียวกับ site-header ที่ใช้ในไฟล์รายงาน 05/06/07
+    ═══════════════════════════════════════════════════════ -->
+    <header class="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-md border-b border-white/10 shadow-lg">
+      <div class="container mx-auto max-w-6xl flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-base shadow-lg shadow-blue-500/30">🗃️</div>
+          <div>
+            <div class="text-[13px] font-semibold text-white leading-tight">ระบบรายงานการฝึกอบรม</div>
+            <div class="text-[11px] text-slate-400 leading-tight">กองฝึกอบรมภูมิภาค 1 · กปภ.</div>
+          </div>
+        </div>
+        <button onclick="history.back()" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-transparent text-white/80 border border-white/20 rounded-lg text-xs font-medium hover:bg-white/10 hover:text-white transition-all">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          ย้อนกลับ
+        </button>
+      </div>
+    </header>
+
+    <!-- HERO SECTION CONTAINER -->
+    <!-- รหัสและไอดี "vanta-bg" จะเป็นจุดที่เรียกคำสั่งสร้างคลื่นสีฟ้าขยับได้ที่พื้นหลัง -->
+    <div id="vanta-bg" class="relative w-full flex items-center justify-center pt-16 pb-20 px-4 sm:px-6 lg:px-8">
+
+        <!-- แผ่นกรองพื้นหลังเพื่อให้ข้อความอ่านง่ายขึ้น -->
+        <div class="absolute inset-0 bg-gradient-to-b from-blue-900/20 to-base-200/90 pointer-events-none"></div>
+
+        <!-- MAIN LAYOUT -->
+        <div class="relative z-10 container mx-auto max-w-6xl">
+
+            <!-- ── แถวบน: ข้อความ (ซ้าย) + รูปภาพ/การ์ดสรุปงบ (ขวา) ── -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+
+                <!-- ฝั่งซ้าย: ข้อความและปุ่มกด -->
+                <div class="space-y-6 text-center lg:text-left text-white">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 backdrop-blur-sm">
+                        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                        <span class="text-xs font-medium text-cyan-200 tracking-wide">กองฝึกอบรมภูมิภาค 1</span>
+                    </div>
+                    <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight text-white drop-shadow">
+                        ชื่อหลักสูตร <br class="hidden sm:inline">
+                        <span id="f_course_name" class="bg-gradient-to-r from-cyan-300 to-blue-200 bg-clip-text text-transparent">กำลังโหลดข้อมูล...</span>
+                    </h1>
+                    <div class="space-y-1">
+                        <div id="f_meta_line1" class="text-base sm:text-lg font-medium text-sky-300 drop-shadow-sm">กำลังดึงข้อมูลรุ่น / เลขที่หลักสูตรจาก Google Sheet...</div>
+                        <div id="f_meta_line2" class="text-base sm:text-lg font-medium text-blue-200/85 drop-shadow-sm"></div>
+                        <div id="f_meta_line3" class="text-base sm:text-lg font-medium text-blue-100/70 drop-shadow-sm"></div>
+                    </div>
+                    <div class="pt-2 flex flex-col sm:flex-row justify-center lg:justify-start gap-4">
+                        <button id="btn-detail" class="btn btn-primary btn-lg shadow-lg shadow-blue-500/30 rounded-full text-white px-8">
+                            รายละเอียด
+                        </button>
+                        <button id="btn-report" class="btn btn-ghost btn-lg border-white/20 hover:bg-white/10 rounded-full text-white px-8 backdrop-blur-sm">
+                            ออกรายงาน
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ฝั่งขวา: กล่องเดียว = รูปภาพ (บน) + การ์ดสรุปงบประมาณ 6 ใบ (ล่าง) -->
+                <div class="flex justify-center">
+                    <div class="relative w-full max-w-[440px]">
+
+                        <!-- กล่องหลัง (เงาสี่เหลี่ยมเรืองแสง) -->
+                        <div class="absolute inset-0 bg-gradient-to-tr from-blue-500 to-cyan-400 rounded-3xl opacity-20 blur-2xl transform scale-95 translate-y-4"></div>
+
+                        <!-- หลอดไฟลอยเหนือกล่อง มุมขวาบน (อยู่นอก overflow-hidden ของการ์ด จึงแสดงเต็มไม่โดนตัด) -->
+                        <div class="absolute -top-5 -right-5 z-20 w-14 h-14 bg-cyan-400/20 backdrop-blur-sm border border-cyan-400/30 rounded-xl transform rotate-12 flex items-center justify-center text-cyan-300 shadow-xl animate-float">📸</div>
+
+                        <div class="relative bg-slate-900/80 border border-white/10 rounded-3xl shadow-2xl backdrop-blur-md overflow-hidden">
+
+                            <!-- รูปภาพหลัก -->
+                            <div class="relative w-full h-64 sm:h-72 overflow-hidden">
+                                <img id="course-image" 
+                                        src="https://res.cloudinary.com/daytjjgll/image/upload/fl_preserve_transparency/v1783993162/gfr1/2569/qfkdnj9m6y0f9ilkklcl.jpg?_s=public-apps"
+                                        alt="ภาพประกอบหลักสูตร"
+                                        class="w-full h-full object-cover scale-105 opacity-0 transition-opacity duration-300">
+
+                                <!-- ไล่เฉดมืดด้านล่างให้ตัวหนังสืออ่านง่าย -->
+                                <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/10 to-transparent"></div>
+                                <!-- ไล่เฉดบางๆ ด้านบนให้ badge เด่นขึ้น -->
+                                <div class="absolute inset-0 bg-gradient-to-b from-slate-900/40 via-transparent to-transparent"></div>
+
+                                <!-- เส้นขอบเรืองแสงรอบรูป -->
+                                <div class="absolute inset-0 ring-1 ring-inset ring-white/15 rounded-t-3xl"></div>
+
+                                <!-- badge มุมบนซ้าย -->
+                                <div class="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/60 border border-white/20 backdrop-blur-sm">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                                    <span class="text-[10px] font-medium text-cyan-200 tracking-wide">กองฝึกอบรมภูมิภาค 1 กปภ.</span>
+                                </div>
+
+                                <!-- ข้อความแคปชั่นทับด้านล่างรูป -->
+                                <div class="absolute bottom-3 left-4 right-4">
+                                    <div class="text-[11px] font-medium text-cyan-200/90 tracking-wide">ภาพกิจกรรมการฝึกอบรม</div>
+                                    <div id="f_image_caption" class="text-sm font-semibold text-white drop-shadow leading-snug">ความปลอดภัยในการทำงานเกี่ยวกับสารเคมีอันตราย และการตอบโต้กรณีเกิดเหตุฉุกเฉิน รุ่นที่ 1-3/69</div>
+                                </div>
+                            </div>
+
+                            <!-- แถบไล่สีคั่นบางๆ -->
+                            <div class="h-1 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500"></div>
+
+                            <!-- การ์ดสรุปงบประมาณ 6 ใบ (ปรับจาก _renderBudgetPanel ของไฟล์ 01) -->
+                            <div class="p-4">
+                                <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
+                                    <span class="text-[11px] text-slate-300 tracking-wide">📌 สรุปงบประมาณ</span>
+                                    <span id="summary-status" class="text-[11px] font-medium text-slate-400">ยังไม่มีข้อมูล</span>
+                                </div>
+                                <div id="summary-grid" class="grid grid-cols-2 gap-2.5">
+                                    <!-- การ์ดสรุปงบ ถูกสร้างด้วย JS -->
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ── แถวล่าง: การ์ดรายงาน 6 ใบ เต็มความกว้าง (2 แถว x 3 คอลัมน์) ── -->
+            <div id="report-panel" class="mt-14">
+                <div class="flex items-center gap-2 justify-center lg:justify-start mb-5">
+                    <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                    <span class="text-xs text-slate-200 tracking-wide">ระบบสร้างรายงานสรุปค่าใช้จ่ายการฝึกอบรม กฝภ.1</span>
+                </div>
+                <div id="report-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <!-- การ์ดรายงานถูกสร้างด้วย JS จาก REPORTS array ด้านล่าง -->
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         แถบด้านล่าง (footer bar) — สไตล์เดียวกับแถบบน
+    ═══════════════════════════════════════════════════════ -->
+    <footer class="bg-slate-900 border-t border-white/10">
+      <div class="container mx-auto max-w-6xl flex items-center justify-center px-4 sm:px-6 lg:px-8 py-4">
+        <div class="text-[11px] text-slate-400">© 2569 กองฝึกอบรมภูมิภาค 1 · การประปาส่วนภูมิภาค (กปภ.)</div>
+      </div>
+    </footer>
+
+    <!-- ═══════════════════════════════════════════════════════
+         ข้อมูลรายงาน 6 ใบ (ปรับรูปแบบใหม่ให้เข้ากับธีมหน้านี้ — อิงจากไฟล์ 01_Main-Reports.html)
+         แก้ href / ชื่อ / ไอคอน ตรงนี้ได้เลยถ้ารายการรายงานจริงมีเปลี่ยนแปลง
+    ═══════════════════════════════════════════════════════ -->
+    <script>
+        const REPORTS = [
+            { num: '05', name: 'ประมาณการค่าใช้จ่าย',        icon: '⭐', color: 'from-amber-400/20 to-amber-600/10 border-amber-400/30 text-amber-300',  href: '05.Budgeted-Expenses.html' },
+            { num: '06', name: 'สรุปค่าใช้จ่ายจริง',          icon: '📋', color: 'from-teal-400/20 to-teal-600/10 border-teal-400/30 text-teal-300',      href: '06.Sum-Training-Expenses.html' },
+            { num: '07', name: 'สรุปฯ (ใบปะหน้า)',            icon: '📝', color: 'from-fuchsia-500/40 to-pink-600/30 border-fuchsia-400/50 text-fuchsia-100', href: '07.Sum-Borrow1.html' },
+            { num: '08', name: 'ใบหักล้างยืมเงิน (บง.27)',    icon: '🧾', color: 'from-rose-400/20 to-rose-600/10 border-rose-400/30 text-rose-300',      href: '08.Form-Pwa-27.html' },
+            { num: '09', name: 'ค่าวัสดุเบ็ดเตล็ด (ว.119)',   icon: '⏱️', color: 'from-slate-400/20 to-slate-600/10 border-slate-400/30 text-slate-300',  href: '09.V199.html' },
+            { num: '01', name: 'ภาพรวมทั้งหมด',               icon: '🏠', color: 'from-indigo-500/40 to-cyan-500/30 border-cyan-300/50 text-cyan-100',    href: '01.Main-Reports.html' },
+        ];
+
+        function renderReportCards() {
+            const grid = document.getElementById('report-grid');
+            grid.innerHTML = REPORTS.map(r => `
+                <a href="${r.href}" onclick="return passRunToReport(event, '${r.href}')"
+                   class="group flex flex-col gap-2 bg-gradient-to-br ${r.color} border rounded-2xl p-4
+                          transition-all duration-300 ease-out
+                          hover:-translate-y-1.5 hover:scale-[1.04] hover:border-white/60
+                          hover:shadow-2xl hover:shadow-cyan-500/20 hover:brightness-125">
+                    <span class="text-xl transition-transform duration-300 group-hover:scale-110">${r.icon}</span>
+                    <span class="text-[15px] font-semibold text-white leading-snug">${r.name}</span>
+                </a>
+            `).join('');
+        }
+        renderReportCards();
+
+        // ส่งเลขที่หลักสูตรปัจจุบันไปให้หน้ารายงาน (ตามกลไกเดียวกับ goDetail() ในไฟล์ dashboard — sessionStorage.courseData)
+        function passRunToReport(e, href) {
+            if (window.__courseData && window.__courseData.no) {
+                try { sessionStorage.setItem('courseData', JSON.stringify(window.__courseData)); } catch (err) {}
+            }
+            return true; // ปล่อยให้ลิงก์ทำงานตามปกติ
+        }
+
+        // ปุ่ม "ออกรายงาน" — เลื่อนไปที่กรอบการ์ดรายงานด้านล่าง (ยังไม่ผูกลิงก์อื่น)
+        document.getElementById('btn-report').addEventListener('click', () => {
+            document.getElementById('report-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+
+        // ปุ่ม "รายละเอียด" — ยังไม่ต้องสร้างลิงก์ (รอคิดกระบวนการ) กันไว้เป็นจุดต่อโค้ดในอนาคต
+        document.getElementById('btn-detail').addEventListener('click', () => {
+            console.log('TODO: ยังไม่ได้กำหนดปลายทางของปุ่ม "รายละเอียด"');
+        });
+    </script>
+
+    <!-- ═══════════════════════════════════════════════════════
+         การ์ดสรุปงบประมาณ 6 ใบ (ปรับ logic มาจาก _renderBudgetPanel() ในไฟล์ 01 — ธีมกระจกมืด)
+    ═══════════════════════════════════════════════════════ -->
+    <script>
+        function fmtBaht(n) {
+            return (n !== null && n !== undefined)
+                ? Number(n).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' บาท'
+                : null;
+        }
+
+        // slot = { budget, speakers, actual06, actual07 } — เหมือนโครงสร้างที่ 01_Main-Reports.html ใช้
+        function renderSummaryCards(slot) {
+            const grid = document.getElementById('summary-grid');
+            const statusEl = document.getElementById('summary-status');
+            const noData = '<span class="text-slate-500 text-[13px]">ยังไม่มีข้อมูล</span>';
+
+            if (!slot) {
+                const labels = [
+                    'ประมาณการค่าใช้จ่ายทั้งหมด', 'จำนวนเงินยืมทดลองจ่าย', 'ชื่อวิทยากร / บริษัท',
+                    'ค่าใช้จ่ายเกิดจริงทั้งหมด', 'ค่าใช้จ่ายรวม ก. (ใช้จริง)', 'เงินคืน (คงเหลือของรวมเงิน ก.)'
+                ];
+                grid.innerHTML = labels.map((l, i) => `
+                    <div class="bg-white/5 border border-white/10 rounded-xl p-3">
+                        <div class="text-[11.5px] font-semibold text-slate-200 leading-tight">${l}</div>
+                        <div class="mt-1.5">${noData}</div>
+                    </div>
+                `).join('');
+                statusEl.textContent = 'ยังไม่มีข้อมูล';
+                return;
+            }
+
+            const b   = slot.budget   || {};
+            const sp  = slot.speakers || {};
+            const a06 = slot.actual06 || null;
+            const a07 = slot.actual07 || null;
+
+            const budgetTotal = b.budgetTotal || b.grandTotal || 0;
+            const borrowAmt = (Number(b.secFuel)||0)
+                             + (Number(b.sec1)||0) + (Number(b.sec2)||0)
+                             + (Number(b.secLump)||0) + (Number(b.secVenue)||0)
+                             + (Number(b.sec3)||0)    + (Number(b.sec4)||0)
+                             + (Number(b.sec5)||0)    + (Number(b.sec6)||0);
+
+            const spkList = Array.isArray(sp.EXT) ? sp.EXT : [];
+            const spkNames = spkList.filter(s => s && s.name).map(s => s.name);
+            const hasInt = (b.secInternal || 0) > 0;
+
+            let actualTotal = null;
+            if (a06 && (a06.grandTotal || 0) > 0) actualTotal = a06.grandTotal;
+            if (a07 && (a07.grandTotal || 0) > 0) actualTotal = a07.grandTotal;
+
+            // ค่าใช้จ่ายรวม ก. (ใช้จริง) — ตัดยอดวิทยากรภายใน/ประธานในพิธีออก (โอนตรงหน่วยงานต้นสังกัด ไม่ใช่เงินยืมทดลองจ่าย)
+            let actualGorA = null;
+            if (a07) {
+                const avf = k => parseFloat(a07[k] || 0);
+                const spkA07 = a07.spkActual || {};
+                const spkSum = Array.isArray(spkA07.EXT)
+                    ? spkA07.EXT.reduce((s,x)=>s+(x.aHotel||0)+(x.aTravel||0)+(x.aAmt||0),0)
+                    : (spkA07.A||[]).reduce((s,x)=>s+(x.aAmt||0),0)
+                    + (spkA07.B||[]).reduce((s,x)=>s+(x.aAmt||0),0)
+                    + (spkA07.C||[]).reduce((s,x)=>s+(x.aHotel||0)+(x.aTravel||0)+(x.aAmt||0),0);
+                actualGorA = avf('a_fuel') + avf('a_1_1')+avf('a_1_2') + avf('a_2_1') + avf('a_lump')
+                           + avf('a_venue_meet')+avf('a_venue_vip')+avf('a_venue_staff')
+                           + avf('a_3_1')+avf('a_food_dinner')+avf('a_3_2')+avf('a_3_3')
+                           + avf('a_4_1')+avf('a_4_2')+avf('a_4_3') + spkSum;
+            } else if (a06) {
+                actualGorA = Number(a06.grandTotal) || 0;
+            }
+
+            const refund = (actualGorA !== null && borrowAmt > 0) ? (borrowAmt - actualGorA) : null;
+            const hasBudget = budgetTotal > 0;
+            const hasActual = actualTotal !== null;
+
+            const spkHTML = spkNames.length
+                ? spkNames.map(n => `<div class="text-[11px] text-cyan-300 font-medium leading-relaxed">👤 ${n}</div>`).join('')
+                : noData;
+
+            grid.innerHTML = `
+                <div class="bg-cyan-400/[0.07] border border-cyan-400/20 rounded-xl p-3">
+                    <div class="text-[11.5px] font-semibold text-slate-100 leading-tight">ประมาณการค่าใช้จ่ายทั้งหมด</div>
+                    <div class="text-[15px] font-bold text-cyan-300 mt-1.5">${hasBudget ? fmtBaht(budgetTotal) : noData}</div>
+                </div>
+
+                <div class="bg-cyan-400/[0.07] border border-cyan-400/20 rounded-xl p-3">
+                    <div class="text-[11.5px] font-semibold text-slate-100 leading-tight">จำนวนเงินยืมทดลองจ่าย</div>
+                    <div class="text-[15px] font-bold text-cyan-300 mt-1.5">${hasBudget ? fmtBaht(borrowAmt) : noData}</div>
+                </div>
+
+                <div class="bg-cyan-400/[0.07] border border-cyan-400/20 rounded-xl p-3">
+                    <div class="text-[11.5px] font-semibold text-slate-100 leading-tight">ชื่อวิทยากร / บริษัท</div>
+                    <div class="mt-1.5 space-y-0.5">${spkHTML}${hasInt ? '<div class="text-[11px] text-cyan-300 font-medium">🏢 มีวิทยากรภายใน</div>' : ''}</div>
+                </div>
+
+                <div class="bg-cyan-400/[0.07] border border-cyan-400/20 rounded-xl p-3">
+                    <div class="text-[11.5px] font-semibold text-slate-100 leading-tight">ค่าใช้จ่ายเกิดจริงทั้งหมด</div>
+                    <div class="text-[15px] font-bold text-cyan-300 mt-1.5">${hasActual ? fmtBaht(actualTotal) : noData}</div>
+                </div>
+
+                <div class="bg-cyan-400/[0.07] border border-cyan-400/20 rounded-xl p-3">
+                    <div class="text-[11.5px] font-semibold text-slate-100 leading-tight">ค่าใช้จ่ายรวม ก. (ใช้จริง)</div>
+                    <div class="text-[15px] font-bold text-cyan-300 mt-1.5">${actualGorA !== null ? fmtBaht(actualGorA) : noData}</div>
+                </div>
+
+                <div class="bg-cyan-400/[0.07] border border-cyan-400/20 rounded-xl p-3">
+                    <div class="text-[11.5px] font-semibold text-slate-100 leading-tight">เงินคืน (คงเหลือของรวมเงิน ก.)</div>
+                    <div class="text-[15px] font-bold mt-1.5" style="color:${refund !== null ? (refund >= 0 ? '#34d399' : '#fb7185') : '#64748b'}">
+                        ${refund !== null ? fmtBaht(refund) : noData}
+                    </div>
+                </div>
+            `;
+            statusEl.textContent = 'เชื่อมต่อสำเร็จ';
+        }
+
+        renderSummaryCards(null);
+    </script>
+
+    <!-- ═══════════════════════════════════════════════════════
+         ดึงข้อมูลหลักสูตรจาก Google Sheet (GAS Web API เดียวกับไฟล์ 01_Main-Reports.html)
+         การทำงาน (init flow / retry / sessionStorage) พอร์ตมาจากไฟล์ 01 ทั้งหมด
+         สิ่งที่เพิ่ม: รูปภาพต่อหลักสูตร — อ่านจากคอลัมน์ "imageUrl" ในชีท courses (ดูหมายเหตุท้ายไฟล์)
+    ═══════════════════════════════════════════════════════ -->
+    <script>
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbySJROnBMkxFBNyPvET3DC5ihdCz03OPzvi2xXm6cMQpoPFsi2pAiTQAQIVSDUwQNVZ5w/exec';
+
+        async function gsApi(action, data, no) {
+            const params = new URLSearchParams({ action });
+            if (data) params.set('data', JSON.stringify(data));
+            if (no)   params.set('no', no);
+            const res = await fetch(GAS_URL + '?' + params.toString());
+            const json = await res.json();
+            if (!json.ok) throw new Error(json.error || 'GAS error');
+            return json.data;
+        }
+
+        const _mo = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+        function isoTh(iso) {
+            if (!iso) return '';
+            const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (!m) return String(iso);
+            return `${parseInt(m[3])} ${_mo[parseInt(m[2]) - 1]} ${parseInt(m[1]) + 543}`;
+        }
+        function isoThRange(ds, de) {
+            if (!ds) return '';
+            if (!de || de === ds) return isoTh(ds);
+            return isoTh(ds) + ' – ' + isoTh(de);
+        }
+
+        // ── โหลดรูปแบบ "ทันที" — ไม่พึ่ง Google Sheet เลย ──
+        // สร้าง URL รูปจาก "เลขที่หลักสูตร" ตรงๆ (แอดมินอัปโหลดรูปไปตั้งชื่อไฟล์ = เลขที่หลักสูตร ไว้ล่วงหน้าใน Cloudinary
+        // path: gfr1/2569/{เลขที่หลักสูตร} เช่น เลขที่ 01320829 → อัปโหลดไฟล์ชื่อ "01320829.jpg" ไว้ใน path นี้)
+        // วิธีนี้ไม่ต้องยิง gsApi เลย จึงไม่มีความหน่วงจากการรอ Google Apps Script ตอบกลับ
+        function courseImageUrl(no) {
+                return `https://res.cloudinary.com/daytjjgll/image/upload/f_auto,q_auto/gfr1/2569/${no}`;
+            }
+
+            // ── แก้ไข Path ในนี้ให้ตรงกับตำแหน่งจริงของรูปภาพบน Cloudinary ──
+            const FALLBACK_GFR1_IMAGES = [
+                'gfr1/heftpyre6z4aiotufazm', // แก้ไขเอา /2569/ ออกเพื่อให้ตรงกับลิงก์จริงของคุณ
+                'gfr1/s5epptybf473sotkli4h' // ฝากเช็คภาพนี้ด้วยครับว่าอยู่ในโฟลเดอร์ gfr1 หรือ gfr1/2569
+            ];
+
+            function randomFallbackImage() {
+                const pick = FALLBACK_GFR1_IMAGES[Math.floor(Math.random() * FALLBACK_GFR1_IMAGES.length)];
+                return `https://res.cloudinary.com/daytjjgll/image/upload/f_auto,q_auto/${pick}`;
+            }
+
+       function setCourseImage(no) {
+            const imgEl = document.getElementById('course-image');
+            if (!imgEl || !no) return;
+            
+            const url = courseImageUrl(no);
+            if (imgEl.dataset.wanted === url) return; 
+            imgEl.dataset.wanted = url;
+
+            // 1. ซ่อนรูปปัจจุบันไว้ก่อน เพื่อไม่ให้ภาพเก่าค้างระหว่างดาวน์โหลดภาพใหม่
+            imgEl.style.opacity = '0';
+            imgEl.style.transition = 'opacity 0.2s ease-in-out'; // เพิ่มความสมูทตอนแสดงผล
+
+            // 2. เมื่อภาพใหม่ (หรือภาพสำรอง) โหลดเสร็จเรียบร้อย ค่อยสั่งให้แสดงผล
+            imgEl.onload = () => {
+                imgEl.style.opacity = '1';
+            };
+
+            imgEl.onerror = () => {
+                // ไม่พบรูปของหลักสูตรนี้ → สุ่มรูปสำรองจาก path gfr1 แทน
+                imgEl.onerror = () => { 
+                    imgEl.onerror = null; 
+                    imgEl.style.opacity = '1'; // เผื่อกรณีแย่ที่สุดรูปสำรองพัง ก็ให้โชว์กล่อง (หรือภาพเก่า) ไม่ซ่อนค้าง
+                }; 
+                imgEl.src = randomFallbackImage();
+            };
+            
+            imgEl.src = url;
+        }
+
+        function setCourseFields(cr) {
+            window.__courseData = cr;
+            document.getElementById('f_course_name').textContent = cr.course || 'ยังไม่พบข้อมูลหลักสูตร';
+
+            const line1Parts = [];
+            if (cr.batch) line1Parts.push(`รุ่นที่ ${cr.batch}`);
+            if (cr.no)    line1Parts.push(`เลขที่หลักสูตร ${cr.no}`);
+            document.getElementById('f_meta_line1').textContent =
+                line1Parts.length ? line1Parts.join(' · ') : 'ยังไม่มีข้อมูลรุ่น/เลขที่หลักสูตร';
+
+            const dateTxt = isoThRange(cr.dateStart, cr.dateEnd);
+            document.getElementById('f_meta_line2').textContent = dateTxt ? `วันที่ ${dateTxt}` : '';
+
+            document.getElementById('f_meta_line3').textContent = cr.location ? `ณ ${cr.location}` : '';
+
+            // แคปชั่นทับรูปภาพ — ชื่อหลักสูตร + รุ่นที่
+            const capEl = document.getElementById('f_image_caption');
+            if (capEl) capEl.textContent = cr.course ? `${cr.course}${cr.batch ? ' รุ่นที่ ' + cr.batch : ''}` : '';
+
+            // รูปภาพ: ไม่ต้องทำอะไรที่นี่แล้ว — setCourseImage(no) ถูกเรียกทันทีตั้งแต่รู้เลขที่หลักสูตร
+            // ใน initCourse() ก่อนหน้านี้แล้ว (ไม่พึ่งข้อมูลจาก Google Sheet อีกต่อไป)
+        }
+
+        /* ============================================================
+           โหลดการ์ดสรุปงบประมาณ — มี retry อัตโนมัติ (พอร์ตจาก loadBudgetPanel() ไฟล์ 01)
+           GAS Web App บางครั้ง "cold start" ช้าในการเรียกครั้งแรก จึงลองใหม่ก่อนฟ้อง error
+        ============================================================ */
+        function loadSummary(no, attempt) {
+            attempt = attempt || 1;
+            const statusEl = document.getElementById('summary-status');
+            statusEl.textContent = attempt === 1 ? 'กำลังโหลด...' : `กำลังลองใหม่ (${attempt}/3)...`;
+
+            gsApi('getByNo', null, no).then(gsRow => {
+                const gb = (gsRow && gsRow.budget)   || {};
+                const g6 = (gsRow && gsRow.actual06) || null;
+                const g7 = (gsRow && gsRow.actual07) || null;
+                const cr = (gsRow && gsRow.course)   || {};
+
+                // มีข้อมูลหลักสูตรจริงจากชีต — sync ฟอร์ม/รูปภาพให้ล่าสุดอีกครั้ง (เผื่อ sessionStorage เก่ากว่า)
+                if (cr && cr.course) {
+                    setCourseFields({ ...cr, no });
+                    // เก็บ sessionStorage ให้หน้ารายงานอื่นดึงต่อได้ (รวม imageUrl ไปด้วย)
+                    try { sessionStorage.setItem('courseData', JSON.stringify({ ...cr, no, _fromCourseList: true })); } catch (e) {}
+                }
+
+                renderSummaryCards({
+                    budget: gb,
+                    speakers: gb.spkJson ? (typeof gb.spkJson === 'string' ? JSON.parse(gb.spkJson) : gb.spkJson) : {},
+                    actual06: g6,
+                    actual07: g7 ? {
+                        ...g7,
+                        spkActual: typeof g7.spkActualJson === 'string'
+                            ? JSON.parse(g7.spkActualJson || '{}')
+                            : (g7.spkActualJson || {})
+                    } : null,
+                });
+            }).catch(() => {
+                if (attempt < 3) {
+                    setTimeout(() => loadSummary(no, attempt + 1), 1200);
+                } else {
+                    statusEl.innerHTML = '⚠️ เชื่อมต่อไม่สำเร็จ <button onclick="loadSummary(\'' + no + '\')" class="underline ml-1">ลองใหม่</button>';
+                }
+            });
+        }
+
+        // ── ข้อมูลตัวอย่าง — ใช้เฉพาะกรณีเปิดไฟล์นี้ตรงๆ โดยไม่มีเลขที่หลักสูตรส่งมาจากที่ไหนเลย (เดโมหน้าตา) ──
+        const SAMPLE_COURSE = {
+            no: '01320829',
+            course: 'ความปลอดภัยในการทำงานเกี่ยวกับสารเคมีอันตราย และการตอบโต้กรณีเกิดเหตุฉุกเฉิน',
+            batch: '1-3/69',
+            courseNum: '13',
+            year: '2569',
+            dateStart: '2026-05-25',
+            dateEnd: '2026-05-25',
+            location: 'การประปาส่วนภูมิภาคสาขาชัยนาท อำเภอเมืองชัยนาท จังหวัดชัยนาท'
+        };
+
+        /* ============================================================
+           INIT — พอร์ต flow เดียวกับ init() ในไฟล์ 01:
+           1) อ่านเลขที่หลักสูตรจาก sessionStorage.courseData ก่อนเสมอ (ปุ่ม "รายละเอียด" ของ dashboard ส่งมาทางนี้)
+           2) ถ้าไม่มี ลอง URL param ?no=/?run= (เผื่อเปิดหน้านี้ตรงๆ)
+           3) ถ้าไม่มีจริงๆ ใช้ข้อมูลตัวอย่างไว้ดูหน้าตา (ไม่ใช่พฤติกรรมในไฟล์ 01 — เพิ่มเฉพาะหน้านี้เพื่อพรีวิว)
+        ============================================================ */
+        (function initCourse() {
+            let courseData = null;
+            try {
+                const raw = sessionStorage.getItem('courseData');
+                if (raw) courseData = JSON.parse(raw);
+            } catch (e) { courseData = null; }
+
+            let no = (courseData && courseData.no) ? String(courseData.no).trim() : '';
+            if (!no) {
+                const params = new URLSearchParams(window.location.search);
+                no = params.get('no') || params.get('run') || '';
+            }
+
+            if (no) {
+                // ⚡ ตั้งค่ารูปภาพทันทีจากเลขที่หลักสูตร (ไม่รอ fetch ใดๆ — เร็วที่สุดเท่าที่ทำได้)
+                setCourseImage(no);
+                // เติมข้อมูลที่มีอยู่แล้วทันที (ไม่ต้องรอ fetch) แล้วค่อยโหลดการ์ดสรุปงบ (มี retry ในตัว)
+                setCourseFields(courseData && courseData.no === no ? courseData : { no });
+                loadSummary(no);
+            } else {
+                // ไม่มีเลขที่หลักสูตรจากที่ไหนเลย — โชว์ข้อมูลตัวอย่างไว้ดูหน้าตาก่อน
+                setCourseImage(SAMPLE_COURSE.no);
+                setCourseFields(SAMPLE_COURSE);
+            }
+        })();
+    </script>
+
+    <!-- สคริปต์เปิดใช้งานระบบคลื่น Vanta.js ที่พื้นหลัง -->
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            VANTA.WAVES({
+                el: "#vanta-bg",
+                mouseControls: true,
+                touchControls: true,
+                gyroControls: false,
+                minHeight: 200.00,
+                minWidth: 200.00,
+                scale: 1.00,
+                scaleMobile: 1.00,
+                color: 0x0f172a,      /* โทนสีกรมท่าเข้ม */
+                shininess: 35.00,
+                waveHeight: 15.00,
+                waveSpeed: 0.60,
+                zoom: 0.85
+            })
+        });
+    </script>
+</body>
+</html>

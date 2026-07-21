@@ -1,0 +1,2050 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>สรุปค่าใช้จ่ายจากการฝึกอบรม (ใบปะหน้า)</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--blue:#1a56db;--blue-light:#e8f0fe;--blue-dark:#1241b0;--gray-50:#f7f8fa;--gray-200:#d1d5db;--text:#1f2937;--navy:#0f2744;--accent:#e8a020;}
+*{box-sizing:border-box;}
+body{font-family:'Sarabun',sans-serif;background:var(--gray-50);color:var(--text);font-size:15px;line-height:1.6;margin:0;padding:0;}
+.site-header{background:var(--navy);color:#fff;position:sticky;top:0;z-index:200;box-shadow:0 2px 12px rgba(0,0,0,.25);}
+.header-inner{max-width:1060px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.header-title{display:flex;align-items:center;gap:12px;}
+.header-icon{width:38px;height:38px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.header-text h1{font-size:15px;font-weight:600;margin:0;}
+.header-text p{font-size:11px;color:rgba(255,255,255,.55);margin:0;}
+a.btn-nav{padding:6px 14px;border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.8);background:transparent;border-radius:6px;font-family:'Sarabun',sans-serif;font-size:12px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:5px;transition:background .2s;}
+a.btn-nav:hover{background:rgba(255,255,255,.1);color:#fff;}
+
+/* ── SYNC STATUS BANNER ── */
+.sync-banner{max-width:900px;margin:16px auto 0;padding:0 20px;}
+.sync-box{background:#fff;border:1.5px solid var(--gray-200);border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;box-shadow:0 2px 8px rgba(0,0,0,.05);transition:box-shadow .2s;}
+.sync-box.has-data{border-color:#10b981;background:#f0fdf4;}
+.sync-box.no-data{border-color:#f59e0b;background:#fffbeb;}
+.sync-status-icon{font-size:22px;flex-shrink:0;}
+.sync-status-text{flex:1;}
+.sync-status-title{font-size:13px;font-weight:700;color:#1f2937;}
+.sync-status-sub{font-size:11px;color:#6b7280;margin-top:1px;}
+.btn-sync{padding:7px 18px;background:var(--blue);color:#fff;border:none;border-radius:7px;font-family:'Sarabun',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s;box-shadow:0 2px 6px rgba(26,86,219,.25);}
+.btn-sync:hover{background:var(--blue-dark);transform:translateY(-1px);box-shadow:0 3px 10px rgba(26,86,219,.35);}
+.btn-sync-warn{padding:7px 18px;background:#f59e0b;color:#fff;border:none;border-radius:7px;font-family:'Sarabun',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s;box-shadow:0 2px 6px rgba(245,158,11,.25);}
+.btn-sync-warn:hover{background:#d97706;transform:translateY(-1px);box-shadow:0 3px 10px rgba(245,158,11,.35);}
+
+/* ── FORM ── */
+#form-view{max-width:900px;margin:0 auto;padding:20px 20px 60px;}
+.form-section{background:#fff;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:20px;overflow:hidden;transition:box-shadow .2s;}
+.form-section:hover{box-shadow:0 4px 14px rgba(0,0,0,.08);}
+.form-section-header{background:var(--blue-light);padding:12px 20px;font-weight:700;font-size:14px;color:var(--blue-dark);border-bottom:2px solid #c7d8f8;display:flex;align-items:center;gap:10px;}
+.form-section-body{padding:20px;}
+.form-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-bottom:14px;}
+.form-row.single{grid-template-columns:1fr;}
+.form-row.three{grid-template-columns:1fr 1fr 1fr;}
+.form-row.two{grid-template-columns:1fr 1fr;}
+.form-group{display:flex;flex-direction:column;}
+.form-group label{font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;}
+.form-group input[type=text],.form-group input[type=number]{border:1.5px solid var(--gray-200);border-radius:6px;padding:8px 12px;font-family:'Sarabun',sans-serif;font-size:14px;color:var(--text);transition:border-color .2s,box-shadow .2s;background:#fff;}
+.form-group input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,86,219,.1);}
+.form-group input[type=number]{text-align:right;}
+
+/* ── BUDGET FIELDS (readonly grey, modern) ── */
+input.budget-field{background:#eef1f5!important;color:#5a6a7a!important;border:1.5px solid #dde2ea!important;cursor:not-allowed!important;font-weight:600;border-radius:6px;transition:background .2s;}
+input.budget-field:focus{box-shadow:none!important;border-color:#dde2ea!important;}
+.budget-label{font-size:11px;font-weight:700;color:#6b7280;white-space:nowrap;display:flex;align-items:center;gap:4px;background:#f1f3f6;padding:3px 8px;border-radius:5px;}
+.budget-label::before{content:'📋';font-size:10px;}
+
+/* ── ACTUAL FIELDS (editable green, modern) ── */
+input.actual-input{border:1.5px solid #a7e8c8!important;background:#f0fdf4!important;border-radius:6px;transition:border-color .2s,box-shadow .2s;font-weight:600;color:#065f46;}
+input.actual-input:hover{border-color:#6ee7b7!important;}
+input.actual-input:focus{border-color:#059669!important;box-shadow:0 0 0 3px rgba(16,185,129,.15)!important;outline:none;}
+.actual-label{font-size:11px;font-weight:700;color:#059669;white-space:nowrap;background:#ecfdf5;padding:3px 8px;border-radius:5px;display:inline-flex;align-items:center;gap:4px;}
+.actual-label::before{content:'✎';font-size:10px;}
+
+/* ── SUB-ITEMS ── */
+.sub-items{background:#fafbff;border:1px solid #e5e9f8;border-radius:10px;padding:16px;margin-top:6px;}
+.sub-item-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px dashed #e5e9f8;flex-wrap:wrap;}
+.sub-item-row:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
+.sub-item-row>label{font-size:13px;font-weight:600;color:#374151;flex:1;min-width:160px;}
+.field-group{display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap;}
+.field-group input{border-radius:6px;padding:7px 10px;}
+
+/* ── SPEAKER CARDS ── */
+.spk-card{background:#f0f4ff;border:1px solid #d4e0fb;border-radius:10px;padding:14px 16px;margin-bottom:10px;position:relative;transition:box-shadow .2s;}
+.spk-card:hover{box-shadow:0 2px 8px rgba(26,86,219,.08);}
+.spk-card-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
+.spk-num-badge{background:var(--blue-dark);color:#fff;font-size:11px;font-weight:700;border-radius:5px;padding:3px 10px;white-space:nowrap;}
+.spk-name-ro{font-size:13px;font-weight:600;color:#1e3a5f;padding:5px 10px;background:#e8f0fe;border-radius:6px;}
+.spk-fields{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;padding-left:4px;margin-top:4px;}
+.spk-fields label{font-size:12px;font-weight:600;color:#6b7280;white-space:nowrap;}
+.spk-fields input{border:1.5px solid var(--gray-200);border-radius:6px;padding:6px 9px;font-family:'Sarabun',sans-serif;font-size:13px;text-align:right;width:110px;transition:border-color .2s,box-shadow .2s;}
+.spk-fields input.budget-field{background:#eef1f5!important;color:#5a6a7a!important;cursor:not-allowed!important;}
+.spk-fields input.actual-input{border-color:#a7e8c8!important;background:#f0fdf4!important;}
+.spk-fields input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,86,219,.1);}
+
+/* ── SECTION TOGGLE ── */
+.cond-sec{display:none;}.cond-sec.show{display:block;}
+.opt-group{display:flex;gap:20px;flex-wrap:wrap;margin:6px 0 10px;}
+.opt-group label{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#374151;cursor:default;}
+.opt-group input[type=radio]{width:15px;height:15px;cursor:default;}
+.sec-divider{border:none;border-top:1px dashed #c7d8f8;margin:14px 0;}
+.hint-row{background:#fffbe6;border:1px solid #fcd34d;border-radius:8px;padding:9px 14px;font-size:12px;color:#92400e;margin-bottom:10px;}
+
+/* ── SAVE BUTTON ROW ── */
+.btn-row{display:flex;gap:12px;justify-content:center;margin-top:28px;flex-wrap:wrap;}
+.btn-save-actual{background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:8px;padding:13px 32px;font-family:'Sarabun',sans-serif;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(16,185,129,.35);transition:all .2s;display:flex;align-items:center;gap:8px;}
+.btn-save-actual:hover{background:linear-gradient(135deg,#059669,#047857);transform:translateY(-1px);}
+.btn-preview{background:#fff;color:var(--blue);border:2px solid var(--blue);border-radius:8px;padding:13px 28px;font-family:'Sarabun',sans-serif;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .2s;}
+.btn-preview:hover{background:var(--blue-light);transform:translateY(-1px);}
+.btn-print{background:linear-gradient(135deg,#1a56db,#1241b0);color:#fff;border:none;border-radius:8px;padding:13px 36px;font-family:'Sarabun',sans-serif;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(26,86,219,.35);transition:all .2s;display:flex;align-items:center;gap:8px;}
+.btn-print:hover{background:linear-gradient(135deg,#1241b0,#0e3491);transform:translateY(-1px);}
+
+/* ── TOAST ── */
+.save-toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(20px);background:#1f2937;color:white;padding:10px 22px;border-radius:8px;font-family:'Sarabun',sans-serif;font-size:14px;font-weight:600;opacity:0;transition:all .3s;z-index:9999;pointer-events:none;}
+.save-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ── REPORT VIEW ── */
+#report-view{display:none;max-width:1060px;margin:0 auto;padding:20px;}
+.print-toolbar{display:flex;gap:10px;justify-content:center;margin-bottom:20px;}
+.btn-back-form{background:#fff;color:#374151;border:2px solid var(--gray-200);border-radius:8px;padding:10px 22px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;}
+.btn-back-form:hover{border-color:#9ca3af;transform:translateY(-1px);}
+.btn-do-print{background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:8px;padding:10px 28px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(16,185,129,.3);display:flex;align-items:center;gap:6px;transition:all .2s;}
+.btn-do-print:hover{background:linear-gradient(135deg,#059669,#047857);transform:translateY(-1px);}
+.report-container{background:#fff;padding:40px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.05);--row-pad-v:5px;}
+.header-area{text-align:center;margin-bottom:30px;}
+.header-area h1,.header-area p{font-size:14px!important;font-weight:700!important;color:#000;margin:4px 0;}
+table.rpt{width:100%;border-collapse:collapse;font-size:14px;color:#000;table-layout:fixed;border:1px solid #333;}
+table.rpt thead th{background:#fff;color:#000!important;padding:10px 4px;font-weight:700;border:1px solid #333;text-align:center;}
+table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:1px solid #000;vertical-align:middle;transition:padding .15s;}
+
+/* ── ตัวควบคุมระยะห่างระหว่างบรรทัด (เฉพาะตารางรายงาน) ── */
+.spacing-ctrl{display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid var(--gray-200);border-radius:8px;padding:6px 8px 6px 14px;box-shadow:0 2px 6px rgba(0,0,0,.05);}
+.spacing-ctrl span{font-size:12px;font-weight:700;color:#374151;white-space:nowrap;}
+.spacing-ctrl .sp-level{font-size:12px;font-weight:700;color:var(--blue);min-width:48px;text-align:center;}
+.btn-sp{width:30px;height:30px;border:1.5px solid var(--gray-200);background:#fff;border-radius:6px;font-size:16px;font-weight:700;color:var(--blue-dark);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;line-height:1;}
+.btn-sp:hover{background:var(--blue-light);border-color:var(--blue);}
+.btn-sp:disabled{opacity:.35;cursor:not-allowed;}
+.btn-sp:disabled:hover{background:#fff;border-color:var(--gray-200);}
+.tl{text-align:left!important;} .tr{text-align:right!important;} .tc{text-align:center!important;} .tw{font-weight:700;}
+.i1{padding-left:16px!important;} .i2{padding-left:32px!important;} .i3{padding-left:48px!important;}
+.nb{border-bottom:none!important;} .nt{border-top:none!important;}
+.bb2{border-bottom:1px solid #000!important;} .bt2{border-top:1px solid #000!important;} .bb3{border-bottom:1px double #000!important;}
+.bgray{background:#eaeaea!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+.rpt-edit{border:none;border-bottom:1px dotted #999;background:transparent;font-family:'Sarabun',sans-serif;font-size:14px;color:#000;padding:0 2px;outline:none;line-height: 1.5;}
+.rpt-edit-sm{width:80px;} .rpt-edit-md{width:140px;} .rpt-edit-lg{width:200px;}
+.hdr-edit{border-bottom:1px dotted #aaa;}
+
+@media print{
+  .site-header,.print-toolbar,.sync-banner{display:none!important;}
+  #form-view{display:none!important;}
+  #report-view{display:block!important;}
+  body{background:#fff;padding:0;line-height:1.35;}
+  .report-container{box-shadow:none;padding:0;max-width:100%;}
+  .bgray{background:#eaeaea!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .rpt-edit{border:none!important;}
+  .hdr-edit{border:none!important;border-bottom:none!important;}
+  .note-row-1:has(input:placeholder-shown){display:none!important;}
+  .note-row-2:has(input:placeholder-shown){display:none!important;}
+  .note-row-3:has(input:placeholder-shown){display:none!important;}
+
+  }
+  @page{margin:10mm;}
+  table.rpt{font-size:13px;}
+  table.rpt thead th{padding:4px 2px!important;}
+  table.rpt tbody td{padding:var(--row-pad-v,5px) 8px!important;}
+  .header-area{margin-bottom:18px;text-align:center;}
+  .header-area h1{font-size:18px;line-height:1.6!important;margin:0 0 2px 0!important;}
+  .header-area p{font-size:14px;line-height:1.5!important;margin:0 0 4px 0!important;}
+}
+
+/* ── ie-wrap inline edit ── */
+.ie-wrap { position:relative; display:inline-flex; align-items:center; }
+.ie-wrap .ie-input { position:relative; z-index:1; background:transparent; min-width:80px; }
+.ie-wrap .ie-ph { position:absolute; left:4px; font-size:13px; display:inline; pointer-events:none; z-index:0; color:#aaa; font-style:italic; }
+.ie-wrap .ie-input:not(:placeholder-shown) + .ie-ph { display:none !important; }
+@media print {
+  /* ถ้ากรอกข้อความ → แสดง input ค่าปกติ ซ่อน placeholder span */
+  .ie-wrap .ie-input { border:none !important; background:transparent !important; color:#000 !important; }
+  .ie-wrap .ie-input:placeholder-shown { opacity:0; width:0; min-width:0; overflow:hidden; }
+  .ie-wrap .ie-ph { display:none !important; }
+}
+.double-bottom {
+  border-bottom: 3px double #000 !important;
+  /* บังคับให้แสดงเส้นคู่เด่นชัด ไม่โดนเส้น solid เดิมกลืน */
+  background-clip: padding-box; 
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+     FORM VIEW
+════════════════════════════════════════ -->
+<div id="form-view">
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-title">
+      <div class="header-icon">📝</div>
+      <div class="header-text">
+        <h1>รายงาน — สรุปค่าใช้จ่ายจากการฝึกอบรม (ใบปะหน้า)</h1>
+        <p>การประปาส่วนภูมิภาค (กปภ.) · กฝภ.1</p>
+      </div>
+    </div>
+    <button onclick="confirmBack07()" style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;background:transparent;color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.3);border-radius:6px;font-family:'Sarabun',sans-serif;font-size:12px;cursor:pointer;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,.1)'; this.style.color='#fff';" onmouseout="this.style.background='transparent'; this.style.color='rgba(255,255,255,.8)';">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>ย้อนกลับ
+    </button>
+  </div>
+</header>
+
+<!-- ข้อมูลหลักสูตร (readonly — มาจาก 01) -->
+<div class="form-section" style="margin-top:16px;">
+  <div class="form-section-header">📌 ข้อมูลหลักสูตร <span style="font-size:11px;font-weight:400;opacity:.7"></span></div>
+  <div class="form-section-body">
+    <div class="form-row single"><div class="form-group"><label>ชื่อหลักสูตร</label><input type="text" id="f_courseName" readonly class="budget-field" placeholder="(จะแสดงเมื่อโหลดข้อมูล)"></div></div>
+    <div class="form-row three">
+      <div class="form-group"><label>รุ่นที่</label><input type="text" id="f_batch" readonly class="budget-field" placeholder="—"></div>
+      <div class="form-group"><label>เลขที่รุ่นหลักสูตร</label><input type="text" id="f_courseNo" readonly class="budget-field" placeholder="—"></div>
+      <div class="form-group"><label>วันที่จัดอบรม</label><input type="text" id="f_date" readonly class="budget-field" placeholder="—"></div>
+    </div>
+    <div class="form-row single"><div class="form-group"><label>สถานที่จัดอบรม</label><input type="text" id="f_location" readonly class="budget-field" placeholder="—"></div></div>
+    <div class="form-row two">
+      <div class="form-group"><label>จำนวนผู้เข้ารับการอบรมตามอนุมัติ (คน)</label><input type="number" id="f_trainees_approved" value="0" step="1" class="actual-input"></div>
+      <div class="form-group"><label>จำนวนผู้เข้ารับการอบรมจริง (คน)</label><input type="number" id="f_trainees_actual" value="0" step="1" class="actual-input"></div>
+    </div>
+  </div>
+</div>
+
+<!-- หมวดค่าน้ำมันเชื้อเพลิงและหล่อลื่น -->
+<div class="form-section" id="sec_fuel_wrap" style="display:none;">
+  <div class="form-section-header">ก. <span class="num-fuel">x</span>. ค่าน้ำมันเชื้อเพลิงและหล่อลื่น</div>
+  <div class="form-section-body"><div class="sub-items">
+    <div class="sub-item-row"><label>ค่าน้ำมันเชื้อเพลิงและหล่อลื่น</label>
+      <div class="field-group">
+        <span class="budget-label">งบประมาณ (บาท)</span><input type="number" id="f_fuel" value="0" step="0.01" class="budget-field" readonly>
+        <span class="actual-label">ใช้จริง (บาท)</span><input type="number" id="a_fuel" value="0" step="0.01" class="actual-input">
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- หมวด 1 -->
+<div class="form-section" id="sec_office_wrap">
+  <div class="form-section-header">ก. <span class="num-office">x</span>. ค่าวัสดุสำนักงาน</div>
+  <div class="form-section-body"><div class="sub-items">
+    <div class="sub-item-row" id="row_1_1"><label><span class="num-office">x</span>.<span class="sub-office-1">1</span> ค่าเครื่องเขียนแบบพิมพ์</label>
+      <div class="field-group">
+        <span class="budget-label">งบประมาณ (บาท)</span><input type="number" id="f_1_1" value="0" step="0.01" class="budget-field" readonly>
+        <span class="actual-label">ใช้จริง (บาท)</span><input type="number" id="a_1_1" value="0" step="0.01" class="actual-input">
+      </div>
+    </div>
+    <div class="sub-item-row" id="row_1_2">
+      <label><span class="num-office">x</span>.<span class="sub-office-2">2</span> ค่าถ่ายเอกสารและเข้าเล่ม</label>
+      <div class="field-group">
+        <span class="budget-label">งบประมาณ (บาท)</span><input type="number" id="f_1_2" value="0" step="0.01" class="budget-field" readonly>
+        <span class="actual-label">ใช้จริง (บาท)</span><input type="number" id="a_1_2" value="0" step="0.01" class="actual-input">
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- หมวด 2 -->
+<div class="form-section" id="sec_misc_wrap">
+  <div class="form-section-header">ก. <span class="num-misc">x</span>. ค่าวัสดุเบ็ดเตล็ด</div>
+  <div class="form-section-body"><div class="sub-items">
+    <div class="sub-item-row"><label>ค่าใช้จ่ายอื่นๆ (กระเป๋าผ้า, ถ่านกล้อง, หน้ากากอนามัย ฯลฯ)</label>
+      <div class="field-group">
+        <span class="budget-label">งบประมาณ (บาท)</span><input type="number" id="f_2_1" value="0" step="0.01" class="budget-field" readonly>
+        <span class="actual-label">ใช้จริง (บาท)</span><input type="number" id="a_2_1" value="0" step="0.01" class="actual-input">
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- หมวด ค่าจ้างเหมา -->
+<div class="form-section" id="sec_lump_wrap" style="display:none;">
+  <div class="form-section-header">ก. <span class="num-lump">x</span>. ค่าจ้างเหมา</div>
+  <div class="form-section-body"><div class="sub-items">
+    <div class="sub-item-row"><label><span class="num-lump">x</span>.1 รถตู้รับจ้างรวมน้ำมันเชื้อเพลิง</label>
+      <div class="field-group">
+        <span class="budget-label">งบประมาณ (บาท)</span><input type="number" id="f_lump" value="0" step="0.01" class="budget-field" readonly>
+        <span class="actual-label">ใช้จริง (บาท)</span><input type="number" id="a_lump" value="0" step="0.01" class="actual-input">
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- หมวด ค่าเช่าสถานที่ -->
+<div class="form-section" id="sec_venue_wrap" style="display:none;">
+  <div class="form-section-header">ก. <span class="num-venue">x</span>. ค่าเช่าสถานที่</div>
+  <div class="form-section-body"><div class="sub-items" id="venue_sub_items"></div></div>
+</div>
+
+<!-- หมวด 3 -->
+<div class="form-section" id="sec_food_wrap">
+  <div class="form-section-header">ก. <span class="num-food">x</span>. ค่าอาหารและเครื่องดื่ม</div>
+  <div class="form-section-body"><div class="sub-items">
+    <div class="sub-item-row" id="row_3_1">
+      <label><span class="num-food">x</span>.<span class="sub-food-lunch">1</span> อาหารกลางวัน</label>
+      <div class="field-group">
+        <input type="number" id="f_3_1_rate" value="0" step="0.01" class="budget-field" readonly style="width:70px;">
+        <span class="budget-label" style="font-size:11px;">บ./คน/มื้อ</span>
+        <input type="number" id="f_3_1_ppl"  value="0" step="1"    class="budget-field" readonly style="width:60px;">
+        <span class="budget-label" style="font-size:11px;">คน</span>
+        <input type="number" id="f_3_1_times" value="1" step="1"   class="budget-field" readonly style="width:55px;">
+        <span class="budget-label" style="font-size:11px;">มื้อ</span>
+        <input type="number" id="f_3_1_days" value="0" step="1"    class="budget-field" readonly style="width:60px;">
+        <span class="budget-label" style="font-size:11px;">วัน</span>
+        <span class="actual-label">ใช้จริง (บาท)</span><input type="number" id="a_3_1" value="0" step="0.01" class="actual-input">
+      </div>
+    </div>
+    <div class="sub-item-row" id="row_food_dinner" style="display:none;">
+      <label><span class="num-food">x</span>.<span class="sub-food-dinner">2</span> อาหารเย็น</label>
+      <div class="field-group">
+        <input type="number" id="f_food_dinner_rate" value="0" step="0.01" class="budget-field" readonly style="width:70px;">
+        <span class="budget-label" style="font-size:11px;">บ./คน/มื้อ</span>
+        <input type="number" id="f_food_dinner_ppl"  value="0" step="1"    class="budget-field" readonly style="width:60px;">
+        <span class="budget-label" style="font-size:11px;">คน</span>
+        <input type="number" id="f_food_dinner_times" value="1" step="1"   class="budget-field" readonly style="width:55px;">
+        <span class="budget-label" style="font-size:11px;">มื้อ</span>
+        <input type="number" id="f_food_dinner_days" value="0" step="1"    class="budget-field" readonly style="width:60px;">
+        <span class="budget-label" style="font-size:11px;">วัน</span>
+        <span class="actual-label">ใช้จริง (บาท)</span><input type="number" id="a_food_dinner" value="0" step="0.01" class="actual-input">
+      </div>
+    </div>
+    <div class="sub-item-row" id="row_3_2">
+      <label><span class="num-food">x</span>.<span class="sub-food-coffee">2</span> อาหารว่างและเครื่องดื่ม</label>
+      <div class="field-group">
+        <input type="number" id="f_3_2_rate" value="0" step="0.01" class="budget-field" readonly style="width:70px;">
+        <span class="budget-label" style="font-size:11px;">บ./คน/มื้อ</span>
+        <input type="number" id="f_3_2_ppl"  value="0" step="1"    class="budget-field" readonly style="width:60px;">
+        <span class="budget-label" style="font-size:11px;">คน</span>
+        <input type="number" id="f_3_2_times" value="1" step="1"   class="budget-field" readonly style="width:55px;">
+        <span class="budget-label" style="font-size:11px;">มื้อ</span>
+        <input type="number" id="f_3_2_days" value="0" step="1"    class="budget-field" readonly style="width:60px;">
+        <span class="budget-label" style="font-size:11px;">วัน</span>
+        <span class="actual-label">ใช้จริง (บาท)</span><input type="number" id="a_3_2" value="0" step="0.01" class="actual-input">
+      </div>
+    </div>
+    <div class="sub-item-row" id="row_3_3">
+      <label><span class="num-food">x</span>.<span class="sub-food-extdinner">3</span> ค่าอาหารเย็นวิทยากรภายนอก</label>
+      <div class="field-group">
+        <span class="budget-label">งบประมาณ (บาท)</span><input type="number" id="f_3_3" value="0" step="0.01" class="budget-field" readonly>
+        <span class="actual-label">ใช้จริง (บาท)</span><input type="number" id="a_3_3" value="0" step="0.01" class="actual-input">
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- หมวด 4 -->
+<div class="form-section" id="sec_stafftravel_wrap">
+  <div class="form-section-header">ก. <span class="num-stafftravel">x</span>. ค่าเดินทางเจ้าหน้าที่ดำเนินการและประสานงาน (กฝภ.1)</div>
+  <div class="form-section-body"><div class="sub-items" id="stafftravel_sub_items">
+    <div class="sub-item-row"><label>ค่าเบี้ยเลี้ยง</label>
+      <div class="field-group">
+        <span class="budget-label">งบประมาณ (บาท)</span><input type="number" id="f_4_1" value="0" step="0.01" class="budget-field" readonly>
+        <span class="actual-label">ใช้จริง (บาท)</span><input type="number" id="a_4_1" value="0" step="0.01" class="actual-input">
+      </div>
+    </div>
+    <div class="sub-item-row"><label>ค่าที่พัก</label>
+      <div class="field-group">
+        <span class="budget-label">งบประมาณ (บาท)</span><input type="number" id="f_4_2" value="0" step="0.01" class="budget-field" readonly>
+        <span class="actual-label">ใช้จริง (บาท)</span><input type="number" id="a_4_2" value="0" step="0.01" class="actual-input">
+      </div>
+    </div>
+    <div class="sub-item-row"><label>ค่าพาหนะ (น้ำมันเชื้อเพลิงและหล่อลื่น)</label>
+      <div class="field-group">
+        <span class="budget-label">งบประมาณ (บาท)</span><input type="number" id="f_4_3" value="0" step="0.01" class="budget-field" readonly>
+        <span class="actual-label">ใช้จริง (บาท)</span><input type="number" id="a_4_3" value="0" step="0.01" class="actual-input">
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- หมวดวิทยากรภายนอก — สร้างโดย JS (renderSpk07) -->
+<div class="form-section" id="sec_spk_wrap">
+  <div class="form-section-header" id="sec_spk_header">ก. <span class="num-ext">x</span>. ค่าสมนาคุณวิทยากรภายนอก</div>
+  <div class="form-section-body">
+    <div class="hint-row" id="hint_paytype" style="display:none;"></div>
+    <div style="margin-bottom:8px;" id="paytype_row">
+      <span style="font-size:13px;font-weight:700;color:#374151;">รูปแบบการจ่าย: </span>
+      <span id="paytype_display" style="font-size:13px;color:#1a56db;font-weight:700;"></span>
+    </div>
+    <div id="sec_EXT" class="cond-sec show"><div class="sub-items" id="spk_EXT_container"></div></div>
+  </div>
+</div>
+
+<!-- วิทยากรภายใน — แสดง/ซ่อนตาม slot -->
+<div class="form-section" id="sec_internal_wrap" style="display:none;">
+  <div class="form-section-header" id="sec_internal_header">มีวิทยากรภายใน</div>
+  <div class="form-section-body">
+    <div class="sub-items">
+      <div class="sub-item-row"><label id="lbl_Ax">ค่าเบี้ยเลี้ยง</label>
+        <div class="field-group">
+          <span class="budget-label">งบประมาณ (บาท)</span><input type="number" id="f_in_1" value="0" step="0.01" class="budget-field" readonly>
+          <span class="actual-label">ใช้จริง (บาท)</span><input type="number" id="a_in_1" value="0" step="0.01" class="actual-input">
+        </div>
+      </div>
+      <div class="sub-item-row"><label id="lbl_Ay">ค่าที่พัก</label>
+        <div class="field-group">
+          <span class="budget-label">งบประมาณ (บาท)</span><input type="number" id="f_in_2" value="0" step="0.01" class="budget-field" readonly>
+          <span class="actual-label">ใช้จริง (บาท)</span><input type="number" id="a_in_2" value="0" step="0.01" class="actual-input">
+        </div>
+      </div>
+      <div class="sub-item-row"><label id="lbl_Az">ค่าพาหนะ</label>
+        <div class="field-group">
+          <span class="budget-label">งบประมาณ (บาท)</span><input type="number" id="f_in_3" value="0" step="0.01" class="budget-field" readonly>
+          <span class="actual-label">ใช้จริง (บาท)</span><input type="number" id="a_in_3" value="0" step="0.01" class="actual-input">
+        </div>
+      </div>
+    </div>
+    <hr class="sec-divider">
+    <div class="sub-items" style="margin-top:0;">
+      <div class="sub-item-row"><label id="lbl_B_payroll">ค่าสมนาคุณวิทยากรภายใน (จ่ายผ่าน Payroll)</label>
+        <div class="field-group">
+          <span class="budget-label">งบประมาณ (บาท)</span><input type="number" id="f_in_payroll" value="0" step="0.01" class="budget-field" readonly>
+          <span class="actual-label">ใช้จริง (บาท)</span><input type="number" id="a_in_payroll" value="0" step="0.01" class="actual-input">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ค่าเดินทางประธานในพิธี — แสดง/ซ่อนตาม slot -->
+<div class="form-section" id="sec_pres_wrap" style="display:none;">
+  <div class="form-section-header">ค่าเดินทางประธานในพิธี (โอนให้หน่วยงานต้นสังกัด)</div>
+  <div class="form-section-body"><div class="sub-items" id="pres_sub_items">
+    <div class="sub-item-row"><label>ค่าเบี้ยเลี้ยง</label>
+      <div class="field-group">
+        <span class="budget-label">งบประมาณ (บาท)</span><input type="number" id="f_pres_1" value="0" step="0.01" class="budget-field" readonly>
+        <span class="actual-label">ใช้จริง (บาท)</span><input type="number" id="a_pres_1" value="0" step="0.01" class="actual-input">
+      </div>
+    </div>
+    <div class="sub-item-row"><label>ค่าที่พัก</label>
+      <div class="field-group">
+        <span class="budget-label">งบประมาณ (บาท)</span><input type="number" id="f_pres_2" value="0" step="0.01" class="budget-field" readonly>
+        <span class="actual-label">ใช้จริง (บาท)</span><input type="number" id="a_pres_2" value="0" step="0.01" class="actual-input">
+      </div>
+    </div>
+    <div class="sub-item-row"><label>ค่าพาหนะ</label>
+      <div class="field-group">
+        <span class="budget-label">งบประมาณ (บาท)</span><input type="number" id="f_pres_3" value="0" step="0.01" class="budget-field" readonly>
+        <span class="actual-label">ใช้จริง (บาท)</span><input type="number" id="a_pres_3" value="0" step="0.01" class="actual-input">
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- หมวด ข -->
+<div class="form-section">
+  <div class="form-section-header">ข. ค่าใช้จ่ายในการเดินทางของผู้เข้ารับการฝึกอบรม</div>
+  <div class="form-section-body"><div class="sub-items" id="b_sub_items">
+    <div class="sub-item-row"><label>1. ค่าเบี้ยเลี้ยง</label>
+      <div class="field-group">
+        <span class="budget-label">งบประมาณ (บาท)</span><input type="number" id="f_b1" value="0" step="0.01" class="budget-field" readonly>
+        <span class="actual-label">ใช้จริง (บาท)</span><input type="number" id="a_b1" value="0" step="0.01" class="actual-input">
+      </div>
+    </div>
+    <div class="sub-item-row"><label>2. ค่าที่พัก</label>
+      <div class="field-group">
+        <span class="budget-label">งบประมาณ (บาท)</span><input type="number" id="f_b2" value="0" step="0.01" class="budget-field" readonly>
+        <span class="actual-label">ใช้จริง (บาท)</span><input type="number" id="a_b2" value="0" step="0.01" class="actual-input">
+      </div>
+    </div>
+    <div class="sub-item-row"><label>3. ค่าพาหนะ</label>
+      <div class="field-group">
+        <span class="budget-label">งบประมาณ (บาท)</span><input type="number" id="f_b3" value="0" step="0.01" class="budget-field" readonly>
+        <span class="actual-label">ใช้จริง (บาท)</span><input type="number" id="a_b3" value="0" step="0.01" class="actual-input">
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- LOAD PANEL -->
+<!-- BUTTON ROW — เฉพาะ บันทึก + ดูรายงาน + พิมพ์ -->
+<div class="btn-row">
+  <button class="btn-save-actual" onclick="saveActual07()">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+    บันทึกค่าใช้จริง
+  </button>
+  <button class="btn-preview" onclick="showReport()">👁 ดูตัวอย่างรายงาน</button>
+</div>
+
+<div class="save-toast" id="save-toast"></div>
+</div><!-- end form-view -->
+
+<!-- ═══════════════════════════════════════
+     REPORT VIEW  (ห้ามแก้ส่วนนี้)
+════════════════════════════════════════ -->
+<div id="report-view">
+  <div class="print-toolbar">
+    <button class="btn-back-form" onclick="backToForm()">◀ กลับแก้ไขข้อมูล</button>
+    <div class="spacing-ctrl">
+      <span>ระยะห่างบรรทัด</span>
+      <button class="btn-sp" id="sp_dec" onclick="adjustRowSpacing(-1)" title="ลดระยะห่าง">−</button>
+      <span class="sp-level" id="sp_level">ปกติ</span>
+      <button class="btn-sp" id="sp_inc" onclick="adjustRowSpacing(1)" title="เพิ่มระยะห่าง">＋</button>
+    </div>
+    
+    <button class="btn-do-print" onclick="window.print()">🖨️ พิมพ์แบบฟอร์ม</button>
+    <button onclick="savePdf07(this)" style="background:linear-gradient(135deg,#1a56db,#1241b0);color:#fff;border:none;border-radius:8px;padding:10px 28px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(26,86,219,.3);display:flex;align-items:center;gap:6px;transition:all .2s;">💾 บันทึก PDF</button>
+  </div>
+  
+  <div class="report-container" id="report-container-07">
+    <div class="header-area">
+      <h1><input class="rpt-edit hdr-edit" type="text" id="r_title" value="สรุปค่าใช้จ่ายการดำเนินการฝึกอบรม" style="width:100%;text-align:center;font-size:inherit;font-weight:inherit;color:inherit;font-family:inherit;border-bottom:1px dotted #aaa;padding:2px 4px;"></h1>
+      <p><input class="rpt-edit hdr-edit" type="text" id="r_hdr1" style="width:100%;text-align:center;font-size:inherit;font-weight:inherit;color:inherit;font-family:inherit;border-bottom:1px dotted #aaa;padding:2px 4px;"></p>
+      <p><input class="rpt-edit hdr-edit" type="text" id="r_hdr2" style="width:100%;text-align:center;font-size:inherit;font-weight:inherit;color:inherit;font-family:inherit;border-bottom:1px dotted #aaa;padding:2px 4px;"></p>
+      <p><input class="rpt-edit hdr-edit" type="text" id="r_hdr3" style="width:100%;text-align:center;font-size:inherit;font-weight:inherit;color:inherit;font-family:inherit;border-bottom:1px dotted #aaa;padding:2px 4px;"></p>
+    </div>
+    <div id="rpt_wrap"></div>
+  </div>
+</div>
+
+<script>
+/* ── STATE — โหลดจาก slot เท่านั้น ไม่ให้ user แก้ budget ── */
+const spk = { EXT: [] };
+let _currentSlot = null;
+const TMS_KEY = 'tms_saved_slots';
+
+// toggle state ของแต่ละหมวด (โหลดมาจาก spkJson ของไฟล์ 05 ตอน applySlot07)
+let TOGGLES07 = {
+  fuel:false, office:true, misc:true, lump:false, venue:false,
+  venueMeeting:false, venueVip:false, venueStaff:false,
+  food:true, dinner:false, stafftravel:true,
+  external:true, hasLodging:false, hasTravel:false, payType:'hourly',
+  internal:false, pres:false
+};
+
+/* ── GLOBAL HELPERS ── */
+function sfV(id,val){ const e=document.getElementById(id); if(e) e.value=(val!==undefined&&val!==null&&val!=='') ? val : 0; }
+function v(id){ return parseFloat(document.getElementById(id)?.value)||0; }
+
+// normalize ชื่อวิทยากร: ตัดคำนำหน้า/ช่องว่างซ้ำซ้อน เพื่อให้การจับคู่ชื่อทนต่อความต่างเล็กน้อยของการสะกด
+const SPEAKER_TITLES = ['นางสาว','นาง','นาย','ดร.','ดร','ผศ.ดร.','ผศ.','รศ.ดร.','รศ.','ศ.ดร.','ศ.','ว่าที่ร้อยตรี','ว่าที่ ร.ต.'];
+function normSpeakerName(s){
+  let t = String(s||'').trim().replace(/\s+/g,' ');
+  // ตัดคำนำหน้าบุคคลก่อน normalize (เพื่อไม่ให้ "นาย" ติดไปกับชื่อ)
+  for(const ti of SPEAKER_TITLES){ if(t.startsWith(ti)){ t = t.slice(ti.length).trim(); break; } }
+  // strip ทุกอย่างที่ไม่ใช่ตัวอักษรไทย/อังกฤษ/ตัวเลข → ครอบคลุมจุด วงเล็บ ขีด ช่องว่าง ฯลฯ
+  return t.replace(/[^\u0E00-\u0E7Fa-zA-Z0-9]/g,'').toLowerCase();
+}
+
+const _mo=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+function isoTh(iso){
+  if(!iso) return '';
+  // รองรับ ISO datetime ที่มีเวลา/timezone ติดมาด้วย เช่น "2026-05-18T17:00:00.000Z"
+  // (Google Apps Script มักคืนค่า Date column มาเป็นรูปแบบนี้) — ตัดเอาเฉพาะ YYYY-MM-DD ก่อน
+  const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(!m) return String(iso);
+  const y = parseInt(m[1]), mo = parseInt(m[2]), d = parseInt(m[3]);
+  return `${d} ${_mo[mo-1]} ${y+543}`;
+}
+function isoThRange(ds,de){
+  if(!ds) return '';
+  // normalize ทั้งสองค่าให้เป็น YYYY-MM-DD ล้วนๆ ก่อนเทียบเดือน/ปี (กันกรณีมี T...Z ติดมา)
+  const norm = s => { const m = String(s||'').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[1]}-${m[2]}-${m[3]}` : (s||''); };
+  ds = norm(ds); de = norm(de);
+  if(!de||de===ds) return isoTh(ds);
+  const ps=ds.split('-'),pe=de.split('-');
+  if(ps[0]===pe[0]&&ps[1]===pe[1]) return `${parseInt(ps[2])} – ${parseInt(pe[2])} ${_mo[parseInt(ps[1])-1]} ${parseInt(ps[0])+543}`;
+  if(ps[0]===pe[0]) return `${parseInt(ps[2])} ${_mo[parseInt(ps[1])-1]} – ${parseInt(pe[2])} ${_mo[parseInt(pe[1])-1]} ${parseInt(ps[0])+543}`;
+  return isoTh(ds)+' – '+isoTh(de);
+}
+
+/* ── toggle helpers (ล้อจากไฟล์ 05 — อ่านจาก TOGGLES07 แทน checkbox สด) ── */
+function hasFuel(){ return !!TOGGLES07.fuel; }
+function hasOffice(){ return TOGGLES07.office !== false; }
+function hasOfficeItem1(){ return hasOffice() && TOGGLES07.office_1_1 !== false; }
+function hasOfficeItem2(){ return hasOffice() && !!TOGGLES07.office_1_2; }
+function hasMisc(){ return TOGGLES07.misc !== false; }
+function hasLump(){ return !!TOGGLES07.lump; }
+function hasVenue(){ return !!TOGGLES07.venue; }
+function hasVenueMeeting(){ return hasVenue() && !!TOGGLES07.venueMeeting; }
+function hasVenueVip(){ return hasVenue() && !!TOGGLES07.venueVip; }
+function hasVenueStaff(){ return hasVenue() && !!TOGGLES07.venueStaff; }
+function hasFood(){ return TOGGLES07.food !== false; }
+function hasFoodLunch(){ return hasFood() && TOGGLES07.food_lunch !== false; }
+function hasFoodCoffee(){ return hasFood() && TOGGLES07.food_coffee !== false; }
+function hasFoodDinner(){ return hasFood() && !!TOGGLES07.dinner; }
+function hasStaffTravel(){ return TOGGLES07.stafftravel !== false; }
+function hasExternal(){ return TOGGLES07.external !== false; }
+function hasSpkLodging(){ return !!TOGGLES07.hasLodging; }
+function hasSpkTravel(){ return !!TOGGLES07.hasTravel; }
+function isLumpPay(){ return TOGGLES07.payType === 'lump'; }
+function hasInternal(){ return !!TOGGLES07.internal; }
+function hasPres(){ return !!TOGGLES07.pres; }
+
+function hotelAmtOf(s){ return (s.hotelRate||0)*(s.hotelRooms||1)*(s.hotelNights||0); }
+function travelAmtOf(s){ return (s.travel||0)*(s.travelDays||1); }
+function honorAmtOf(s){ return isLumpPay() ? (s.amt||0) : (s.rate||0)*(s.hours||0); }
+function honorDetailOf(s){ return isLumpPay() ? '' : (s.rate||s.hours ? ` (อัตรา ${fmt(s.rate||0)} บาท/ชั่วโมง × ${s.hours||0} ชั่วโมง)` : ''); }
+
+/* ── เลขข้อ dynamic ก. — ต้องล้อลำดับเดียวกับไฟล์ 05 calcSectionNumbers() ── */
+function calcSectionNumbers07(){
+  let n=0;
+  const nums={};
+  if(hasFuel()){ n++; nums.fuel=n; }
+  if(hasOffice()){ n++; nums.office=n; }
+  if(hasMisc()){ n++; nums.misc=n; }
+  if(hasLump()){ n++; nums.lump=n; }
+  if(hasVenue()){ n++; nums.venue=n; }
+  if(hasFood()){ n++; nums.food=n; }
+  if(hasStaffTravel()){ n++; nums.stafftravel=n; }
+  const ext=hasExternal();
+  if(ext){
+    n++; nums.ext1=n;
+    if(hasSpkLodging()||hasSpkTravel()){ n++; nums.ext2=n; }
+  }
+  if(hasInternal()){ n++; nums.intTravel=n; n++; nums.intPayroll=n; }
+  if(hasPres()){ n++; nums.pres=n; }
+  nums.last=n;
+  return nums;
+}
+
+function updateSectionNumberLabels07(){
+  const nums = calcSectionNumbers07();
+  document.querySelectorAll('.num-fuel').forEach(el=>el.textContent=nums.fuel||'x');
+  document.querySelectorAll('.num-office').forEach(el=>el.textContent=nums.office||'x');
+  document.querySelectorAll('.num-misc').forEach(el=>el.textContent=nums.misc||'x');
+  document.querySelectorAll('.num-lump').forEach(el=>el.textContent=nums.lump||'x');
+  document.querySelectorAll('.num-venue').forEach(el=>el.textContent=nums.venue||'x');
+  document.querySelectorAll('.num-food').forEach(el=>el.textContent=nums.food||'x');
+  document.querySelectorAll('.num-stafftravel').forEach(el=>el.textContent=nums.stafftravel||'x');
+  document.querySelectorAll('.num-ext').forEach(el=>el.textContent=nums.ext1||'x');
+
+  let vSub=1;
+  const meetNum = hasVenueMeeting() ? vSub++ : null;
+  const staffNum= hasVenueStaff()   ? vSub++ : null;
+  const vipNum  = hasVenueVip()     ? vSub++ : null;
+  document.querySelectorAll('.sub-venue-meeting').forEach(el=>el.textContent=meetNum||1);
+  document.querySelectorAll('.sub-venue-staff').forEach(el=>el.textContent=staffNum||2);
+  document.querySelectorAll('.sub-venue-vip').forEach(el=>el.textContent=vipNum||3);
+
+  let oSub=1;
+  const office1Num = hasOfficeItem1() ? oSub++ : null;
+  const office2Num = hasOfficeItem2() ? oSub++ : null;
+  document.querySelectorAll('.sub-office-1').forEach(el=>el.textContent=office1Num||1);
+  document.querySelectorAll('.sub-office-2').forEach(el=>el.textContent=office2Num||2);
+
+  let fSub=1;
+  const lunchOn=hasFoodLunch();
+  if(lunchOn){ document.querySelectorAll('.sub-food-lunch').forEach(el=>el.textContent=fSub); fSub++; }
+  if(hasFoodDinner()){ document.querySelectorAll('.sub-food-dinner').forEach(el=>el.textContent=fSub); fSub++; }
+  const coffeeOn=hasFoodCoffee();
+  if(coffeeOn){ document.querySelectorAll('.sub-food-coffee').forEach(el=>el.textContent=fSub); fSub++; }
+  document.querySelectorAll('.sub-food-extdinner').forEach(el=>el.textContent=fSub);
+
+  return nums;
+}
+
+/* ── แสดง/ซ่อนหมวดทั้งหมดตาม TOGGLES07 (ล้อ onCondChange ของไฟล์ 05) ── */
+function applySectionVisibility07(){
+  const show = (id, on) => { const el = document.getElementById(id); if(el) el.style.display = on ? '' : 'none'; };
+  show('sec_fuel_wrap', hasFuel());
+  show('sec_office_wrap', hasOffice());
+  show('sec_misc_wrap', hasMisc());
+  show('sec_lump_wrap', hasLump());
+  show('sec_venue_wrap', hasVenue());
+  show('sec_food_wrap', hasFood());
+  show('row_3_1', hasFoodLunch());
+  show('row_food_dinner', hasFoodDinner());
+  show('row_3_2', hasFoodCoffee());
+  show('row_1_1', hasOfficeItem1());
+  show('row_1_2', hasOfficeItem2());
+  show('sec_stafftravel_wrap', hasStaffTravel());
+  show('sec_spk_wrap', hasExternal());
+  show('sec_internal_wrap', hasInternal());
+  show('sec_pres_wrap', hasPres());
+  updateSectionNumberLabels07();
+}
+
+/* ── RENDER SPEAKER SECTION (ล้อจาก 05 — budget readonly, actual editable) ── */
+function renderSpk07(){
+  const el = document.getElementById('spk_EXT_container');
+  if(!el) return;
+  el.innerHTML = '';
+  const list = spk.EXT || [];
+  const L = hasSpkLodging(), T = hasSpkTravel(), lump = isLumpPay();
+  list.forEach((s, i) => {
+    const d = document.createElement('div');
+    d.className = 'spk-card';
+    let fields = '';
+    if(L){
+      const hAmt = hotelAmtOf(s);
+      fields += `<label>ค่าที่พัก (บ./คืน)</label><input type="number" step="0.01" value="${s.hotelRate||0}" class="budget-field" readonly style="width:70px;">
+        <label>ห้อง</label><input type="number" step="1" value="${s.hotelRooms||1}" class="budget-field" readonly style="width:50px;">
+        <label>คืน</label><input type="number" step="1" value="${s.hotelNights||0}" class="budget-field" readonly style="width:50px;">
+        <label>งบที่พัก (บาท)</label><input type="number" value="${hAmt.toFixed(2)}" class="budget-field" readonly style="width:80px;">
+        <label class="actual-label">ใช้จริง ที่พัก (บาท)</label>
+        <input type="number" step="0.01" value="${s.aHotel||0}" class="actual-input" style="width:80px;"
+          oninput="spk.EXT[${i}].aHotel=parseFloat(this.value)||0">`;
+    }
+    if(T){
+      const tAmt = travelAmtOf(s);
+      fields += `<label>ค่าพาหนะ (บ./วัน)</label><input type="number" step="0.01" value="${s.travel||0}" class="budget-field" readonly style="width:70px;">
+        <label>วัน</label><input type="number" step="1" value="${s.travelDays||1}" class="budget-field" readonly style="width:50px;">
+        <label>งบพาหนะ (บาท)</label><input type="number" value="${tAmt.toFixed(2)}" class="budget-field" readonly style="width:80px;">
+        <label class="actual-label">ใช้จริง พาหนะ (บาท)</label>
+        <input type="number" step="0.01" value="${s.aTravel||0}" class="actual-input" style="width:80px;"
+          oninput="spk.EXT[${i}].aTravel=parseFloat(this.value)||0">`;
+    }
+    if(lump){
+      fields += `<label>ค่าสมนาคุณ (บาท เหมาจ่าย)</label><input type="number" step="0.01" value="${s.amt||0}" class="budget-field" readonly style="width:80px;">
+        <label class="actual-label">ใช้จริง สมนาคุณ (บาท)</label>
+        <input type="number" step="0.01" value="${s.aAmt||0}" class="actual-input" style="width:80px;"
+          oninput="spk.EXT[${i}].aAmt=parseFloat(this.value)||0">`;
+    } else {
+      fields += `<label>อัตรา (บ./ชม.)</label><input type="number" step="0.01" value="${s.rate||0}" class="budget-field" readonly style="width:60px;">
+        <label>ชั่วโมง</label><input type="number" step="0.5" value="${s.hours||0}" class="budget-field" readonly style="width:50px;">
+        <label class="actual-label">ใช้จริง สมนาคุณ (บาท)</label>
+        <input type="number" step="0.01" value="${s.aAmt||0}" class="actual-input" style="width:80px;"
+          oninput="spk.EXT[${i}].aAmt=parseFloat(this.value)||0">`;
+    }
+    d.innerHTML = `<div class="spk-card-header">
+      <span class="spk-num-badge">วิทยากรที่ ${i+1}</span>
+      <span class="spk-name-ro">${s.name||'(ไม่ระบุชื่อ)'}</span>
+    </div><div class="spk-fields">${fields}</div>`;
+    el.appendChild(d);
+  });
+  if(list.length===0){
+    el.innerHTML = '<div class="hint-row">— ไม่มีวิทยากรภายนอกในงบประมาณ —</div>';
+  }
+}
+
+function onCondChange07(){
+  applySectionVisibility07();
+  // paytype display
+  const pdis = document.getElementById('paytype_display');
+  if(pdis){
+    const L=hasSpkLodging(), T=hasSpkTravel();
+    const payLabel = isLumpPay() ? 'เหมาจ่าย' : 'อัตราต่อชั่วโมง';
+    const extraLabel = (L&&T) ? ' (มีที่พัก+พาหนะ)' : (L ? ' (มีที่พัก)' : (T ? ' (มีพาหนะ)' : ''));
+    pdis.textContent = payLabel + extraLabel;
+  }
+  renderSpk07();
+}
+
+/* ── LOAD SLOT — fill all fields from saved slot ── */
+
+/* คำนวณ bySection จาก rowsJson ของ actual06 (client-side) — robust กว่าพึ่ง bySection ที่ไม่ได้ถูกบันทึกลง Sheet จริง */
+function computeBySectionFromRows(rows){
+  const by = {};
+  (rows||[]).forEach(r => {
+    const sec = r.sec || r.secV || '';
+    const sub = r.sub || '';
+    const total = parseFloat(r.total) || 0;
+    if (!sec) return;
+    if (!by[sec]) by[sec] = { total: 0, subs: {}, items: [] };
+    by[sec].total += total;
+    if (sub === '3_12') {
+      const t31 = (parseFloat(r.v31)||0) + (parseFloat(r.vat31)||0);
+      const t32 = (parseFloat(r.v32)||0) + (parseFloat(r.vat32)||0);
+      by[sec].subs['3_1'] = (by[sec].subs['3_1']||0) + t31;
+      by[sec].subs['3_2'] = (by[sec].subs['3_2']||0) + t32;
+    } else if (sub) {
+      by[sec].subs[sub] = (by[sec].subs[sub]||0) + total;
+    }
+    const name = r.name || r.staff || '';
+    if (name && sec === 'ext') {
+      by[sec].items.push({ name, val: parseFloat(r.val)||0, total });
+    }
+  });
+  return by;
+}
+
+function renderVenueSubItems07(){
+  const el = document.getElementById('venue_sub_items');
+  if(!el) return;
+  el.innerHTML = '';
+  const b = (_currentSlot && _currentSlot.budget) || {};
+  let n = 1;
+  if(hasVenueMeeting()){
+    el.innerHTML += `<div class="sub-item-row"><label><span class="num-venue">x</span>.<span class="sub-venue-meeting">${n++}</span> ค่าเช่าห้องประชุม</label>
+      <div class="field-group">
+        <span class="budget-label">งบประมาณ (บาท)</span><input type="number" id="f_venue_meet" value="${b.secVenueMeeting||0}" step="0.01" class="budget-field" readonly>
+        <span class="actual-label">ใช้จริง (บาท)</span><input type="number" id="a_venue_meet" value="0" step="0.01" class="actual-input">
+      </div></div>`;
+  }
+  if(hasVenueStaff()){
+    el.innerHTML += `<div class="sub-item-row"><label><span class="num-venue">x</span>.<span class="sub-venue-staff">${n++}</span> ค่าเช่าห้องพัก ผู้เข้าอบรม/เจ้าหน้าที่</label>
+      <div class="field-group">
+        <span class="budget-label">งบประมาณ (บาท)</span><input type="number" id="f_venue_staff" value="${b.secVenueStaff||0}" step="0.01" class="budget-field" readonly>
+        <span class="actual-label">ใช้จริง (บาท)</span><input type="number" id="a_venue_staff" value="0" step="0.01" class="actual-input">
+      </div></div>`;
+  }
+  if(hasVenueVip()){
+    el.innerHTML += `<div class="sub-item-row"><label><span class="num-venue">x</span>.<span class="sub-venue-vip">${n++}</span> ค่าเช่าห้องพัก ประธานในพิธี</label>
+      <div class="field-group">
+        <span class="budget-label">งบประมาณ (บาท)</span><input type="number" id="f_venue_vip" value="${b.secVenueVip||0}" step="0.01" class="budget-field" readonly>
+        <span class="actual-label">ใช้จริง (บาท)</span><input type="number" id="a_venue_vip" value="0" step="0.01" class="actual-input">
+      </div></div>`;
+  }
+}
+
+function applySlot07(slot){
+  if(!slot) return;
+
+  // 🔴 FIX: ตั้งค่า _currentSlot ที่นี่เพื่อให้ saveActual07 หา slot เจอในครั้งแรก
+  _currentSlot = slot;
+
+  // ── 1. Course info ──
+  sfV('f_courseName', slot.course);
+  sfV('f_batch', slot.batch);
+  sfV('f_courseNo', slot.no);
+  sfV('f_location', slot.location);
+
+  // date display
+  const ds=slot.dateStart||slot.date||'', de=slot.dateEnd||'';
+  sfV('f_date', isoThRange(ds,de)||slot.date||'');
+
+  // ── 2. Budget fields from slot.budget ──
+  const b = slot.budget || {};
+  const sp = slot.speakers || {};
+
+  // ── toggles (ล้อจาก spkJson ของไฟล์ 05) ──
+  const t = sp.toggles || {};
+
+  // ⚠️ เพิ่ม: ตรวจข้อมูล "ใช้จริง" จากไฟล์ 06 ด้วย (ไม่ใช่แค่ toggle งบประมาณ)
+  // เพื่อไม่ให้หมวดที่มีการใช้จ่ายจริงเกิดขึ้น (เช่น กรอกจริงแต่ไม่ได้ตั้งงบไว้ในไฟล์ 05)
+  // ถูกซ่อนหายไปจากรายงาน 07 — แสดงถ้า "ตั้งงบไว้ หรือ มีใช้จริง" อย่างใดอย่างหนึ่ง
+  const act06Pre = slot.actual06 || null;
+  let rows06Pre = [];
+  if (act06Pre) {
+    if (Array.isArray(act06Pre.rows)) rows06Pre = act06Pre.rows;
+    else if (act06Pre.rowsJson) {
+      try { rows06Pre = typeof act06Pre.rowsJson === 'string' ? JSON.parse(act06Pre.rowsJson) : act06Pre.rowsJson; }
+      catch(e) { rows06Pre = []; }
+    }
+  }
+  const by06Pre = computeBySectionFromRows(rows06Pre);
+  const hasActualSec = (sec) => !!(by06Pre[sec] && by06Pre[sec].total > 0);
+  const hasActualSub = (sec,sub) => !!(by06Pre[sec] && by06Pre[sec].subs && by06Pre[sec].subs[sub] > 0);
+
+  TOGGLES07 = {
+    fuel: !!(sp.fuel && sp.fuel.on) || hasActualSec('fuel'),
+    office: t.office !== false,
+    office_1_1: (t.office_1_1 !== undefined ? !!t.office_1_1 : true) || hasActualSub('1','1_1'),
+    office_1_2: (t.office_1_2 !== undefined ? !!t.office_1_2 : (b.s12 > 0)) || hasActualSub('1','1_2'),
+    misc: t.misc !== false,
+    lump: !!(sp.lump && sp.lump.on) || hasActualSec('lump'),
+    venue: !!(sp.venue && sp.venue.on) || hasActualSec('venue'),
+    venueMeeting: !!(sp.venue && sp.venue.meetingOn) || hasActualSub('venue','venue_meet'),
+    venueVip: !!(sp.venue && sp.venue.vipOn) || hasActualSub('venue','venue_vip'),
+    venueStaff: !!(sp.venue && sp.venue.staffOn) || hasActualSub('venue','venue_staff'),
+    food: t.food !== false,
+    food_lunch: (t.food_lunch !== undefined ? !!t.food_lunch : true) || hasActualSub('3','3_1'),
+    food_coffee: (t.food_coffee !== undefined ? !!t.food_coffee : true) || hasActualSub('3','3_2'),
+    dinner: !!(sp.foodDinner && sp.foodDinner.on) || hasActualSub('3','3_dinner'),
+    stafftravel: t.stafftravel !== false,
+    external: (sp.hasExternal !== undefined) ? !!sp.hasExternal : true,
+    hasLodging: !!sp.hasLodging,
+    hasTravel: !!sp.hasTravel,
+    payType: sp.payType || 'hourly',
+    internal: !!sp.hasInternal || (b.secInternal > 0),
+    pres: !!(sp.pres && sp.pres.on)
+  };
+
+  sfV('f_fuel', b.secFuel||0);
+
+  sfV('f_1_1', b.s11||0); sfV('f_1_2', b.s12||0);
+
+  sfV('f_2_1', b.s21||0);
+
+  sfV('f_lump', b.secLump||0);
+  renderVenueSubItems07();
+
+  sfV('f_3_1_rate', b.r31||0); sfV('f_3_1_ppl', b.p31||0); sfV('f_3_1_times', b.m31||1); sfV('f_3_1_days', b.d31||0);
+  sfV('f_food_dinner_rate', b.rD||0); sfV('f_food_dinner_ppl', b.pD||0); sfV('f_food_dinner_times', b.mD||1); sfV('f_food_dinner_days', b.dD||0);
+  sfV('f_3_2_rate', b.r32||0); sfV('f_3_2_ppl', b.p32||0); sfV('f_3_2_times', b.m32||1); sfV('f_3_2_days', b.d32||0);
+  sfV('f_3_3', b.s33||0);
+  const r33 = document.getElementById('row_3_3');
+  if(r33) r33.style.display = (b.s33 > 0) ? '' : 'none';
+
+  sfV('f_4_1', b.s41||0); sfV('f_4_2', b.s42||0); sfV('f_4_3', b.s43||0);
+  sfV('f_b1', b.bb1||0);  sfV('f_b2', b.bb2||0);  sfV('f_b3', b.bb3||0);
+
+  // วิทยากรภายใน — priority: column ใหม่ (in_allowance/in_lodging/in_travel/in_payroll) > spkJson เดิม (in1/in2/in3/inPayroll)
+  const in1_b       = (b.in_allowance !== undefined && b.in_allowance !== '') ? (b.in_allowance||0) : (b.in1      !== undefined ? (b.in1||0)      : (sp.in1||0));
+  const in2_b       = (b.in_lodging   !== undefined && b.in_lodging   !== '') ? (b.in_lodging||0)   : (b.in2      !== undefined ? (b.in2||0)      : (sp.in2||0));
+  const in3_b       = (b.in_travel    !== undefined && b.in_travel    !== '') ? (b.in_travel||0)    : (b.in3      !== undefined ? (b.in3||0)      : (sp.in3||0));
+  const inPayroll_b = (b.in_payroll   !== undefined && b.in_payroll   !== '') ? (b.in_payroll||0)   : (b.inPayroll !== undefined ? (b.inPayroll||0) : (sp.inPayroll||0));
+  sfV('f_in_1', in1_b); sfV('f_in_2', in2_b); sfV('f_in_3', in3_b); sfV('f_in_payroll', inPayroll_b);
+
+  // ค่าเดินทางประธานในพิธี
+  const presData = sp.pres || {};
+  sfV('f_pres_1', (b.pres1!==undefined?b.pres1:presData.pres1)||0);
+  sfV('f_pres_2', (b.pres2!==undefined?b.pres2:presData.pres2)||0);
+  sfV('f_pres_3', (b.pres3!==undefined?b.pres3:presData.pres3)||0);
+
+  // ── 3. Speaker structure from slot.speakers (รูปแบบใหม่ spk.EXT รวม / backward-compat กับ A/B/C เดิม) ──
+  if(Array.isArray(sp.EXT)){
+    spk.EXT = sp.EXT.map(s => ({...s, aHotel:s.aHotel||0, aTravel:s.aTravel||0, aAmt:s.aAmt||0}));
+  } else if(sp.C && sp.C.length){
+    spk.EXT = sp.C.map(s => ({...s, aHotel:s.aHotel||0, aTravel:s.aTravel||0, aAmt:s.aAmt||0}));
+    TOGGLES07.hasLodging = true; TOGGLES07.hasTravel = true;
+  } else if(sp.payType==='lump' && sp.A && sp.A.length){
+    spk.EXT = sp.A.map(s => ({...s, aAmt:s.aAmt||0}));
+  } else if(sp.B && sp.B.length){
+    spk.EXT = sp.B.map(s => ({...s, aAmt:s.aAmt||0}));
+  } else {
+    spk.EXT = [];
+  }
+
+  onCondChange07();
+
+  // ── 4. Auto-fill actual fields ──
+  applyActuals07(slot);
+
+  // ── 5. Update sync banner ──
+  updateSyncBanner(slot);
+}
+
+/* ============================================================
+   applyActuals07 — เติม fields ค่าใช้จ่ายเกิดจริงทั้งหมด
+   คำนวณ by06 (สรุปยอดรายหมวด/หมวดย่อย) แบบ client-side จาก actual06.rowsJson เสมอ
+   (robust กว่าพึ่ง actual06.bySection ที่ไม่ได้ถูกบันทึกลง Google Sheet จริง)
+============================================================ */
+function applyActuals07(slot){
+  const b    = slot.budget    || {};
+  const sp   = slot.speakers  || {};
+  const a07  = slot.actual07  || {};
+  const act06 = slot.actual06 || slot.actual || null;
+
+  let rows06 = [];
+  if (act06) {
+    if (Array.isArray(act06.rows)) rows06 = act06.rows;
+    else if (act06.rowsJson) {
+      try { rows06 = typeof act06.rowsJson === 'string' ? JSON.parse(act06.rowsJson) : act06.rowsJson; }
+      catch(e) { rows06 = []; }
+    }
+  }
+  const by06 = (act06 && act06.bySection && Object.keys(act06.bySection).length)
+    ? act06.bySection
+    : computeBySectionFromRows(rows06);
+
+  const sFuel=by06['fuel']||{}, s1=by06['1']||{}, s2=by06['2']||{}, sLump=by06['lump']||{},
+        sVenue=by06['venue']||{}, s3=by06['3']||{}, s4=by06['4']||{}, sExt=by06['ext']||{};
+
+  // helper: ใช้คอลัมน์แบนที่บันทึกจริงในชีทก่อนเสมอ (ตรงกับสิ่งที่เห็นในชีทเป๊ะ)
+  // fallback ไปคำนวณจาก rowsJson เฉพาะกรณีคอลัมน์นั้นไม่มีค่าเลย (ข้อมูลเก่าก่อนเพิ่มคอลัมน์นี้)
+  const flat = (col, fallback) => (act06 && act06[col] !== undefined && act06[col] !== '') ? (parseFloat(act06[col])||0) : fallback;
+
+  // ── ค่าน้ำมันเชื้อเพลิงและหล่อลื่น ──
+  sfV('a_fuel', flat('secFuel', sFuel.total||0));
+
+  // ── หมวด 1 (แยก 1.1/1.2 จากคอลัมน์ sec1_1/sec1_2 ที่บันทึกจริง) ──
+  sfV('a_1_1', flat('sec1_1', (s1.subs&&s1.subs['1_1']) || (s1.subs&&Object.keys(s1.subs).length ? 0 : s1.total) || 0));
+  sfV('a_1_2', flat('sec1_2', (s1.subs&&s1.subs['1_2']) || 0));
+
+  // ── หมวด 2 ──
+  sfV('a_2_1', flat('sec2', s2.total||0));
+
+  // ── ค่าจ้างเหมา / ค่าเช่าสถานที่ ──
+  sfV('a_lump', flat('secLump', sLump.total||0));
+  sfV('a_venue_meet',  flat('secVenueMeeting', (sVenue.subs&&sVenue.subs['venue_meet'])  || 0));
+  sfV('a_venue_vip',   flat('secVenueVip',     (sVenue.subs&&sVenue.subs['venue_vip'])   || 0));
+  sfV('a_venue_staff', flat('secVenueStaff',   (sVenue.subs&&sVenue.subs['venue_staff']) || 0));
+
+  // ── หมวด 3 (อาหาร) ──
+  const has3subs = s3.subs && (s3.subs['3_1']||s3.subs['3_2']||s3.subs['3_dinner']||s3.subs['3_3']);
+  sfV('a_3_1', flat('sec3_1', has3subs ? (s3.subs['3_1']||0) : (s3.total||0)));
+  sfV('a_food_dinner', flat('sec3Dinner', has3subs ? (s3.subs['3_dinner']||0) : 0));
+  sfV('a_3_2', flat('sec3_2', has3subs ? (s3.subs['3_2']||0) : 0));
+  sfV('a_3_3', flat('sec3_3', has3subs ? (s3.subs['3_3']||0) : 0));
+
+  // ── หมวด 4: 4.1/4.2 = งบประมาณ, 4.3 = actual06 ──
+  sfV('a_4_1', b.s41||0);
+  sfV('a_4_2', b.s42||0);
+  sfV('a_4_3', flat('sec4_3', (s4.subs&&s4.subs['4_3']) ? s4.subs['4_3'] : 0));
+
+  // ── หมวด ข = งบประมาณ ──
+  sfV('a_b1', b.bb1||0);
+  sfV('a_b2', b.bb2||0);
+  sfV('a_b3', b.bb3||0);
+
+  // ── วิทยากรภายใน = งบประมาณ ──
+  if(hasInternal()){
+    sfV('a_in_1', v('f_in_1')); sfV('a_in_2', v('f_in_2'));
+    sfV('a_in_3', v('f_in_3')); sfV('a_in_payroll', v('f_in_payroll'));
+  }
+  if(hasPres()){
+    sfV('a_pres_1', v('f_pres_1')); sfV('a_pres_2', v('f_pres_2')); sfV('a_pres_3', v('f_pres_3'));
+  }
+  if(a07.trainees_approved !== undefined) sfV('f_trainees_approved', parseInt(a07.trainees_approved)||0);
+  if(a07.trainees_actual   !== undefined) sfV('f_trainees_actual',   parseInt(a07.trainees_actual)||0);
+
+  const norm = normSpeakerName;
+  const extRows = (rows06||[]).filter(r => (r.sec||r.secV) === 'ext');
+
+  const byNameComp = {};
+  extRows.forEach(r => {
+    const rawName = r.name || r.staff || '';
+    const key = norm(rawName);
+    if(!key) return;
+    if(!byNameComp[key]) byNameComp[key] = { raw: rawName, honor:0, lodging:0, travel:0, other:0 };
+    const total = parseFloat(r.total)||0;
+    if(r.sub === 'ext_honor') byNameComp[key].honor += total;
+    else if(r.sub === 'ext_lodging') byNameComp[key].lodging += total;
+    else if(r.sub === 'ext_travel') byNameComp[key].travel += total;
+    else byNameComp[key].other += total;
+  });
+  const byNameKeys = Object.keys(byNameComp);
+
+  const list = spk.EXT || [];
+  const matchedKeys = new Set();
+  const fuzzyMatches = [];
+
+  list.forEach(s => {
+    const key = norm(s.name);
+    if(!key) return;
+    let foundKey = byNameComp.hasOwnProperty(key) ? key
+      : byNameKeys.find(k => !matchedKeys.has(k) && (k.includes(key)||key.includes(k)));
+    if(foundKey && !byNameComp.hasOwnProperty(key)) fuzzyMatches.push(`"${s.name}" ⇄ "${byNameComp[foundKey].raw}"`);
+    if(foundKey){
+      const c = byNameComp[foundKey];
+      // ถ้าไม่มี sub tag แยก (ข้อมูลเก่า/กรอกไม่ระบุหมวดย่อย) → รวมทั้งหมดลงสมนาคุณเป็นค่าเริ่มต้น ให้ผู้ใช้แก้เองได้
+      s.aHotel  = c.lodging;
+      s.aTravel = c.travel;
+      s.aAmt    = c.honor + c.other;
+      matchedKeys.add(foundKey);
+    }
+  });
+
+  const unmatched = byNameKeys.filter(k=>!matchedKeys.has(k)).map(k=>byNameComp[k].raw);
+  const warnParts = [];
+  if(fuzzyMatches.length) warnParts.push('จับคู่แบบไม่ตรงเป๊ะ (โปรดตรวจสอบ): '+fuzzyMatches.join(' | '));
+  if(unmatched.length)    warnParts.push('ไม่พบคู่ในไฟล์ 05: '+unmatched.join(', '));
+  if(warnParts.length){
+    console.warn('⚠️ การจับคู่วิทยากร 06↔05:', warnParts);
+    _showStatus07 && _showStatus07('⚠️ '+warnParts.join(' / '), 'warn');
+  }
+  renderSpk07();
+}
+
+/* ── SYNC BANNER UPDATE ── */
+function updateSyncBanner(slot){
+  const banner = document.getElementById('sync-banner');
+  const icon   = document.getElementById('sync-icon');
+  const title  = document.getElementById('sync-title');
+  const sub    = document.getElementById('sync-sub');
+  if(!banner) return;
+  const hasBudget  = !!(slot && slot.budget);
+  const hasActual06 = !!(slot && (slot.actual06||slot.actual));
+  const hasActual07 = !!(slot && slot.actual07);
+  if(hasBudget){
+    banner.className = 'sync-box has-data';
+    icon.textContent = '✅';
+    const parts = [];
+    if(hasBudget)   parts.push('💰 งบประมาณ (05)');
+    if(hasActual06) parts.push('📋 ใบเสร็จ (06)');
+    if(hasActual07) parts.push('📝 บันทึกแล้ว (07)');
+    title.textContent = 'โหลดข้อมูลแล้ว: ' + (slot.course||'') + (slot.batch?' · รุ่น '+slot.batch:'');
+    sub.innerHTML = parts.join(' · ') + (slot.no ? ' · เลขที่: '+slot.no : '');
+  } else {
+    banner.className = 'sync-box no-data';
+    icon.textContent = '⚠️';
+    title.textContent = 'ยังไม่พบข้อมูลงบประมาณจากไฟล์ 05';
+    sub.innerHTML = 'กรุณาบันทึกข้อมูลงบประมาณในไฟล์ 05 ก่อน แล้วโหลดที่นี่';
+  }
+}
+
+/* ── LOAD PANEL ── */
+/* ── SAVE actual07 ── */
+function computeActual07Grand(){
+  const aFuel=v('a_fuel');
+  const a11=v('a_1_1'), a12=v('a_1_2');
+  const a21=v('a_2_1');
+  const aLump=v('a_lump');
+  const aVenue=v('a_venue_meet')+v('a_venue_vip')+v('a_venue_staff');
+  const a31=v('a_3_1'), aDinner=v('a_food_dinner'), a32=v('a_3_2'), a33=v('a_3_3');
+  const a41=v('a_4_1'), a42=v('a_4_2'), a43=v('a_4_3');
+  const L=hasSpkLodging(), T=hasSpkTravel();
+  let aspExt1=0, aspExt2=0, aspInt=0, aspPres=0;
+  const list = spk.EXT||[];
+  if(!L && !T) aspExt1 = list.reduce((s,x)=>s+(x.aAmt||0),0);
+  else if(L && !T){ aspExt1 = list.reduce((s,x)=>s+(x.aHotel||0),0); aspExt2 = list.reduce((s,x)=>s+(x.aAmt||0),0); }
+  else if(!L && T){ aspExt1 = list.reduce((s,x)=>s+(x.aTravel||0),0); aspExt2 = list.reduce((s,x)=>s+(x.aAmt||0),0); }
+  else { aspExt1 = list.reduce((s,x)=>s+(x.aHotel||0)+(x.aTravel||0),0); aspExt2 = list.reduce((s,x)=>s+(x.aAmt||0),0); }
+  if(hasInternal()){ aspInt=v('a_in_1')+v('a_in_2')+v('a_in_3')+v('a_in_payroll'); }
+  if(hasPres()){ aspPres=v('a_pres_1')+v('a_pres_2')+v('a_pres_3'); }
+  const gorA=aFuel+(a11+a12)+a21+aLump+aVenue+(a31+aDinner+a32+a33)+(a41+a42+a43)+aspExt1+aspExt2+aspInt+aspPres;
+  return gorA + v('a_b1')+v('a_b2')+v('a_b3');
+}
+
+function saveActual07(){
+  const course = document.getElementById('f_courseName')?.value||'';
+  const batch  = document.getElementById('f_batch')?.value||'';
+  const no     = document.getElementById('f_courseNo')?.value||'';
+  if(!course){ showToast07('⚠️ ไม่พบข้อมูลหลักสูตร กรุณาโหลดข้อมูลก่อน'); return; }
+
+  const actual07 = {
+    a_fuel:v('a_fuel'),
+    a_1_1:v('a_1_1'), a_1_2:v('a_1_2'),
+    a_2_1:v('a_2_1'),
+    a_lump:v('a_lump'),
+    a_venue_meet:v('a_venue_meet'), a_venue_vip:v('a_venue_vip'), a_venue_staff:v('a_venue_staff'),
+    a_3_1:v('a_3_1'), a_food_dinner:v('a_food_dinner'), a_3_2:v('a_3_2'), a_3_3:v('a_3_3'),
+    a_4_1:v('a_4_1'), a_4_2:v('a_4_2'), a_4_3:v('a_4_3'),
+    a_b1:v('a_b1'),   a_b2:v('a_b2'),   a_b3:v('a_b3'),
+    a_in_1:v('a_in_1'), a_in_2:v('a_in_2'),
+    a_in_3:v('a_in_3'), a_in_payroll:v('a_in_payroll'),
+    a_pres_1:v('a_pres_1'), a_pres_2:v('a_pres_2'), a_pres_3:v('a_pres_3'),
+    trainees_approved: parseInt(document.getElementById('f_trainees_approved')?.value)||0,
+    trainees_actual:   parseInt(document.getElementById('f_trainees_actual')?.value)||0,
+    spkActual:{
+      EXT: (spk.EXT||[]).map(s=>({name:s.name, aHotel:s.aHotel||0, aTravel:s.aTravel||0, aAmt:s.aAmt||0})),
+    },
+    grandTotal: computeActual07Grand(),
+    savedAt: new Date().toISOString()
+  };
+
+  // persist to tms_saved_slots
+  const TMS_KEY = 'tms_saved_slots';
+  const slots = (() => { try{ return JSON.parse(localStorage.getItem(TMS_KEY)||'[]'); }catch{ return []; } })();
+  const now = new Date().toLocaleString('th-TH',{dateStyle:'short',timeStyle:'short'});
+  // ค้นหา slot ด้วย _currentSlot.id ก่อน (แม่นยำที่สุด หลีกเลี่ยง slot ผิด)
+  let idx = (_currentSlot && _currentSlot.id) ? slots.findIndex(s=>s.id===_currentSlot.id) : -1;
+  if(idx<0 && no) idx = slots.findIndex(s=>s.no&&s.no===no);
+  if(idx<0) idx = slots.findIndex(s=>s.course===course&&s.batch===batch);
+  if(idx>=0){
+    slots[idx].actual07 = actual07;
+    slots[idx].actual07SavedAt = now;
+    _currentSlot = slots[idx];
+  } else {
+    const newSlot = { id:Date.now(), course, batch, no, savedAt:now, actual07 };
+    slots.unshift(newSlot);
+    _currentSlot = newSlot;
+  }
+  try{ localStorage.setItem(TMS_KEY, JSON.stringify(slots.slice(0,30))); }catch{}
+  try{ sessionStorage.setItem('actual07Data', JSON.stringify(actual07)); }catch{}
+
+  updateSyncBanner(_currentSlot);
+
+  // ── sync Google Sheet ──
+  const gsData07 = { no, ...actual07, spkActualJson: JSON.stringify(actual07.spkActual||{}) };
+  delete gsData07.spkActual;
+  gsApi('saveActual07', gsData07).then(r => {
+    if(r) showToast07('✅ บันทึกและซิงก์ Google Sheet แล้ว (เลขที่: '+(no||course)+')');
+    else  showToast07('✅ บันทึกเรียบร้อย (⚠️ Google Sheet ออฟไลน์)');
+  });
+  showToast07('⏳ กำลังบันทึก...');
+
+  // แสดง popup ถามกลับหน้าหลักหรือไม่
+  setTimeout(() => showBackConfirmPopup(), 400);
+}
+
+/* ── TOAST ── */
+function showToast07(msg){
+  const t = document.getElementById('save-toast');
+  if(!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 3000);
+}
+
+/* ── STORAGE KEY ── */
+
+/* ── GOOGLE SHEET API ── */
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbySJROnBMkxFBNyPvET3DC5ihdCz03OPzvi2xXm6cMQpoPFsi2pAiTQAQIVSDUwQNVZ5w/exec';
+
+async function gsApi(action, data, no) {
+  try {
+    let url = GAS_URL + '?action=' + action;
+    if (no) url += '&no=' + encodeURIComponent(no);
+    const opts = data
+      ? { method: 'POST', body: new URLSearchParams({ action, data: JSON.stringify(data) }) }
+      : { method: 'GET' };
+    const res = await fetch(url, opts);
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || 'API error');
+    return json.data;
+  } catch(e) {
+    console.warn('gsApi error:', e);
+    return null;
+  }
+}
+
+/* ── HELPERS ── */
+function fmt(n){ return Number(n).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function ie(ph,cls='rpt-edit-md'){
+  // ซ่อน placeholder เมื่อ print: ใช้ data-ph แทน placeholder จริง
+  // CSS @media print จะซ่อน input ที่ value ว่างและแสดง span แทน
+  return `<span class="ie-wrap"><input class="rpt-edit ${cls} ie-input" type="text" placeholder="${ph}" oninput="this.parentNode.querySelector('.ie-ph').style.display=this.value?'none':'inline'"><span class="ie-ph" style="color:#aaa;font-style:italic;pointer-events:none;">${ph}</span></span>`;
+}
+const NB='nb', NT='nt', BB2='bb2', BT2='bt2', BB3='bb3';
+
+function row(cells){ return `<tr>${cells}</tr>`; }
+function td(txt,cls=''){ return `<td class="${cls}">${txt}</td>`; }
+// 5-col row helpers: plan-detail | plan-subtotal | plan-total | actual-total | remaining
+
+
+function ThaiBaht(n) {
+  n = Math.round(n * 100) / 100;
+  let textNum = ['ศูนย์', 'หนึ่ง', 'สอง', 'สาม', 'สี่', 'ห้า', 'หก', 'เจ็ด', 'แปด', 'เก้า', 'สิบ'];
+  let textUnit = ['', 'สิบ', 'ร้อย', 'พัน', 'หมื่น', 'แสน', 'ล้าน'];
+  let s = String(n).split('.');
+  let baht = s[0];
+  let satang = s[1] || '00';
+  if (satang.length === 1) satang += '0';
+
+  function convert(str) {
+    if (str === '0' || str === '') return '';
+    let res = '';
+    for (let i = 0; i < str.length; i++) {
+      let num = parseInt(str.charAt(i));
+      let pos = str.length - i - 1;
+      if (num === 0) continue;
+      if (num === 1 && pos === 0 && str.length > 1) res += 'เอ็ด';
+      else if (num === 2 && pos === 1) res += 'ยี่';
+      else if (num === 1 && pos === 1) res += '';
+      else res += textNum[num];
+      res += textUnit[pos];
+    }
+    return res;
+  }
+
+  let bahtText = convert(baht);
+  let satangText = convert(satang);
+  
+  if (bahtText === '' && satangText === '') return 'ศูนย์บาทถ้วน';
+  if (bahtText !== '') bahtText += 'บาท';
+  if (satangText === '') satangText = 'ถ้วน';
+  else satangText += 'สตางค์';
+  
+  return bahtText + satangText;
+}
+
+/* ── BUILD TABLE ── */
+/* แสดงกลุ่ม x.1/x.2/x.3 (เบี้ยเลี้ยง/ที่พัก/พาหนะ ฯลฯ) แบบ 6 คอลัมน์ — ซ่อนรายการที่งบ+จริง=0 แล้วเรียงเลขใหม่ */
+function renderTriad07(baseNum, items){
+  const visible = items.filter(it => it.budgetAmt || it.actualAmt);
+  const out = [];
+  visible.forEach((it, idx) => {
+    const isLast = idx === visible.length - 1;
+    const cls = isLast ? 'nt bb2' : 'nb nt';
+    const prefix = baseNum !== '' ? `${baseNum}.${idx + 1}` : `${idx + 1}.`;
+    out.push(`<tr>${td(`&nbsp;&nbsp;${prefix} ${it.label}`, `tl i2 ${cls}`)}${td(fmt(it.budgetAmt), `tr ${cls}`)}${td('', cls)}${td(fmt(it.actualAmt), `tr ${cls}`)}${td('', cls)}${td('', cls)}</tr>`);
+  });
+  return out;
+}
+
+function buildTable(){
+  const nums = calcSectionNumbers07();
+  const useInternal = hasInternal();
+  const presOn = hasPres();
+  const hasExt07 = hasExternal();
+
+  const has12 = hasOfficeItem2();
+  const has33 = v('f_3_3') > 0;
+
+  // ฟังก์ชันสร้างแถว 6 คอลัมน์: c1=รายการ, c2=แผนย่อย, c3=แผนรวม, c4=จริงย่อย, c5=จริงรวม, c6=คงเหลือ
+  function r5(c1,cls1, c2,cls2, c3,cls3, c4,cls4, c5,cls5, c6,cls6){
+    return `<tr>${td(c1,cls1)}${td(c2,cls2)}${td(c3,cls3)}${td(c4,cls4)}${td(c5,cls5)}${td(c6||'',cls6||cls2)}</tr>`;
+  }
+
+  let rows=[];
+  rows.push(r5('ก. ค่าดำเนินการฝึกอบรม','tl tw nb', '','nb', '','nb', '','nb', '','nb', '','nb'));
+
+  // ── ค่าน้ำมันเชื้อเพลิงและหล่อลื่น ──
+  let secFuel=0, asecFuel=0;
+  if(hasFuel()){
+    secFuel=v('f_fuel'); asecFuel=v('a_fuel');
+    rows.push(r5(`${nums.fuel}. ค่าน้ำมันเชื้อเพลิงและหล่อลื่น`,'tl tw i1 nt bb2', '','nt bb2', fmt(secFuel),'tr tw nt bb2', '','nt bb2', fmt(asecFuel),'tr tw nt bb2', fmt(secFuel-asecFuel),'tr tw nt bb2'));
+  }
+
+  // ── 1. ค่าวัสดุสำนักงาน ──
+  let sec1=0, asec1=0;
+  if(hasOffice()){
+    const has11=hasOfficeItem1();
+    const s11=has11?v('f_1_1'):0, s12=has12?v('f_1_2'):0;
+    const a11=has11?v('a_1_1'):0, a12=has12?v('a_1_2'):0;
+    sec1=s11+s12; asec1=a11+a12;
+    rows.push(r5(`${nums.office}. ค่าวัสดุสำนักงาน`,'tl tw i1 nb nt', '','nb nt', fmt(sec1),'tr tw nb nt', '','nb nt', fmt(asec1),'tr tw nb nt', fmt(sec1-asec1),'tr tw nb nt'));
+    const officeItems=[];
+    if(has11) officeItems.push({label:'ค่าเครื่องเขียนแบบพิมพ์ (สมุด, ปากกา, ฯลฯ)', budgetAmt:s11, actualAmt:a11});
+    if(has12) officeItems.push({label:'ค่าถ่ายเอกสารและเข้าเล่ม', budgetAmt:s12, actualAmt:a12});
+    rows.push(...renderTriad07(String(nums.office), officeItems));
+  }
+
+  // ── 2. ค่าวัสดุเบ็ดเตล็ด ──
+  let sec2=0, asec2=0;
+  if(hasMisc()){
+    sec2=v('f_2_1'); asec2=v('a_2_1');
+    rows.push(r5(`${nums.misc}. ค่าวัสดุเบ็ดเตล็ด`,'tl tw i1 nb nt', '','nb nt', fmt(sec2),'tr tw nb nt', '','nb nt', fmt(asec2),'tr tw nb nt', fmt(sec2-asec2),'tr tw nb nt'));
+    rows.push(r5(`&nbsp;&nbsp;${nums.misc}.1 ค่าใช้จ่ายอื่นๆ (กระเป๋าผ้า, ถ่านกล้องถ่ายรูป, หน้ากากอนามัย, ฯลฯ)`,'tl i2 nt bb2', fmt(sec2),'tr nt bb2', '','nt bb2', fmt(asec2),'tr nt bb2', '','nt bb2'));
+  }
+
+  // ── ค่าจ้างเหมา ──
+  let secLump=0, asecLump=0;
+  if(hasLump()){
+    secLump=v('f_lump'); asecLump=v('a_lump');
+    rows.push(r5(`${nums.lump}. ค่าจ้างเหมา`,'tl tw i1 nb nt', '','nb nt', fmt(secLump),'tr tw nb nt', '','nb nt', fmt(asecLump),'tr tw nb nt', fmt(secLump-asecLump),'tr tw nb nt'));
+    rows.push(r5(`&nbsp;&nbsp;${nums.lump}.1 รถตู้รับจ้างรวมน้ำมันเชื้อเพลิง`,'tl i2 nt bb2', fmt(secLump),'tr nt bb2', '','nt bb2', fmt(asecLump),'tr nt bb2', '','nt bb2'));
+  }
+
+  // ── ค่าเช่าสถานที่ ──
+  let secVenue=0, asecVenue=0;
+  if(hasVenue()){
+    const items=[];
+    if(hasVenueMeeting()) items.push({label:'ค่าเช่าห้องประชุม', budgetAmt:v('f_venue_meet'), actualAmt:v('a_venue_meet')});
+    if(hasVenueStaff())   items.push({label:'ค่าเช่าห้องพัก ผู้เข้าอบรม/เจ้าหน้าที่', budgetAmt:v('f_venue_staff'), actualAmt:v('a_venue_staff')});
+    if(hasVenueVip())     items.push({label:'ค่าเช่าห้องพัก ประธานในพิธี', budgetAmt:v('f_venue_vip'), actualAmt:v('a_venue_vip')});
+    secVenue = items.reduce((a,it)=>a+it.budgetAmt,0);
+    asecVenue = items.reduce((a,it)=>a+it.actualAmt,0);
+    rows.push(r5(`${nums.venue}. ค่าเช่าสถานที่`,'tl tw i1 nb nt', '','nb nt', fmt(secVenue),'tr tw nb nt', '','nb nt', fmt(asecVenue),'tr tw nb nt', fmt(secVenue-asecVenue),'tr tw nb nt'));
+    rows.push(...renderTriad07(String(nums.venue), items));
+  }
+
+  // ── 3. ค่าอาหารและเครื่องดื่ม ──
+  let sec3=0, asec3=0;
+  if(hasFood()){
+    const lunchOn = hasFoodLunch();
+    const r31=v('f_3_1_rate'), p31=v('f_3_1_ppl'), m31=v('f_3_1_times')||1, d31=v('f_3_1_days');
+    const s31=lunchOn ? r31*p31*m31*d31 : 0, a31=lunchOn ? v('a_3_1') : 0;
+    const dinnerOn = hasFoodDinner();
+    const sD = dinnerOn ? v('f_food_dinner_rate')*v('f_food_dinner_ppl')*(v('f_food_dinner_times')||1)*v('f_food_dinner_days') : 0;
+    const aD = dinnerOn ? v('a_food_dinner') : 0;
+    const coffeeOn = hasFoodCoffee();
+    const r32=v('f_3_2_rate'), p32=v('f_3_2_ppl'), m32=v('f_3_2_times')||1, d32=v('f_3_2_days');
+    const s32=coffeeOn ? r32*p32*m32*d32 : 0, a32=coffeeOn ? v('a_3_2') : 0;
+    const s33=has33?v('f_3_3'):0, a33=has33?v('a_3_3'):0;
+    sec3=s31+sD+s32+s33; asec3=a31+aD+a32+a33;
+
+    rows.push(r5(`${nums.food}. ค่าอาหารและเครื่องดื่ม`,'tl tw i1 nb nt', '','nb nt', fmt(sec3),'tr tw nb nt', '','nb nt', fmt(asec3),'tr tw nb nt', fmt(sec3-asec3),'tr tw nb nt'));
+    const foodItems=[];
+    if(lunchOn)  foodItems.push({label:'อาหารกลางวัน', budgetAmt:s31, actualAmt:a31});
+    if(dinnerOn) foodItems.push({label:'อาหารเย็น', budgetAmt:sD, actualAmt:aD});
+    if(coffeeOn) foodItems.push({label:'อาหารว่างและเครื่องดื่ม', budgetAmt:s32, actualAmt:a32});
+    if(has33)    foodItems.push({label:'ค่าอาหารเย็นวิทยากรภายนอก', budgetAmt:s33, actualAmt:a33});
+    rows.push(...renderTriad07(String(nums.food), foodItems));
+  }
+
+  // ── 4. ค่าเดินทางเจ้าหน้าที่ (ซ่อนรายการ 0) ──
+  let sec4=0, asec4=0;
+  if(hasStaffTravel()){
+    const s41=v('f_4_1'), s42=v('f_4_2'), s43=v('f_4_3');
+    const a41=v('a_4_1'), a42=v('a_4_2'), a43=v('a_4_3');
+    sec4=s41+s42+s43; asec4=a41+a42+a43;
+    rows.push(r5(`${nums.stafftravel}. ค่าเดินทางเจ้าหน้าที่ดำเนินการและประสานงาน (กฝภ.๑)`,'tl tw i1 nb nt', '','nb nt', fmt(sec4),'tr tw nb nt', '','nb nt', fmt(asec4),'tr tw nb nt', fmt(sec4-asec4),'tr tw nb nt'));
+    rows.push(...renderTriad07(String(nums.stafftravel), [
+      {label:'ค่าเบี้ยเลี้ยง', budgetAmt:s41, actualAmt:a41},
+      {label:'ค่าที่พัก', budgetAmt:s42, actualAmt:a42},
+      {label:'ค่าพาหนะ (น้ำมันเชื้อเพลิงและหล่อลื่น)', budgetAmt:s43, actualAmt:a43},
+    ]));
+  }
+
+  let sec5=0, sec6=0, asec5=0, asec6=0;
+  if(hasExt07){
+    const L=hasSpkLodging(), T=hasSpkTravel();
+    const list = spk.EXT||[];
+    const hAmtOf = honorAmtOf, hDetailOf = honorDetailOf;
+
+    if(!L && !T){
+      const total=list.reduce((a,s)=>a+hAmtOf(s),0);
+      const atotal=list.reduce((a,s)=>a+(s.aAmt||0),0);
+      sec5=total; asec5=atotal;
+      if(list.length===1){
+        const s=list[0]; const amt=hAmtOf(s); const aAmt=s.aAmt||0;
+        rows.push(r5(`${nums.ext1}. ค่าสมนาคุณวิทยากรภายนอก (${s.name||'(ไม่ระบุชื่อ)'}${hDetailOf(s)})`,'tl tw i1 nt bb2', '','nt bb2', amt?fmt(amt):'','tr tw nt bb2', '','nt bb2', aAmt?fmt(aAmt):'','tr tw nt bb2', fmt(amt-aAmt),'tr tw nt bb2'));
+      } else {
+        rows.push(r5(`${nums.ext1}. ค่าสมนาคุณวิทยากรภายนอก`,'tl tw i1 nb nt', '','nb nt', total?fmt(total):'','tr tw nb nt', '','nb nt', atotal?fmt(atotal):'','tr tw nb nt', fmt(total-atotal),'tr tw nb nt'));
+        list.forEach((s,i)=>{
+          const isLast=i===list.length-1; const amt=hAmtOf(s); const aAmt=s.aAmt||0;
+          rows.push(r5(`&nbsp;&nbsp;${nums.ext1}.${i+1} ${s.name||'(ไม่ระบุชื่อ)'}${hDetailOf(s)}`,`tl i2 nt ${isLast?'bb2':'nb'}`, amt?fmt(amt):'',`tr nt ${isLast?'bb2':'nb'}`, '',`nt ${isLast?'bb2':'nb'}`, aAmt?fmt(aAmt):'',`tr nt ${isLast?'bb2':'nb'}`, '',`nt ${isLast?'bb2':'nb'}`));
+        });
+      }
+    }
+    else if(L && !T){
+      const totalHotel=list.reduce((a,s)=>a+hotelAmtOf(s),0);
+      const atotalHotel=list.reduce((a,s)=>a+(s.aHotel||0),0);
+      const totalHonor=list.reduce((a,s)=>a+hAmtOf(s),0);
+      const atotalHonor=list.reduce((a,s)=>a+(s.aAmt||0),0);
+      sec5=totalHotel; asec5=atotalHotel; sec6=totalHonor; asec6=atotalHonor;
+      if(list.length===1){
+        const s=list[0]; const hAmt=hotelAmtOf(s); const ahAmt=s.aHotel||0;
+        rows.push(r5(`${nums.ext1}. ค่าที่พักวิทยากรภายนอก`,'tl tw i1 nb nt', '','nb nt', hAmt?fmt(hAmt):'','tr tw nb nt', '','nb nt', ahAmt?fmt(ahAmt):'','tr tw nb nt', fmt(hAmt-ahAmt),'tr tw nb nt'));
+        rows.push(r5(`&nbsp;&nbsp;${nums.ext1}.1 ค่าที่พัก (${fmt(s.hotelRate||0)} บ./คืน x ${s.hotelRooms||1} ห้อง x ${s.hotelNights||0} คืน)`,'tl i2 nt bb2', hAmt?fmt(hAmt):'','tr nt bb2', '','nt bb2', ahAmt?fmt(ahAmt):'','tr nt bb2', '','nt bb2'));
+        const amt=hAmtOf(s); const aAmt=s.aAmt||0;
+        rows.push(r5(`${nums.ext2}. ค่าสมนาคุณวิทยากรภายนอก (${s.name||'(ไม่ระบุชื่อ)'} ${''} ${hDetailOf(s)})`,'tl tw i1 nt bb2', '','nt bb2', amt?fmt(amt):'','tr tw nt bb2', '','nt bb2', aAmt?fmt(aAmt):'','tr tw nt bb2', fmt(amt-aAmt),'tr tw nt bb2'));
+      } else {
+        rows.push(r5(`${nums.ext1}. ค่าที่พักวิทยากรภายนอก`,'tl tw i1 nb nt', '','nb nt', totalHotel?fmt(totalHotel):'','tr tw nb nt', '','nb nt', atotalHotel?fmt(atotalHotel):'','tr tw nb nt', fmt(totalHotel-atotalHotel),'tr tw nb nt'));
+        list.forEach((s,i)=>{
+          const isLast=i===list.length-1; const hAmt=hotelAmtOf(s);
+          rows.push(r5(`&nbsp;&nbsp;${nums.ext1}.${i+1} ${s.name||'(ไม่ระบุชื่อ)'}`,`tl i2 nt ${isLast?'bb2':'nb'}`, hAmt?fmt(hAmt):'',`tr nt ${isLast?'bb2':'nb'}`, '',`nt ${isLast?'bb2':'nb'}`, s.aHotel?fmt(s.aHotel):'',`tr nt ${isLast?'bb2':'nb'}`, '',`nt ${isLast?'bb2':'nb'}`));
+        });
+        rows.push(r5(`${nums.ext2}. ค่าสมนาคุณวิทยากรภายนอก`,'tl tw i1 nb nt', '','nb nt', totalHonor?fmt(totalHonor):'','tr tw nb nt', '','nb nt', atotalHonor?fmt(atotalHonor):'','tr tw nb nt', fmt(totalHonor-atotalHonor),'tr tw nb nt'));
+        list.forEach((s,i)=>{
+          const isLast=i===list.length-1; const amt=hAmtOf(s); const aAmt=s.aAmt||0;
+          rows.push(r5(`&nbsp;&nbsp;${nums.ext2}.${i+1} ${s.name||'(ไม่ระบุชื่อ)'}${hDetailOf(s)}`,`tl i2 nt ${isLast?'bb2':'nb'}`, amt?fmt(amt):'',`tr nt ${isLast?'bb2':'nb'}`, '',`nt ${isLast?'bb2':'nb'}`, aAmt?fmt(aAmt):'',`tr nt ${isLast?'bb2':'nb'}`, '',`nt ${isLast?'bb2':'nb'}`));
+        });
+      }
+    }
+    else if(!L && T){
+      const totalTravel=list.reduce((a,s)=>a+travelAmtOf(s),0);
+      const atotalTravel=list.reduce((a,s)=>a+(s.aTravel||0),0);
+      const totalHonor=list.reduce((a,s)=>a+hAmtOf(s),0);
+      const atotalHonor=list.reduce((a,s)=>a+(s.aAmt||0),0);
+      sec5=totalTravel; asec5=atotalTravel; sec6=totalHonor; asec6=atotalHonor;
+      if(list.length===1){
+        const s=list[0]; const tAmt=travelAmtOf(s); const atAmt=s.aTravel||0;
+        rows.push(r5(`${nums.ext1}. ค่าใช้จ่ายในการเดินทางของวิทยากร (${s.name||'(ไม่ระบุชื่อ)'} อัตราเหมาจ่าย ${fmt(s.travel||0)} บาท/วัน x ${s.travelDays||1} วัน)`,'tl tw i1 nt bb2', '','nt bb2', tAmt?fmt(tAmt):'','tr tw nt bb2', '','nt bb2', atAmt?fmt(atAmt):'','tr tw nt bb2', fmt(tAmt-atAmt),'tr tw nt bb2'));
+        const amt=hAmtOf(s); const aAmt=s.aAmt||0;
+        rows.push(r5(`${nums.ext2}. ค่าสมนาคุณวิทยากรภายนอก (${s.name||'(ไม่ระบุชื่อ)'} ${''} ${hDetailOf(s)})`,'tl tw i1 nt bb2', '','nt bb2', amt?fmt(amt):'','tr tw nt bb2', '','nt bb2', aAmt?fmt(aAmt):'','tr tw nt bb2', fmt(amt-aAmt),'tr tw nt bb2'));
+      } else {
+        rows.push(r5(`${nums.ext1}. ค่าใช้จ่ายในการเดินทางของวิทยากร`,'tl tw i1 nb nt', '','nb nt', totalTravel?fmt(totalTravel):'','tr tw nb nt', '','nb nt', atotalTravel?fmt(atotalTravel):'','tr tw nb nt', fmt(totalTravel-atotalTravel),'tr tw nb nt'));
+        list.forEach((s,i)=>{
+          const isLast=i===list.length-1; const tAmt=travelAmtOf(s);
+          rows.push(r5(`&nbsp;&nbsp;${nums.ext1}.${i+1} ${s.name||'(ไม่ระบุชื่อ)'} (อัตราเหมาจ่าย ${fmt(s.travel||0)} บาท/วัน x ${s.travelDays||1} วัน)`,`tl i2 nt ${isLast?'bb2':'nb'}`, tAmt?fmt(tAmt):'',`tr nt ${isLast?'bb2':'nb'}`, '',`nt ${isLast?'bb2':'nb'}`, s.aTravel?fmt(s.aTravel):'',`tr nt ${isLast?'bb2':'nb'}`, '',`nt ${isLast?'bb2':'nb'}`));
+        });
+        rows.push(r5(`${nums.ext2}. ค่าสมนาคุณวิทยากรภายนอก`,'tl tw i1 nb nt', '','nb nt', totalHonor?fmt(totalHonor):'','tr tw nb nt', '','nb nt', atotalHonor?fmt(atotalHonor):'','tr tw nb nt', fmt(totalHonor-atotalHonor),'tr tw nb nt'));
+        list.forEach((s,i)=>{
+          const isLast=i===list.length-1; const amt=hAmtOf(s); const aAmt=s.aAmt||0;
+          rows.push(r5(`&nbsp;&nbsp;${nums.ext2}.${i+1} ${s.name||'(ไม่ระบุชื่อ)'}${hDetailOf(s)}`,`tl i2 nt ${isLast?'bb2':'nb'}`, amt?fmt(amt):'',`tr nt ${isLast?'bb2':'nb'}`, '',`nt ${isLast?'bb2':'nb'}`, aAmt?fmt(aAmt):'',`tr nt ${isLast?'bb2':'nb'}`, '',`nt ${isLast?'bb2':'nb'}`));
+        });
+      }
+    }
+    else { // L && T
+      const totalHotel=list.reduce((a,s)=>a+hotelAmtOf(s),0);
+      const atotalHotel=list.reduce((a,s)=>a+(s.aHotel||0),0);
+      const totalTravel=list.reduce((a,s)=>a+travelAmtOf(s),0);
+      const atotalTravel=list.reduce((a,s)=>a+(s.aTravel||0),0);
+      const totalHonor=list.reduce((a,s)=>a+hAmtOf(s),0);
+      const atotalHonor=list.reduce((a,s)=>a+(s.aAmt||0),0);
+      sec5=totalHotel+totalTravel; asec5=atotalHotel+atotalTravel; sec6=totalHonor; asec6=atotalHonor;
+
+      rows.push(r5(`${nums.ext1}. ค่าใช้จ่ายในการเดินทางวิทยากรภายนอก`,'tl tw i1 nb nt', '','nb nt', sec5?fmt(sec5):'','tr tw nb nt', '','nb nt', asec5?fmt(asec5):'','tr tw nb nt', fmt(sec5-asec5),'tr tw nb nt'));
+
+      if(list.length===1){
+        const s=list[0]; const hAmt=hotelAmtOf(s); const ahAmt=s.aHotel||0;
+        rows.push(r5(`&nbsp;&nbsp;${nums.ext1}.1 ค่าที่พัก (${fmt(s.hotelRate||0)} บ./คืน x ${s.hotelRooms||1} ห้อง x ${s.hotelNights||0} คืน)`,'tl i2 nb nt', hAmt?fmt(hAmt):'','tr nb nt', '','nb nt', ahAmt?fmt(ahAmt):'','tr nb nt', '','nb nt'));
+        const tAmt=travelAmtOf(s); const atAmt=s.aTravel||0;
+        rows.push(r5(`&nbsp;&nbsp;${nums.ext1}.2 ค่าพาหนะ (อัตราเหมาจ่าย ${fmt(s.travel||0)} บาท/วัน x ${s.travelDays||1} วัน)`,'tl i2 nt bb2', tAmt?fmt(tAmt):'','tr nt bb2', '','nt bb2', atAmt?fmt(atAmt):'','tr nt bb2', '','nt bb2'));
+      } else {
+        rows.push(r5(`&nbsp;&nbsp;${nums.ext1}.1 ค่าที่พัก`,'tl i2 nb nt', '','nb nt', '','nb nt', '','nb nt', '','nb nt'));
+        list.forEach((s,i)=>{
+          const isLast=i===list.length-1;
+          const hAmt=hotelAmtOf(s);
+          rows.push(r5(`&nbsp;&nbsp;&nbsp;&nbsp;${nums.ext1}.1.${i+1} ${s.name||'(ไม่ระบุชื่อ)'}`,`tl i3 nt ${isLast?'bb2':'nb'}`, hAmt?fmt(hAmt):'',`tr nt ${isLast?'bb2':'nb'}`, '',`nt ${isLast?'bb2':'nb'}`, s.aHotel?fmt(s.aHotel):'',`tr nt ${isLast?'bb2':'nb'}`, '',`nt ${isLast?'bb2':'nb'}`));
+        });
+        rows.push(r5(`&nbsp;&nbsp;${nums.ext1}.2 ค่าพาหนะ`,'tl i2 nb nt', '','nb nt', '','nb nt', '','nb nt', '','nb nt'));
+        list.forEach((s,i)=>{
+          const isLast=i===list.length-1;
+          const tAmt=travelAmtOf(s);
+          rows.push(r5(`&nbsp;&nbsp;&nbsp;&nbsp;${nums.ext1}.2.${i+1} ${s.name||'(ไม่ระบุชื่อ)'}`,`tl i3 nt ${isLast?'bb2':'nb'}`, tAmt?fmt(tAmt):'',`tr nt ${isLast?'bb2':'nb'}`, '',`nt ${isLast?'bb2':'nb'}`, s.aTravel?fmt(s.aTravel):'',`tr nt ${isLast?'bb2':'nb'}`, '',`nt ${isLast?'bb2':'nb'}`));
+        });
+      }
+
+      rows.push(r5(`${nums.ext2}. ค่าสมนาคุณวิทยากรภายนอก`,'tl tw i1 nb nt', '','nb nt', sec6?fmt(sec6):'','tr tw nb nt', '','nb nt', asec6?fmt(asec6):'','tr tw nb nt', fmt(sec6-asec6),'tr tw nb nt'));
+      list.forEach((s,i)=>{
+        const isLast=i===list.length-1; const amt=hAmtOf(s); const aAmt=s.aAmt||0;
+        rows.push(r5(`&nbsp;&nbsp;${nums.ext2}.${i+1} ${s.name||'(ไม่ระบุชื่อ)'}${hDetailOf(s)}`,`tl i2 nt ${isLast?'bb2':'nb'}`, amt?fmt(amt):'',`tr nt ${isLast?'bb2':'nb'}`, '',`nt ${isLast?'bb2':'nb'}`, aAmt?fmt(aAmt):'',`tr nt ${isLast?'bb2':'nb'}`, '',`nt ${isLast?'bb2':'nb'}`));
+      });
+    }
+  }
+
+  // ── ผลรวมก่อนวิทยากรภายใน/ประธาน (สำหรับหมายเหตุยืมเงินทดลองจ่าย) ──
+  const coreOrderDesc = ['ext2','ext1','stafftravel','food','venue','lump','misc','office','fuel'];
+  let preInternalLast = 0;
+  for(const k of coreOrderDesc){ if(nums[k]){ preInternalLast = nums[k]; break; } }
+  const extTotal  = secFuel+sec1+sec2+secLump+secVenue+sec3+sec4+sec5+sec6;
+  const aExtTotal = asecFuel+asec1+asec2+asecLump+asecVenue+asec3+asec4+asec5+asec6;
+
+  /* ---- วิทยากรภายใน (ซ่อนรายการ 0) ---- */
+  const in1=v('f_in_1'), in2=v('f_in_2'), in3=v('f_in_3');
+  const inPayroll=v('f_in_payroll');
+  const inTravel=in1+in2+in3;
+  const ain1=v('a_in_1'), ain2=v('a_in_2'), ain3=v('a_in_3');
+  const ainPayroll=v('a_in_payroll');
+  const ainTravel=ain1+ain2+ain3;
+
+  let secInternal=0, asecInternal=0;
+  if(useInternal){
+    rows.push(`<tr class="bb2">${td(`รวมเงินข้อ ก. (1. - ${preInternalLast}.) เป็นเงิน`,'tc tw bgray bt2')+td('','bgray bt2')+td(fmt(extTotal),'tr tw bgray bt2')+td('','bgray bt2')+td(fmt(aExtTotal),'tr tw bgray bt2')+td(fmt(extTotal-aExtTotal),'tr tw bgray bt2')}</tr>`);
+
+    secInternal=inTravel+inPayroll;
+    asecInternal=ainTravel+ainPayroll;
+    rows.push(r5(`${nums.intTravel}. ค่าสมนาคุณวิทยากรภายใน (โอนให้หน่วยงานต้นสังกัด)`,'tl tw i1 nb nt', '','nb nt', inTravel?fmt(inTravel):'','tr tw nb nt', '','nb nt', ainTravel?fmt(ainTravel):'','tr tw nb nt', fmt(inTravel-ainTravel),'tr tw nb nt'));
+    rows.push(...renderTriad07(String(nums.intTravel), [
+      {label:'ค่าเบี้ยเลี้ยง', budgetAmt:in1, actualAmt:ain1},
+      {label:'ค่าที่พัก', budgetAmt:in2, actualAmt:ain2},
+      {label:'ค่าพาหนะ', budgetAmt:in3, actualAmt:ain3},
+    ]));
+    rows.push(r5(`${nums.intPayroll}. ค่าสมนาคุณวิทยากรภายใน (จ่ายผ่าน Payroll)`,'tl tw i1 nt bb2', '','nt bb2', inPayroll?fmt(inPayroll):'','tr tw nt bb2', '','nt bb2', ainPayroll?fmt(ainPayroll):'','tr tw nt bb2', fmt(inPayroll-ainPayroll),'tr tw nt bb2'));
+  }
+
+  /* ---- ค่าเดินทางประธานในพิธี (ซ่อนรายการ 0) ---- */
+  const pres1=v('f_pres_1'), pres2=v('f_pres_2'), pres3=v('f_pres_3');
+  const apres1=v('a_pres_1'), apres2=v('a_pres_2'), apres3=v('a_pres_3');
+  let secPres=0, asecPres=0;
+  if(presOn){
+    if(!useInternal){
+      rows.push(`<tr class="bb2">${td(`รวมเงินข้อ ก. (1. - ${preInternalLast}.) เป็นเงิน`,'tc tw bgray bt2')+td('','bgray bt2')+td(fmt(extTotal),'tr tw bgray bt2')+td('','bgray bt2')+td(fmt(aExtTotal),'tr tw bgray bt2')+td(fmt(extTotal-aExtTotal),'tr tw bgray bt2')}</tr>`);
+    }
+    secPres=pres1+pres2+pres3; asecPres=apres1+apres2+apres3;
+    rows.push(r5(`${nums.pres}. ค่าเดินทางประธานในพิธี (โอนให้หน่วยงานต้นสังกัด)`,'tl tw i1 nb nt', '','nb nt', secPres?fmt(secPres):'','tr tw nb nt', '','nb nt', asecPres?fmt(asecPres):'','tr tw nb nt', fmt(secPres-asecPres),'tr tw nb nt'));
+    rows.push(...renderTriad07(String(nums.pres), [
+      {label:'ค่าเบี้ยเลี้ยง', budgetAmt:pres1, actualAmt:apres1},
+      {label:'ค่าที่พัก', budgetAmt:pres2, actualAmt:apres2},
+      {label:'ค่าพาหนะ', budgetAmt:pres3, actualAmt:apres3},
+    ]));
+  }
+
+  // ── รวม ก. ──
+  const gorTotal  = secFuel+sec1+sec2+secLump+secVenue+sec3+sec4+sec5+sec6+secInternal+secPres;
+  const aGorTotal = asecFuel+asec1+asec2+asecLump+asecVenue+asec3+asec4+asec5+asec6+asecInternal+asecPres;
+  const lastSec = presOn ? nums.pres : (useInternal ? nums.intPayroll : preInternalLast);
+  rows.push(`<tr class="bb3">${td(`รวมเงินข้อ ก. (1. - ${lastSec}.) เป็นเงิน`,'tc tw bgray bt2')+td('','bgray bt2')+td(fmt(gorTotal),'tr tw bgray bt2')+td('','bgray bt2')+td(fmt(aGorTotal),'tr tw bgray bt2')+td(fmt(gorTotal-aGorTotal),'tr tw bgray bt2')}</tr>`);
+
+  // ── ข. ──
+  const bb1=v('f_b1'),bb2=v('f_b2'),bb3=v('f_b3');
+  const ab1=v('a_b1'),ab2=v('a_b2'),ab3=v('a_b3');
+  const korTotal=bb1+bb2+bb3;
+  const aKorTotal=ab1+ab2+ab3;
+  rows.push(r5('ข. ค่าใช้จ่ายในการเดินทางของผู้เข้ารับการฝึกอบรม','tl tw nb', '','nb', fmt(korTotal),'tr tw nb', '','nb', fmt(aKorTotal),'tr tw nb', fmt(korTotal-aKorTotal),'tr tw nb'));
+  rows.push(...renderTriad07('', [
+    {label:'ค่าเบี้ยเลี้ยง', budgetAmt:bb1, actualAmt:ab1},
+    {label:'ค่าที่พัก', budgetAmt:bb2, actualAmt:ab2},
+    {label:'ค่าพาหนะ', budgetAmt:bb3, actualAmt:ab3},
+  ]));
+  const bVisible = [bb1||ab1, bb2||ab2, bb3||ab3].filter(Boolean).length;
+  rows.push(`<tr class="bb3">${td(`รวมเงินข้อ ข. (1. - ${bVisible}.) เป็นเงิน`,'tc tw bt2')+td('','bt2')+td(fmt(korTotal),'tr tw bt2')+td('','bt2')+td(fmt(aKorTotal),'tr tw bt2')+td(fmt(korTotal-aKorTotal),'tr tw bt2')}</tr>`);
+
+  // ── รวมทั้งสิ้น ──
+  const grandTotal=gorTotal+korTotal;
+  const aGrandTotal=aGorTotal+aKorTotal;
+  rows.push(`<tr class="bb2">${td('รวมเงินข้อ ก. และ ข. เป็นเงิน ทั้งสิ้น','tc tw bgray bt2 double-bottom')+td('','bgray bt2 double-bottom')+td(fmt(grandTotal),'tr tw bgray bt2 double-bottom')+td('','bgray bt2 double-bottom')+td(fmt(aGrandTotal),'tr tw bgray bt2 double-bottom')+td(fmt(grandTotal-aGrandTotal),'tr tw bgray bt2 double-bottom')}</tr>`);
+
+  // คำนวณยอดเงินรวมเฉพาะข้อ ก. สำหรับยืมเงินทดลองจ่าย (ไม่รวมวิทยากรภายใน/ประธาน — โอนหน่วยงานต้นสังกัด ไม่ต้องยืม)
+  const extTotalNote = extTotal;
+  const baseNote = preInternalLast;
+
+  const tableHTML = `<table class="rpt">
+    <thead>
+      <tr>
+        <th style="width:50%;">รายการ</th>
+        <th style="width:20%;" colspan="2">งบประมาณ</th>
+        <th style="width:20%;" colspan="2">ใช้จริง</th>
+        <th style="width:10%;">คงเหลือ</th>
+      </tr>
+    </thead>
+    <tbody>${rows.join('')}</tbody>
+  </table>`;
+
+  const noteHTML = `
+    <div style="margin-top: 16px; font-size: 14px; text-align: left; line-height: 24px;">
+    
+      <div style="overflow: hidden;">
+    
+        <div class="note-row-1">
+          <span style="color: #000;"> </span><input class="rpt-edit" type="text" placeholder="1. ยืมเงินทดลองจ่าย ข้อ ก. (1. - ${baseNote}.) เป็นเงิน ${fmt(extTotalNote)} บาท" style="width: 95%; font-family: 'Sarabun', sans-serif; font-size: 14px; color: #000;">
+        </div>
+        <div class="note-row-2">
+          <span style="color: #000;"> </span><input class="rpt-edit" type="text" placeholder="ระบุหมายเหตุเพิ่มเติมที่นี่ (ถ้ามี)..." style="width: 95%; font-family: 'Sarabun', sans-serif; font-size: 14px; color: #000;">
+        </div>
+        <div class="note-row-3">
+          <span style="color: #000;"> </span><input class="rpt-edit" type="text" placeholder="ระบุหมายเหตุเพิ่มเติมที่นี่ (ถ้ามี)..." style="width: 95%; font-family: 'Sarabun', sans-serif; font-size: 14px; color: #000;">
+        </div>
+      </div>
+    </div>
+  `;
+
+  // ตารางจำนวนผู้อบรม (แถวบรรทัดเดียว อยู่หลังตารางหลัก ก่อน หมายเหตุ 1)
+  const tApproved = parseInt(document.getElementById('f_trainees_approved')?.value)||0;
+  const tActual   = parseInt(document.getElementById('f_trainees_actual')?.value)||0;
+  const traineesHTML = (tApproved > 0 || tActual > 0) ? `
+    <table class="rpt" style="margin-top:12px;width:100%;min-width:500px;">
+      <tbody><tr>
+        <td class="tc tw" style="width:20%;border:1px solid #333;padding:5px 5px;">ผู้เข้ารับการอบรม</td>
+        <td class="tc tw" style="width:20%;border:1px solid #333;padding:5px 5px;">ตามอนุมัติ</td>
+        <td class="tc" style="width:20%;border:1px solid #333;padding:5px 5px;"><input class="rpt-edit" type="number" value="${tApproved}" style="width:45px;text-align:center;"> คน</td>
+        <td class="tc tw" style="width:20%;border:1px solid #333;padding:5px 5px;">อบรมจริง</td>
+        <td class="tc" style="width:20%;border:1px solid #333;padding:5px 5px;"><input class="rpt-edit" type="number" value="${tActual}" style="width:45px;text-align:center;"> คน</td>
+      </tr></tbody>
+    </table>` : '';
+
+  return tableHTML + traineesHTML + noteHTML;
+}
+
+/* ── SHOW / BACK ── */
+function showReport(doPrint){
+  document.getElementById('r_hdr1').value=`หลักสูตร "${document.getElementById('f_courseName').value}" รุ่นที่ ${document.getElementById('f_batch').value}`;
+  document.getElementById('r_hdr2').value=`เลขที่รุ่นหลักสูตร ${document.getElementById('f_courseNo').value} ในวันที่ ${document.getElementById('f_date').value}`;
+  document.getElementById('r_hdr3').value=`ณ ${document.getElementById('f_location').value}`;
+  document.getElementById('rpt_wrap').innerHTML=buildTable();
+
+  /* ── บันทึกค่างบประมาณลง sessionStorage ให้ 01.Main-Reports.html ดึงใช้ ── */
+  try {
+    const nums = calcSectionNumbers07();
+    const has12 = hasOfficeItem2();
+    const has33 = v('f_3_3') > 0;
+    const s11=v('f_1_1'), s12=has12?v('f_1_2'):0;
+    const s21=v('f_2_1');
+    const r31=v('f_3_1_rate'),p31=v('f_3_1_ppl'),m31=v('f_3_1_times')||1,d31=v('f_3_1_days');
+    const r32=v('f_3_2_rate'),p32=v('f_3_2_ppl'),m32=v('f_3_2_times')||1,d32=v('f_3_2_days');
+    const s31=r31*p31*m31*d31, s32=r32*p32*m32*d32, s33=has33?v('f_3_3'):0;
+    const s41=v('f_4_1'),s42=v('f_4_2'),s43=v('f_4_3');
+    const bb1=v('f_b1'),bb2=v('f_b2'),bb3=v('f_b3');
+    const useInternal=hasInternal(), L=hasSpkLodging(), T=hasSpkTravel();
+    let sec5=0,sec6=0,secInternal=0;
+    const list = spk.EXT||[];
+    if(!L && !T) sec5=list.reduce((a,s)=>a+honorAmtOf(s),0);
+    else if(L && !T){ sec5=list.reduce((a,s)=>a+hotelAmtOf(s),0); sec6=list.reduce((a,s)=>a+honorAmtOf(s),0); }
+    else if(!L && T){ sec5=list.reduce((a,s)=>a+travelAmtOf(s),0); sec6=list.reduce((a,s)=>a+honorAmtOf(s),0); }
+    else { sec5=list.reduce((a,s)=>a+hotelAmtOf(s)+travelAmtOf(s),0); sec6=list.reduce((a,s)=>a+honorAmtOf(s),0); }
+    if(useInternal){
+      const in1=v('f_in_1'),in2=v('f_in_2'),in3=v('f_in_3');
+      secInternal=(in1+in2+in3)+v('f_in_payroll');
+    }
+    const gorTotal=(s11+s12)+s21+(s31+s32+s33)+(s41+s42+s43)+sec5+sec6+secInternal;
+    const korTotal=bb1+bb2+bb3;
+    const budget = {
+      sec1: s11+s12, s11, s12,
+      sec2: s21, s21,
+      sec3: s31+s32+s33, s31, s32, s33,
+      sec4: s41+s42+s43, s41, s42, s43,
+      sec5, sec6,
+      secInternal,
+      gorTotal,
+      bb1, bb2, bb3,
+      korTotal,
+      grandTotal: gorTotal + korTotal,
+      savedAt: new Date().toISOString()
+    };
+    sessionStorage.setItem('budgetData', JSON.stringify(budget));
+  } catch(e) { console.warn('budget save error:', e); }
+
+  // --- เพิ่มโค้ด 1 บรรทัดนี้ลงไป ---
+  convertToThaiNumerals(document.getElementById('report-view'));
+  // ---------------------------
+  
+  document.getElementById('form-view').style.display='none';
+  document.getElementById('report-view').style.display='block';
+  applyRowSpacing();
+  window.scrollTo(0,0);
+  if(doPrint) setTimeout(()=>window.print(),300);
+}
+function backToForm(){
+  document.getElementById('form-view').style.display='block';
+  document.getElementById('report-view').style.display='none';
+  window.scrollTo(0,0);
+}
+
+/* ─────────────────────────────────────────────────────
+   ระยะห่างระหว่างบรรทัดของตารางรายงาน (เฉพาะ table.rpt)
+   ระดับ: 0=แน่น 1=กระชับ 2=ปกติ(ค่าเริ่มต้น) 3=กว้าง 4=กว้างมาก
+───────────────────────────────────────────────────── */
+const ROW_SPACING_LEVELS = [
+  {label:'แน่น',      pad:'2px'},
+  {label:'กระชับ',    pad:'3.5px'},
+  {label:'ปกติ',      pad:'5px'},
+  {label:'กว้าง',     pad:'7px'},
+  {label:'กว้างมาก',  pad:'9px'},
+];
+const ROW_SPACING_DEFAULT = 2; // index ของ "ปกติ"
+let rowSpacingIdx = ROW_SPACING_DEFAULT;
+
+function applyRowSpacing(){
+  const lvl = ROW_SPACING_LEVELS[rowSpacingIdx];
+  const rc = document.querySelector('.report-container');
+  if(rc) rc.style.setProperty('--row-pad-v', lvl.pad);
+  const lblEl = document.getElementById('sp_level');
+  if(lblEl) lblEl.textContent = lvl.label;
+  const decBtn = document.getElementById('sp_dec');
+  const incBtn = document.getElementById('sp_inc');
+  if(decBtn) decBtn.disabled = (rowSpacingIdx === 0);
+  if(incBtn) incBtn.disabled = (rowSpacingIdx === ROW_SPACING_LEVELS.length - 1);
+  try{ sessionStorage.setItem('rpt07_rowSpacing', String(rowSpacingIdx)); }catch(e){}
+}
+
+function adjustRowSpacing(dir){
+  const next = rowSpacingIdx + dir;
+  if(next < 0 || next >= ROW_SPACING_LEVELS.length) return;
+  rowSpacingIdx = next;
+  applyRowSpacing();
+}
+
+// โหลดค่าระยะห่างที่เคยตั้งไว้ใน session นี้ (ถ้ามี)
+(function initRowSpacing(){
+  try{
+    const saved = sessionStorage.getItem('rpt07_rowSpacing');
+    if(saved !== null){
+      const idx = parseInt(saved, 10);
+      if(!isNaN(idx) && idx >= 0 && idx < ROW_SPACING_LEVELS.length) rowSpacingIdx = idx;
+    }
+  }catch(e){}
+})();
+
+function convertToThaiNumerals(node) {
+  const thaiNums = ['๐','๑','๒','๓','๔','๕','๖','๗','๘','๙'];
+  
+  if (node.nodeType === 3) { // ถ้าเป็น Text Node (ข้อความปกติ)
+    node.nodeValue = node.nodeValue.replace(/\d/g, d => thaiNums[d]);
+  } else if (node.nodeType === 1) { // ถ้าเป็น Element Node
+    // ข้ามการแปลงในช่องตัวเลข เพื่อไม่ให้ระบบคำนวณพัง
+    if (node.tagName === 'INPUT' && node.type === 'number') return;
+    
+    if (node.tagName === 'INPUT' || node.tagName === 'TEXTAREA') {
+      // แปลงข้อความใน placeholder และ value ของช่องกรอกข้อความ (เช่น ช่องระบุรายละเอียดเพิ่มเติม)
+      if (node.placeholder) node.placeholder = node.placeholder.replace(/\d/g, d => thaiNums[d]);
+      if (node.type !== 'number' && node.value) {
+        node.value = node.value.replace(/\d/g, d => thaiNums[d]);
+      }
+    } else {
+      // ค้นหาลึกลงไปใน Child Nodes
+      for (let child of node.childNodes) {
+        convertToThaiNumerals(child);
+      }
+    }
+  }
+}
+
+/* ── DOMContentLoaded — Auto-load from sessionStorage/localStorage ── */
+document.addEventListener('DOMContentLoaded', () => {
+  // อ่าน courseData จาก sessionStorage (ส่งมาจาก passData() ใน 01)
+  let cd = null;
+  try { cd = JSON.parse(sessionStorage.getItem('courseData') || 'null'); } catch{}
+
+  const no = cd && cd.no ? cd.no.trim() : '';
+
+  if (!no) {
+    // ไม่มี no — ไม่โหลดอัตโนมัติ
+    updateSyncBanner(null);
+    return;
+  }
+
+  // เติม meta จาก courseData ทันที (ก่อน GAS ตอบ)
+  _prefillMeta07(cd);
+
+  // แสดง loading overlay แล้วดึงข้อมูลจาก GAS
+  _showLoader07('🔍 ค้นหาเลขที่หลักสูตร ' + no + ' ใน Google Sheets...');
+  _autoLoadGs07(no);
+});
+
+/* ── Pre-fill meta fields จาก courseData ── */
+function _prefillMeta07(cd) {
+  sfV('f_courseName', cd.course);
+  sfV('f_batch',      cd.batch);
+  sfV('f_courseNo',   cd.no);
+  sfV('f_location',   cd.location);
+  const ds = cd.dateStart||cd.date||'', de = cd.dateEnd||'';
+  sfV('f_date', isoThRange(ds,de)||cd.date||'');
+}
+
+/* ── โหลดจาก Google Sheet โดยใช้ getByNo ── */
+async function _autoLoadGs07(no) {
+  try {
+    _showLoader07('📥 กำลังโหลดข้อมูล');
+    const result = await gsApi('getByNo', null, no);
+    console.log('07 getByNo:', result);
+
+    if (!result || (!result.course && !result.budget && !result.actual06 && !result.actual07)) {
+      _hideLoader07();
+      _showStatus07('⚠️ ไม่พบข้อมูลเลขที่ ' + no + ' ใน Google Sheets', 'warn');
+      updateSyncBanner(null);
+      return;
+    }
+
+    // ── parse spkJson จาก budget sheet → speakers object ──
+    // COL_BUDGET มี spkJson = JSON.stringify({A,B,C,payType,hasExpense})
+    // และ budget.hasExternal ถูกเก็บใน spkJson ไม่ได้อยู่ใน COL_BUDGET โดยตรง
+    let budgetRaw = result.budget || null;
+    let speakers  = null;
+    if (budgetRaw && budgetRaw.spkJson) {
+      try {
+        speakers = typeof budgetRaw.spkJson === 'string'
+          ? JSON.parse(budgetRaw.spkJson)
+          : budgetRaw.spkJson;
+      } catch(e) { speakers = null; }
+    }
+    // hasExternal: ถ้า speakers มีข้อมูล A/B/C อยู่ถือว่ามีวิทยากรภายนอก
+    const hasExternal = speakers
+      ? ((speakers.A && speakers.A.length > 0) ||
+         (speakers.B && speakers.B.length > 0) ||
+         (speakers.C && speakers.C.length > 0))
+      : false;
+    if (budgetRaw) budgetRaw = { ...budgetRaw, hasExternal };
+
+    // ── สร้าง actual06 + bySection จาก COL_ACTUAL06 fields ──
+    let actual06 = result.actual06 || null;
+    if (actual06) {
+      let rows06 = [];
+      try { rows06 = actual06.rowsJson ? (typeof actual06.rowsJson === 'string' ? JSON.parse(actual06.rowsJson) : actual06.rowsJson) : []; } catch(e){}
+
+      const bySection = {
+        '1': { total: parseFloat(actual06.sec1)||0, subs: {}, items: [] },
+        '2': { total: parseFloat(actual06.sec2)||0, subs: {}, items: [] },
+        '3': { total: parseFloat(actual06.sec3)||0, subs: {
+          '3_1': parseFloat(actual06.sec3_1)||0,
+          '3_2': parseFloat(actual06.sec3_2)||0,
+          '3_3': 0,
+        }, items: [] },
+        '4': { total: parseFloat(actual06.sec4)||0, subs: { '4_3': 0 }, items: [] },
+        '5': { total: parseFloat(actual06.sec5)||0, subs: {}, items: [] },
+      };
+
+      rows06.forEach(r => {
+        const sec   = String(r.sec||'');
+        const sub   = String(r.sub||'');
+        const total = parseFloat(r.total)||0;
+        const val   = parseFloat(r.val)||0;
+        if (sec==='3' && sub==='3_3') bySection['3'].subs['3_3'] = (bySection['3'].subs['3_3']||0) + total;
+        if (sec==='4' && sub==='4_3') bySection['4'].subs['4_3'] = (bySection['4'].subs['4_3']||0) + total;
+        if (sec==='5') bySection['5'].items.push({ name: r.name||r.staff||'', val, total });
+      });
+
+      actual06 = { ...actual06, bySection, rows: rows06 };
+    }
+
+    const slot = {
+      id:        Date.now(),
+      no:        no,
+      course:    result.course?.course    || '',
+      batch:     result.course?.batch     || '',
+      location:  result.course?.location  || '',
+      dateStart: result.course?.dateStart || '',
+      dateEnd:   result.course?.dateEnd   || '',
+      date:      result.course?.dateStart || '',
+      budget:    budgetRaw,
+      speakers:  speakers,   // ← parse จาก spkJson เพื่อให้ applySlot07 ใช้ได้
+      actual06:  actual06,
+      actual07:  result.actual07 || null,
+    };
+
+    // เก็บ slot สำหรับ saveActual07
+    _currentSlot = slot;
+
+    _showLoader07('🔄 กำลังนำข้อมูลเข้าฟอร์ม...');
+    applySlot07(slot);
+
+    _hideLoader07();
+    const parts = [];
+    if (slot.budget)   parts.push('งบประมาณ');
+    if (slot.actual06) parts.push('ใบเสร็จ(06)');
+    if (slot.actual07) parts.push('ข้อมูล(07)');
+    _showStatus07('✅ โหลดสำเร็จ');
+
+  } catch(e) {
+    _hideLoader07();
+    _showStatus07('❌ โหลดไม่สำเร็จ: ' + e.message, 'error');
+    console.warn('_autoLoadGs07 error:', e);
+    updateSyncBanner(null);
+  }
+}
+
+/* ── Loading overlay helpers (เหมือนไฟล์ 06) ── */
+function _showLoader07(msg) {
+  let el = document.getElementById('gs07-loader');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'gs07-loader';
+    el.style.cssText = 'position:fixed;inset:0;background:rgba(15,39,68,.55);z-index:9998;display:flex;align-items:center;justify-content:center;';
+    el.innerHTML =
+      '<div style="background:transparent;padding:16px;min-width:200px;max-width:280px;width:90%;' +
+      'font-family:Sarabun,sans-serif;text-align:center;box-sizing:border-box;">' +
+      
+      // เพิ่ม filter drop-shadow เป็นแสงออร่าสีขาวฟุ้งๆ (rgba 255, 255, 255, 0.7) เพื่อดันให้วงกลมโหลดเด่นเด้งออกมา
+      '<svg width="48" height="48" viewBox="0 0 48 48" style="display:block;margin:0 auto 14px;filter:drop-shadow(0 0 6px rgba(255,255,255,0.7));">' +
+      
+      // 1. วงกลมฐานเปลี่ยนจากสีเทาเป็นสีขาวทึบ (#ffffff)
+      '<circle cx="24" cy="24" r="20" fill="none" stroke="#ffffff" stroke-width="4"/>' +
+      
+      // 2. ตัวหมุนเป็นสีน้ำเงินเดิมของคุณ (#1a56db) แต่ขยับความหนาเป็น 4.5 ให้ข่มเส้นสีขาวและดูคมชัดขึ้น
+      '<circle cx="24" cy="24" r="20" fill="none" stroke="#1a56db" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="30 96" style="animation:gs7spin .9s linear infinite;transform-origin:center"/>' +
+      '</svg>' +
+      
+      // 3. ปรับตัวหนังสือเป็นสีขาว และใส่ text-shadow หนา 2 ชั้น เพื่อให้อ่านง่ายลอยเด่นบนทุกพื้นผิวเว็บ
+      '<div id="gs07-loader-msg" style="font-size:15px;color:#ffffff;font-weight:600;line-height:1.6;' +
+      'text-shadow:0 2px 4px rgba(0,0,0,0.6), 0 4px 12px rgba(0,0,0,0.3);"></div>' +
+      '</div>';
+    document.head.insertAdjacentHTML('beforeend', '<style>@keyframes gs7spin{to{transform:rotate(360deg)}}</style>');
+    document.body.appendChild(el);
+  }
+  el.style.display = 'flex';
+  const m = document.getElementById('gs07-loader-msg');
+  if (m) m.textContent = msg || 'กำลังโหลด...';
+}
+
+function _hideLoader07() {
+  const el = document.getElementById('gs07-loader');
+  if (el) el.style.display = 'none';
+}
+
+function _showStatus07(msg, type) {
+  const colors = {
+    ok:    ['#d1fae5','#065f46','#10b981'],
+    warn:  ['#fef3c7','#92400e','#f59e0b'],
+    error: ['#fee2e2','#991b1b','#ef4444'],
+  };
+  const [bg, text, border] = colors[type] || colors.ok;
+  let el = document.getElementById('gs07-status');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'gs07-status';
+    el.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);' +
+      'z-index:9999;padding:12px 24px;border-radius:10px;font-family:Sarabun,sans-serif;' +
+      'font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.15);white-space:nowrap;max-width:90vw;';
+    document.body.appendChild(el);
+  }
+  el.style.background = bg;
+  el.style.color      = text;
+  el.style.border     = '1.5px solid ' + border;
+  el.textContent      = msg;
+  el.style.display    = 'block';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
+/* ── POPUP หลังบันทึก — ถามกลับหน้าหลักหรือยัง ── */
+function showBackConfirmPopup(){
+  // ป้องกัน duplicate
+  if(document.getElementById('back-main-popup')) return;
+  const pop = document.createElement('div');
+  pop.id = 'back-main-popup';
+  pop.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  pop.innerHTML = `
+    <div style="background:#fff;border-radius:16px;padding:32px 36px;max-width:420px;width:92%;
+      box-shadow:0 24px 64px rgba(0,0,0,.25);font-family:'Sarabun',sans-serif;text-align:center;">
+      <div style="font-size:40px;margin-bottom:12px;">💾</div>
+      <div style="font-size:17px;font-weight:700;color:#111827;margin-bottom:8px;">บันทึกเสร็จสิ้น</div>
+      <div style="font-size:13px;color:#6b7280;margin-bottom:22px;line-height:1.6;">
+        กลับไปที่หน้าหลักเพื่อดำเนินการต่อไป?</div>
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button onclick="location.href='01.Main-Reports.html';"
+          style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:8px;
+          padding:11px 30px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;
+          box-shadow:0 3px 12px rgba(16,185,129,.3);">✅ กลับหน้าหลัก</button>
+        <button onclick="document.getElementById('back-main-popup').remove();"
+          style="background:#f3f4f6;color:#374151;border:1.5px solid #d1d5db;border-radius:8px;
+          padding:11px 24px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">
+          ยังอยู่นี่</button>
+      </div>
+    </div>`;
+  document.body.appendChild(pop);
+}
+
+/* ── CONFIRM BACK ── */
+function confirmBack07() {
+  const pop = document.createElement('div');
+  pop.id = 'back-confirm-07';
+  pop.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  pop.innerHTML = `
+    <div style="background:#fff;border-radius:14px;padding:28px 32px;max-width:380px;width:90%;
+      box-shadow:0 20px 60px rgba(0,0,0,.25);font-family:'Sarabun',sans-serif;text-align:center;">
+      <div style="font-size:36px;margin-bottom:10px;">💾</div>
+      <div style="font-size:16px;font-weight:700;color:#111827;margin-bottom:8px;">บันทึกค่าใช้จ่ายจริงก่อนออก?</div>
+      <div style="font-size:13px;color:#6b7280;margin-bottom:22px;line-height:1.6;">
+        </div>
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button onclick="saveActual07();document.getElementById('back-confirm-07').remove();"
+          style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:8px;
+          padding:10px 28px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;
+          box-shadow:0 3px 12px rgba(16,185,129,.3);">💾 บันทึก</button>
+        <button onclick="document.getElementById('back-confirm-07').remove();location.href='01.Main-Reports.html';"
+          style="background:#f3f4f6;color:#374151;border:1.5px solid #d1d5db;border-radius:8px;
+          padding:10px 24px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">
+          ไม่บันทึก</button>
+      </div>
+    </div>`;
+  document.body.appendChild(pop);
+}
+/* ── SAVE PDF ── */
+function savePdf07(btn){
+  const el = document.getElementById('report-container-07');
+  if(!el || document.getElementById('report-view').style.display==='none'){
+    alert('กรุณากดดูตัวอย่างรายงานก่อน'); return;
+  }
+  const safe = s => s.replace(/[/\\:*?"<>|]/g,'_').trim();
+  const slot = _currentSlot;
+  const fname = safe('สรุปค่าใช้จ่าย_07_' + (slot&&slot.course||'') + '_รุ่น' + (slot&&slot.batch||'')) || 'sum_07';
+  btn.disabled = true; btn.textContent = '⏳ กำลังสร้าง...';
+  const clone = el.cloneNode(true);
+  /* ลบ shadow/outline */
+  clone.querySelectorAll('*').forEach(e => {
+    e.style.boxShadow = 'none';
+    e.style.outline = 'none';
+    e.style.borderRadius = '0';
+    e.style.transition = 'none';
+  });
+  clone.style.background = '#fff';
+  clone.style.padding = '20px';
+  clone.style.boxShadow = 'none';
+  /* เส้นตาราง: อ่าน computed style จากต้นฉบับ แปลงเป็น separate border
+     ใช้ระบบ border-right + border-bottom เท่านั้น (ไม่ซ้อน) แล้วใส่กรอบนอกตาราง */
+  const origEl2 = document.getElementById('report-container-07');
+  const origCells2 = origEl2.querySelectorAll('table th, table td');
+  // เก็บว่าแต่ละเซลล์มีเส้นล่างจริงไหม (จาก computed)
+  const hasBorderBottom = [];
+  origCells2.forEach(cell => {
+    const cs = window.getComputedStyle(cell);
+    hasBorderBottom.push(parseFloat(cs.borderBottomWidth) > 0);
+  });
+  // ใช้ separate border model — ไม่มีการซ้อนเส้น
+  clone.querySelectorAll('table').forEach(tbl => {
+    tbl.style.borderCollapse = 'separate';
+    tbl.style.borderSpacing = '0';
+    tbl.style.border = 'none';
+    // กรอบนอก: เส้นบนและซ้ายของตาราง
+    tbl.style.borderTop  = '1px solid #000';
+    tbl.style.borderLeft = '1px solid #000';
+  });
+  const cloneCells2 = clone.querySelectorAll('table th, table td');
+  cloneCells2.forEach((cell, i) => {
+    // ทุกเซลล์มีเส้นขวาเสมอ
+    cell.style.borderTop    = 'none';
+    cell.style.borderLeft   = 'none';
+    cell.style.borderRight  = '1px solid #000';
+    // เส้นล่าง: ใส่เฉพาะเซลล์ที่ computed บอกว่ามี
+    cell.style.borderBottom = hasBorderBottom[i] ? '1px solid #000' : 'none';
+    if(!cell.classList.contains('bgray')) cell.style.background = '#fff';
+  });
+  clone.querySelectorAll('.bgray').forEach(cell => { cell.style.background = '#eaeaea'; });
+  /* แปลง input → span (inline) เพื่อให้ตัวเลขกับ "คน" อยู่บรรทัดเดียวกัน */
+  clone.querySelectorAll('input').forEach(inp => {
+    const cs = window.getComputedStyle(inp);
+    const isBlock = cs.display === 'block' || inp.style.width === '100%' || inp.classList.contains('rpt-edit') === false;
+    const span = document.createElement('span');
+    span.style.cssText = `font-family:Sarabun,sans-serif;font-size:${cs.fontSize};font-weight:${cs.fontWeight};color:#000;text-align:${cs.textAlign};display:inline;line-height:1.5;`;
+    span.textContent = inp.value;
+    inp.parentNode.replaceChild(span, inp);
+  });
+  /* ลบ border-bottom ของ hdr-edit (ช่องหัวเอกสาร) */
+  clone.querySelectorAll('.hdr-edit, .rpt-edit').forEach(e => {
+    e.style.borderBottom = 'none';
+    e.style.border = 'none';
+  });
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;left:-9999px;top:0;width:880px;background:#fff;';
+  wrap.appendChild(clone);
+  document.body.appendChild(wrap);
+  setTimeout(() => {
+    const ML=0.39, MT=1.0, MR=0.39, MB=1.7, SCALE=1.8;
+    const printW=8.27-ML-MR, printH=11.69-MT-MB;
+    html2canvas(clone, {scale:SCALE, useCORS:true, logging:false, backgroundColor:'#ffffff'}).then(canvas => {
+      const {jsPDF} = window.jspdf;
+      const pdf = new jsPDF({unit:'in', format:'a4', orientation:'portrait'});
+      const ratio = printW / (canvas.width / SCALE);
+      const totalH = (canvas.height / SCALE) * ratio;
+      let yOff=0, page=0;
+      while(yOff < totalH){
+        if(page > 0) pdf.addPage();
+        const srcY = Math.round((yOff/ratio)*SCALE);
+        const srcH = Math.round((printH/ratio)*SCALE);
+        const slice = document.createElement('canvas');
+        slice.width = canvas.width;
+        slice.height = Math.min(srcH, canvas.height - srcY);
+        slice.getContext('2d').drawImage(canvas, 0, srcY, canvas.width, slice.height, 0, 0, canvas.width, slice.height);
+        pdf.addImage(slice.toDataURL('image/png',1), 'PNG', ML, MT, printW, (slice.height/SCALE)*ratio);
+        yOff += printH; page++;
+      }
+      pdf.save(fname + '.pdf');
+    }).finally(() => {
+      document.body.removeChild(wrap);
+      btn.disabled = false; btn.textContent = '💾 บันทึก PDF';
+    });
+  }, 300);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1057 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>ใบหักล้างเงินยืมทดรองจ่าย (กปภ.บง.27)</title>
+<style type="text/css">
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,700;1,400&display=swap');
+@page { size: A4; margin: 10mm; }
+body { margin:4pt; font-family:'TH Sarabun PSK','Sarabun',sans-serif; font-size:15px; color:#000; }
+td { font-size:15px; padding:2px 4px; }
+.box_data1 { font-family:'TH Sarabun PSK','Sarabun',sans-serif; font-size:15px; height:26px; line-height:26px; border:0px; border-bottom:1px dotted #333; background-color:transparent; box-sizing:border-box; }
+.headTitle { font-size:18px; font-weight:bold; }
+.border-bottom-line { border-bottom:1px solid #000 !important; }
+.no-border-bottom { border-bottom:0px !important; }
+.dotted-line-space { display:inline-block; width:100px; border-bottom:1px dotted #333; height:15px; vertical-align:bottom; margin:0 4px; }
+.print-bg-gray { background-color:#f2f2f2 !important; -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+.print-bg-darkgray { background-color:#e6e6e6 !important; -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+
+/* ── Input Panel ── */
+#input-panel {
+  font-family:'TH Sarabun PSK','Sarabun',sans-serif;
+  background:#f0f4f8; border:2px solid #1d5fa8; border-radius:12px;
+  padding:18px 22px; margin-bottom:18px; max-width:1010px;
+  margin-left:auto; margin-right:auto;
+}
+#input-panel h3 { margin:0 0 14px 0; font-size:16px; color:#0f2744; border-bottom:1px solid #c0d0e0; padding-bottom:8px; }
+.ip-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px 18px; }
+.ip-field { display:flex; flex-direction:column; gap:3px; }
+.ip-field.wide { grid-column:span 2; }
+.ip-field.full { grid-column:span 3; }
+.ip-field label { font-size:11.5px; font-weight:700; color:#4a5568; text-transform:uppercase; letter-spacing:.03em; }
+.ip-field input, .ip-field textarea {
+  padding:6px 10px; border:1.5px solid #c0d0e0; border-radius:6px;
+  font-family:'TH Sarabun PSK','Sarabun',sans-serif; font-size:14px; background:#fff;
+}
+.ip-field input:focus, .ip-field textarea:focus { outline:none; border-color:#1d5fa8; }
+.ip-section-title {
+  font-size:13px; font-weight:700; color:#0f2744; margin:14px 0 8px 0;
+  border-left:3px solid #1d5fa8; padding-left:8px;
+}
+.ip-code-grid { display:grid; grid-template-columns:1fr 1fr 2fr; gap:8px 12px; }
+.ip-amt-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px 14px; margin-top:4px; }
+.ip-amt-field { display:flex; flex-direction:column; gap:3px; }
+.ip-amt-field label { font-size:11.5px; font-weight:700; color:#4a5568; text-transform:uppercase; }
+.ip-amt-field input {
+  padding:6px 10px; border:1.5px solid #c0d0e0; border-radius:6px;
+  font-family:'TH Sarabun PSK','Sarabun',sans-serif; font-size:14px; text-align:right; background:#fff;
+}
+.ip-amt-field input:focus { outline:none; border-color:#1d5fa8; }
+.ip-amt-hint { font-size:11px; color:#888; margin-top:2px; }
+.btn-row { display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
+.btn-preview {
+  padding:9px 24px; background:#fff; color:#1d5fa8;
+  border:2px solid #1d5fa8; border-radius:8px;
+  font-family:'TH Sarabun PSK','Sarabun',sans-serif; font-size:15px; font-weight:700; cursor:pointer;
+}
+.btn-preview:hover { background:#eaf1fb; }
+.btn-print {
+  padding:9px 24px; background:#1d5fa8; color:#fff;
+  border:none; border-radius:8px;
+  font-family:'TH Sarabun PSK','Sarabun',sans-serif; font-size:15px; font-weight:700; cursor:pointer;
+}
+.btn-print:hover { background:#154a8a; }
+
+/* preview overlay */
+#preview-overlay {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.55);
+  z-index:9999; overflow:auto; padding:30px 20px;
+}
+#preview-box {
+  background:#fff; max-width:1040px; margin:0 auto;
+  border-radius:10px; overflow:hidden;
+  box-shadow:0 8px 40px rgba(0,0,0,.4);
+}
+#preview-toolbar {
+  background:#0f2744; color:#fff; padding:12px 20px;
+  display:flex; justify-content:space-between; align-items:center;
+}
+#preview-toolbar span { font-size:15px; font-weight:700; }
+.btn-close-preview {
+  background:rgba(255,255,255,.15); color:#fff; border:1px solid rgba(255,255,255,.3);
+  border-radius:6px; padding:6px 16px; cursor:pointer; font-size:14px; font-family:inherit;
+}
+.btn-close-preview:hover { background:rgba(255,255,255,.25); }
+.btn-print-from-preview {
+  background:#e8a020; color:#0f2744; border:none;
+  border-radius:6px; padding:7px 20px; cursor:pointer; font-size:14px; font-weight:700; font-family:inherit;
+}
+.btn-print-from-preview:hover { background:#f5c842; }
+#preview-content { padding:16px; }
+
+@media print {
+  #input-panel { display:none !important; }
+  #preview-overlay { display:none !important; }
+  body { margin:0; }
+}
+
+/* ── Site Header ── */
+.site-header{background:var(--navy,#0f2744);color:#fff;position:sticky;top:0;z-index:200;box-shadow:0 2px 12px rgba(0,0,0,.25);}
+.header-inner{max-width:1060px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
+.header-title{display:flex;align-items:center;gap:12px;}
+.header-icon{width:38px;height:38px;background:#e8a020;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.header-text h1{font-size:15px;font-weight:600;margin:0;}
+.header-text p{font-size:11px;color:rgba(255,255,255,.55);margin:0;margin-top:1px;}
+.btn-back{padding:6px 14px;border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.8);background:transparent;border-radius:6px;font-family:'Sarabun',sans-serif;font-size:12px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:5px;transition:background 0.2s;}
+.btn-back:hover{background:rgba(255,255,255,.1);color:#fff;}
+/* ── Print Logo ── */
+.pwa-print-logo{display:none;}
+@media print{
+  .pwa-print-logo{display:block !important;position:absolute;top:7px;left:55px;}
+  .pwa-print-logo img{width:95px;height:auto;}
+  .site-header{display:none !important;}
+}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+<!-- Print Logo -->
+<div class="pwa-print-logo">
+  <img src="https://www.pwa.co.th/images/pwalogo.gif" alt="PWA Logo">
+</div>
+
+<!-- Site Header -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-title">
+      <div class="header-icon">📋</div>
+      <div class="header-text">
+        <h1>ใบหักล้างเงินยืมทดรองจ่าย (กปภ.บง.27)</h1>
+        <p>การประปาส่วนภูมิภาค (กปภ.) · กองฝึกอบรมภูมิภาค 1</p>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <a class="btn-back" href="01.Main-Reports.html">← ย้อนกลับ</a>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════
+     INPUT PANEL
+══════════════════════════════════ -->
+<div id="input-panel">
+  <h3>📝 กรอกข้อมูล — ชื่อและรหัสพนักงาน</h3>
+
+  <div class="ip-grid">
+    <div class="ip-field">
+      <label>1. รหัสพนักงาน</label>
+      <input type="text" id="f_empid" value="" oninput="sync()" />
+    </div>
+    <div class="ip-field wide">
+      <label>2. ชื่อ (ผู้ขอหักล้าง)</label>
+      <input type="text" id="f_name" value="" oninput="sync()" />
+    </div>
+    <div class="ip-field full">
+      <label>3. เลขที่หลักสูตร และชื่อหลักสูตร</label>
+      <input type="text" id="f_course" value="" oninput="sync()" />
+    </div>
+    <div class="ip-field full">
+      <label>4. รายการ</label>
+      <input type="text" id="f_item" value="" oninput="sync()" />
+     
+    </div>
+  </div>
+
+  <div class="ip-section-title">5. รหัสบัญชี / รหัสศูนย์ต้นทุน / รหัสงบประมาณ</div>
+  <div class="ip-code-grid">
+    <div class="ip-field">
+      <label>รหัสบัญชี</label>
+      <input type="text" id="f_acct" value="6212001" oninput="sync()" />
+    </div>
+    <div class="ip-field">
+      <label>รหัสศูนย์ต้นทุน</label>
+      <input type="text" id="f_cost" value="100024" oninput="sync()" />
+    </div>
+    <div class="ip-field">
+      <label>รหัสงบประมาณ</label>
+      <input type="text" id="f_budget" value="1Y.100024.6212001" oninput="sync()" />
+    </div>
+  </div>
+
+  <div class="ip-section-title">6. จำนวนเงิน — กรอกตัวเลขทศนิยม ระบบแยกบาท/สตางค์เอง</div>
+  <div class="ip-amt-grid">
+    <div class="ip-amt-field">
+      <label>ค่าใช้จ่ายหลัก</label>
+      <input type="number" id="f_amt1" value="0" step="0.01" min="0" oninput="sync()" />
+      <div class="ip-amt-hint">เช่น 39275.75</div>
+    </div>
+    <div class="ip-amt-field">
+      <label>ภาษี 7%</label>
+      <input type="number" id="f_tax" value="0" step="0.01" min="0" oninput="sync()" />
+    </div>
+    <div class="ip-amt-field">
+      <label>หักภาษี ณ ที่จ่าย 1%</label>
+      <input type="number" id="f_wht" value="0" step="0.01" min="0" oninput="sync()" />
+    </div>
+    <div class="ip-amt-field">
+      <label>รวมค่าใช้จ่าย</label>
+      <input type="number" id="f_total" value="0" step="0.01" min="0" oninput="sync()" />
+    </div>
+    <div class="ip-amt-field">
+      <label>เงินเหลือส่งคืน (จ่ายเกิน)</label>
+      <input type="number" id="f_refund" value="0" step="0.01" min="0" oninput="sync()" />
+    </div>
+    <div class="ip-amt-field">
+      <label>รวมเงินหักล้าง <span style="font-size:10px;color:#1b5e20;font-weight:400;"></span></label>
+      <input type="number" id="f_settle" value="0" step="0.01" min="0" readonly
+        style="background:#e8f5e9;color:#1b5e20;cursor:not-allowed;border-color:#a5d6a7;font-weight:700;" />
+    </div>
+  </div>
+
+  <!-- ── Validation Box ── -->
+  <div id="val-box" style="margin-top:14px;border-radius:8px;overflow:hidden;font-size:13.5px;border:1.5px solid #ddd;">
+    <div style="background:#1d5fa8;color:#fff;padding:7px 14px;font-weight:700;font-size:13px;">
+      🔢 ตรวจสอบความถูกต้องของตัวเลข
+    </div>
+    <div style="padding:10px 16px;display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;background:#fff;">
+      <!-- สมการ 1 -->
+      <div>
+        <div style="font-size:11px;color:#666;margin-bottom:3px;font-weight:600;">สมการที่ 1 : ค่าใช้จ่ายหลัก + ภาษี 7% = หักภาษีฯ 1% + รวมค่าใช้จ่าย</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span id="v1_left" style="font-weight:700;"></span>
+          <span style="color:#888;">=</span>
+          <span id="v1_right" style="font-weight:700;"></span>
+          <span id="v1_status" style="font-size:13px;"></span>
+        </div>
+        <div id="v1_diff" style="font-size:11px;color:#b03030;margin-top:2px;"></div>
+      </div>
+      <!-- สมการ 2 -->
+      <div>
+        <div style="font-size:11px;color:#666;margin-bottom:3px;font-weight:600;">สมการที่ 2 : รวมเงินหักล้าง = รวมค่าใช้จ่าย + เงินเหลือส่งคืน</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span id="v2_left" style="font-weight:700;"></span>
+          <span style="color:#888;">=</span>
+          <span id="v2_right" style="font-weight:700;"></span>
+          <span id="v2_status" style="font-size:13px;"></span>
+        </div>
+        <div id="v2_diff" style="font-size:11px;color:#b03030;margin-top:2px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn-print"   onclick="window.print()">🖨 พิมพ์แบบฟอร์ม</button>
+    <button onclick="savePdf08(this)" style="background:linear-gradient(135deg,#1a56db,#1241b0);color:#fff;border:none;border-radius:8px;padding:10px 28px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(26,86,219,.3);transition:all .2s;">💾 บันทึก PDF</button>
+  </div>
+</div>
+
+
+
+<!-- ══════════════════════════════════
+     FORM
+══════════════════════════════════ -->
+<div id="form-wrap">
+<table width="1000" border="1" align="center" cellpadding="0" cellspacing="0" style="border-collapse:collapse; border:1px solid #000;">
+  <!-- หัวกระดาษ -->
+  <tr>
+    <td align="left" colspan="2" style="padding:0px;">
+      <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+        <tr height="85">
+          <td width="20%" align="center" valign="middle" style="border-right:1px solid #000;">
+            <img src="https://www.pwa.co.th/images/pwalogo.gif" alt="PWA Logo" style="display:block;margin:0 auto;width:95px;height:auto;" />
+          </td>
+          <td width="50%" align="center" valign="middle" style="border-right:1px solid #000;">
+            <div class="headTitle" style="font-size:25px;margin-bottom:15px;">การประปาส่วนภูมิภาค</div>
+            <div style="font-size:18px;font-weight:normal;">ใบหักล้างเงินยืมทดรองจ่าย (กปภ.บง.27)</div>
+          </td>
+        <td width="30%" valign="top" style="padding:0px;">
+              <div class="border-bottom-line" style="padding: 8px; height: 19px;">
+                  &nbsp;เลขที่ : <input name="txt_doc_no" type="text" class="box_data1 no-border-bottom" style="text-align:center; width:190px;" value="" />
+              </div>
+              <div class="border-bottom-line" style="padding: 8px; height: 19px;">
+                  &nbsp;วันที่ : <input name="txt_doc_date" type="text" class="box_data1 no-border-bottom" style="text-align:center; width:190px;" value="" />
+              </div>
+              <div style="padding: 8px; height: 19px;">
+                  &nbsp;เลขที่ใบยืม : <input name="txt_borrow_no" type="text" class="box_data1 no-border-bottom" style="text-align:center; width:160px;" value="" />
+              </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- รหัสพนักงาน / ชื่อ -->
+  <tr>
+    <td align="left" style="padding:0px;border-top:1px solid #000;">
+      <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+        <tr height="32">
+          <td width="70%" valign="middle" style="border-right:1px solid #000;border-bottom:none;padding-top:4px;padding-left:10px;">
+            รหัสพนักงาน : <input type="text" id="d_empid" class="box_data1" style="width:120px;text-align:center;" value="" readonly />
+            &nbsp;&nbsp;&nbsp;&nbsp;ชื่อ : <input type="text" id="d_name_top" class="box_data1" style="width:380px;text-align:left;padding-left:5px;" value="" readonly />
+          </td>
+          <td width="30%" valign="middle" style="border-bottom:none;padding-top:4px;padding-left:5px;">
+            &nbsp;กิจกรรม : <input type="text" class="box_data1" style="width:180px;text-align:center;" value="" />
+          </td>
+        </tr>
+        <tr height="32">
+          <td width="70%" valign="middle" style="border-right:1px solid #000;border-top:none;padding-bottom:4px;padding-left:10px;">
+            หน่วยงาน : <input type="text" class="box_data1" style="width:565px;text-align:left;padding-left:5px;border-bottom:1px dotted #333;" value="กองฝึกอบรมภูมิภาค 1" readonly />
+          </td>
+          <td width="30%" valign="middle" style="border-top:none;padding-bottom:4px;padding-left:5px;">
+            &nbsp;เลขที่การเดินทาง : <input type="text" class="box_data1" style="width:130px;text-align:center;border-bottom:1px dotted #333;" value="" />
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- เหตุผลการยืม -->
+  <tr>
+    <td align="left" style="padding:8px;border-top:1px solid #000;">
+      <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+        <tr>
+          <td valign="middle" style="font-size:15px;white-space:nowrap;padding:2px 0px;">
+            ขอหักล้างเงินยืมทดรองจ่ายเนื่องจาก :
+            &nbsp;<input type="checkbox" /> ซื้อพัสดุ
+            &nbsp;<input type="checkbox" /> เดินทางไปปฏิบัติงานต่างท้องที่
+            &nbsp;<input type="checkbox" checked /> อื่น ๆ (โปรดระบุ) :
+            <input type="text" class="box_data1" style="width:260px;text-align:left;padding-left:5px;border-bottom:0px;" value="ดำเนินการจัดฝึกอบรม" />
+          </td>
+        </tr>
+        <tr>
+          <td valign="middle" style="font-size:15px;padding:2px 0px;">
+            <input type="checkbox" /> เดินทางไปฝึกอบรม เลขที่หลักสูตร :
+            <input type="text" id="d_course" class="box_data1" style="width:680px;text-align:left;padding-left:5px;border-bottom:0px;" value="" />
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- ส่วนที่ 1 ตารางค่าใช้จ่าย -->
+  <tr>
+    <td align="left" valign="top" style="padding:0px;">
+      <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+        <tr height="28" class="print-bg-gray" bgcolor="#f2f2f2" style="border-bottom:1px solid #000;">
+          <td valign="middle" style="font-size:15px;font-weight:normal;padding-left:10px;">
+            ส่วนที่ 1 : การระบุรายละเอียดค่าใช้จ่าย
+          </td>
+        </tr>
+      </table>
+      <table width="100%" border="0" cellpadding="3" cellspacing="0" style="border-collapse:collapse;font-weight:normal;">
+        <thead>
+          <tr height="32" class="print-bg-gray" bgcolor="#f2f2f2">
+            <th width="5%"  style="font-weight:normal;border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;">ลำดับ</th>
+            <th width="45%" style="font-weight:normal;border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;">รายการ</th>
+            <th width="12%" style="font-weight:normal;border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;">รหัสบัญชี</th>
+            <th width="12%" style="font-weight:normal;border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;">รหัสศูนย์ต้นทุน</th>
+            <th width="14%" style="font-weight:normal;border-right:1px solid #000;border-bottom:1px solid #000;text-align:center;">รหัสงบประมาณ</th>
+            <th colspan="2" width="12%" style="font-weight:normal;border-bottom:1px solid #000;text-align:center;">จำนวนเงิน</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td align="center" valign="top" style="border-right:1px solid #000;border-bottom:1px solid #000;padding-top:10px;padding-bottom:10px;">1</td>
+            <td align="left" id="d_item" style="border-right:1px solid #000;border-bottom:1px solid #000;padding-top:10px;padding-bottom:10px;line-height:23px;"></td>
+            <td align="center" valign="top" id="d_acct" style="border-right:1px solid #000;border-bottom:1px solid #000;padding-top:10px;padding-bottom:10px;">6212001</td>
+            <td align="center" valign="top" id="d_cost" style="border-right:1px solid #000;border-bottom:1px solid #000;padding-top:10px;padding-bottom:10px;">100024</td>
+            <td align="center" valign="top" id="d_budget" style="border-right:1px solid #000;border-bottom:1px solid #000;padding-top:10px;padding-bottom:10px;">1Y.100024.6212001</td>
+            <td align="right" valign="top" id="d_amt1"  style="border-right:1px solid #000;border-bottom:1px solid #000;padding-top:10px;padding-bottom:10px;padding-right:5px;width:9%;"></td>
+            <td align="center" valign="top" id="d_amt1s" style="border-bottom:1px solid #000;padding-top:10px;padding-bottom:10px;width:3%;"></td>
+          </tr>
+          <tr>
+            <td colspan="5" align="left" style="border-right:1px solid #000;border-bottom:1px solid #000;padding-left:25px;">ภาษี 7%</td>
+            <td align="right" id="d_tax"  style="border-right:1px solid #000;border-bottom:1px solid #000;padding-right:5px;"></td>
+            <td align="center" id="d_taxs" style="border-bottom:1px solid #000;"></td>
+          </tr>
+          <tr>
+            <td colspan="5" align="left" style="border-right:1px solid #000;border-bottom:1px solid #000;padding-left:25px;">หักภาษี ณ ที่จ่าย 1%</td>
+            <td align="right" id="d_wht"  style="border-right:1px solid #000;border-bottom:1px solid #000;padding-right:5px;"></td>
+            <td align="center" id="d_whts" style="border-bottom:1px solid #000;"></td>
+          </tr>
+          <tr>
+            <td colspan="5" align="left" style="border-right:1px solid #000;border-bottom:1px solid #000;padding-left:25px;">รวมค่าใช้จ่าย</td>
+            <td align="right" id="d_total"  style="border-right:1px solid #000;border-bottom:1px solid #000;padding-right:5px;"></td>
+            <td align="center" id="d_totals" style="border-bottom:1px solid #000;"></td>
+          </tr>
+          <tr>
+            <td colspan="5" align="left" style="border-right:1px solid #000;border-bottom:1px solid #000;padding-left:25px;">จำนวนเงินเหลือจ่ายส่งคืน (จ่ายเกิน)</td>
+            <td align="right" id="d_refund"  style="border-right:1px solid #000;border-bottom:1px solid #000;padding-right:5px;"></td>
+            <td align="center" id="d_refunds" style="border-bottom:1px solid #000;"></td>
+          </tr>
+          <tr>
+            <td colspan="5" align="left" style="border-right:1px solid #000;border-bottom:1px solid #000;padding-left:25px;">รวมเงินหักล้าง</td>
+            <td align="right" id="d_settle"  style="border-right:1px solid #000;border-bottom:1px solid #000;padding-right:5px;"></td>
+            <td align="center" id="d_settles" style="border-bottom:1px solid #000;"></td>
+          </tr>
+        </tbody>
+      </table>
+      <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+        <tr height="30">
+          <td valign="middle" style="font-size:15px;font-weight:normal;padding-left:10px;">
+            <span style="text-decoration:underline;">หมายเหตุ:</span>&nbsp;
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- ลงชื่อผู้ขอหักล้าง / ผู้อนุมัติ -->
+  <tr>
+    <td align="left" style="padding:0px;">
+      <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+        <tr>
+          <td width="50%" valign="top" style="border-right:1px solid #000;padding:8px 10px;font-size:15px;">
+            <div style="margin-bottom:6px;">
+              <input type="checkbox" /> ขออนุมัติเบิกจ่ายเงินเพิ่มเป็นค่าใช้จ่าย <input type="text" style="width:140px;border:none;border-bottom:1px dotted #333;background:transparent;" value="" />
+            </div>
+            <div style="margin-bottom:10px;padding-left:20px;">
+              จำนวนเงิน <input type="text" style="width:120px;text-align:center;border:none;border-bottom:1px dotted #333;background:transparent;" value="" /> บาท &nbsp;&nbsp;&nbsp;&nbsp;ตามรายละเอียดแนบ
+            </div>
+            <div style="margin-bottom:10px;"><input type="checkbox" /> ขอหักล้างยืมเงิน</div>
+            <div style="width:100%;text-align:left;padding-top:4px;">
+              <div style="margin-bottom:4px;">ลงชื่อผู้ขอหักล้าง <input type="text" style="width:190px;border:none;border-bottom:1px dotted #333;background:transparent;" value="" /></div>
+              <div style="margin-bottom:4px;padding-left:102px;font-size:15px;">
+                ( <span id="d_name_sign1" style="display:inline-block;min-width:180px;text-align:center;border-bottom:1px dotted #333;"></span> )
+              </div>
+              <div style="margin-bottom:4px;font-size:15px;">
+                ตำแหน่ง : <input type="text" style="width:150px;border:none;border-bottom:1px dotted #000;background:transparent;" value="" />
+                วันที่ : <input type="text" style="width:150px;border:none;border-bottom:1px dotted #000;background:transparent;" value="" />
+              </div>
+            </div>
+          </td>
+          <td width="50%" valign="top" style="padding:8px 10px;font-size:15px;">
+            <div style="padding-top:70px;">
+              <div style="margin-bottom:4px;">
+                ลงชื่อผู้อนุมัติ : <input type="text" style="width:200px;border:none;border-bottom:1px dotted #333;background:transparent;" value="" /> ผู้บังคับบัญชา
+              </div>
+              <div style="margin-bottom:20px;padding-left:85px;font-size:15px;">
+                ( <input type="text" class="box_data1" style="width:200px;text-align:center;border-bottom:1px dotted #333;" value="" /> )
+              </div>
+              <div style="margin-bottom:4px;font-size:15px;">
+                ตำแหน่ง : <input type="text" style="width:150px;border:none;border-bottom:1px dotted #000;background:transparent;" value="" />
+                วันที่ : <input type="text" style="width:150px;border:none;border-bottom:1px dotted #000;background:transparent;" value="" />
+              </div>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- ส่วนที่ 2 -->
+  <tr>
+    <td align="left" style="padding:0px;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="border:0px;border-collapse:collapse;table-layout:fixed;">
+        <tr class="print-bg-darkgray" bgcolor="#e6e6e6">
+          <td colspan="2" style="padding:3px;border-bottom:1px solid #000;font-weight:normal;">
+            &nbsp;&nbsp;&nbsp;ส่วนที่ 2 : ได้รับเงินส่งคืน / จ่ายเกิน
+          </td>
+        </tr>
+        <tr>
+          <td width="50%" valign="top" style="border-right:1px solid #000;padding:0;box-sizing:border-box;">
+            <div style="padding:16px 15px 18px 15px;">
+              <div style="margin-bottom:14px;">
+                <input type="checkbox" /> ได้รับเงินส่งคืน &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;จำนวน
+                <input type="text" style="width:180px;border:none;border-bottom:1px dotted #000;background:transparent;text-align:center;" value="" /> บาท
+              </div>
+              <div style="margin-bottom:14px;font-size:15px;">
+                ประเภทเอกสาร : <input type="text" style="width:80px;border:none;border-bottom:1px dotted #000;background:transparent;" value="" />
+                &nbsp;เลขที่เอกสารผ่านรายการ : <input type="text" style="width:95px;border:none;border-bottom:1px dotted #000;background:transparent;" value="" />
+              </div>
+              <div style="margin-bottom:4px;">ลงชื่อ : <input type="text" style="width:210px;border:none;border-bottom:1px dotted #000;background:transparent;" value="" /></div>
+              <div style="margin-bottom:4px;padding-left:50px;font-size:15px;">
+                ( <input type="text" class="box_data1" style="width:180px;text-align:center;border-bottom:1px dotted #333;" value="" /> )
+              </div>
+              <div style="margin-bottom:4px;font-size:15px;">
+                ตำแหน่ง : <input type="text" style="width:150px;border:none;border-bottom:1px dotted #000;background:transparent;" value="" />
+                วันที่ : <input type="text" style="width:150px;border:none;border-bottom:1px dotted #000;background:transparent;" value="" />
+              </div>
+            </div>
+            <div style="border-bottom:1px solid #000;margin:0;"></div>
+            <div style="padding:18px 15px 18px 15px;">
+              <div style="margin-bottom:4px;font-size:15px;">ได้ตรวจสอบความถูกต้องแล้ว</div>
+              <div style="margin-bottom:4px;width:300px;text-align:left;">&nbsp;</div>
+              <div style="margin-bottom:4px;">ลงชื่อผู้ตรวจสอบ : <input type="text" style="width:210px;border:none;border-bottom:1px dotted #000;background:transparent;" value="" /></div>
+              <div style="margin-bottom:4px;padding-left:120px;font-size:15px;">
+                ( <input type="text" class="box_data1" style="width:180px;text-align:center;border-bottom:1px dotted #333;" value="" /> )
+              </div>
+              <div style="margin-bottom:10px;font-size:15px;">
+                ตำแหน่ง : <input type="text" style="width:235px;border:none;border-bottom:1px dotted #000;background:transparent;" value="" />
+                วันที่ : <input type="text" style="width:120px;border:none;border-bottom:1px dotted #000;background:transparent;" value="" />
+              </div>
+              <div style="margin-bottom:4px;font-size:15px;">
+                ลงชื่อหัวหน้างาน : <input type="text" style="width:180px;border:none;border-bottom:1px dotted #000;background:transparent;" value="" />
+                &nbsp;วันที่ : <input type="text" style="width:121px;border:none;border-bottom:1px dotted #000;background:transparent;" value="" />
+              </div>
+              <div style="margin-bottom:4px;padding-left:100px;font-size:15px;">
+                ( <input type="text" class="box_data1" style="width:180px;text-align:center;border-bottom:1px dotted #333;" value="" /> )
+              </div>
+            </div>
+          </td>
+          <td width="50%" valign="top" style="padding:0;box-sizing:border-box;">
+            <div style="padding:8px 15px;box-sizing:border-box;">
+              <div style="margin-bottom:4px;">
+                <input type="checkbox" /> จ่ายเงินคืนส่วนที่ขาด &nbsp;&nbsp;จำนวน
+                <input type="text" style="width:170px;border:none;border-bottom:1px dotted #000;background:transparent;text-align:center;" value="" /> บาท &nbsp;&nbsp;โดย
+              </div>
+              <div style="margin-bottom:6px;">
+                <input type="checkbox" /> เงินสดย่อย &nbsp;&nbsp;
+                <input type="checkbox" /> เช็ค &nbsp;&nbsp;เลขที่ใบเบิก :
+                <input type="text" style="width:90px;border:none;border-bottom:1px dotted #000;background:transparent;" value="" />
+                วันที่ : <input type="text" style="width:86px;border:none;border-bottom:1px dotted #000;background:transparent;" value="" />
+              </div>
+              <div style="margin-bottom:1px;padding-left:20px;">
+                ประเภทเอกสาร : <input type="text" style="width:80px;border:none;border-bottom:1px dotted #000;background:transparent;" value="" />
+                &nbsp;เลขที่เอกสารผ่านรายการ : <input type="text" style="width:85px;border:none;border-bottom:1px dotted #000;background:transparent;" value="" />
+              </div>
+            </div>
+            <div style="border-bottom:1px solid #000;width:100%;"></div>
+            <div style="padding:8px 15px 4px 15px;">
+              <div style="font-weight:normal;margin-bottom:4px;">เรียน ผู้ว่าการฯ</div>
+              <div style="margin-bottom:2px;">เพื่อโปรดอนุมัติ &nbsp;<input type="checkbox" /> จ่ายเงินเพิ่มส่วนที่ขาดจำนวนเงิน <span class="dotted-line-space"></span> บาท</div>
+              <div style="margin-bottom:3px;padding-left:99px;"><input type="checkbox" /> หักล้างเงินยืม</div>
+              <div style="margin-bottom:2px;">ลงชื่อ : <input type="text" style="width:210px;border:none;border-bottom:1px dotted #000;background:transparent;" value="" /></div>
+              <div style="margin-bottom:8px;padding-left:48px;font-size:15px;">
+                ( <input type="text" class="box_data1" style="width:180px;text-align:center;border-bottom:1px dotted #333;" value="" /> )
+              </div>
+              <div style="margin-bottom:8px;font-size:15px;">
+                ตำแหน่ง : <input type="text" style="width:150px;border:none;border-bottom:1px dotted #000;background:transparent;" value="" />
+                วันที่ : <input type="text" style="width:150px;border:none;border-bottom:1px dotted #000;background:transparent;" value="" />
+              </div>
+            </div>
+            <div style="border-bottom:1px solid #000;width:100%;"></div>
+            <div style="padding:8px 15px 4px 15px;">
+              <div style="margin-bottom:2px;">อนุมัติ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="checkbox" /> ให้จ่ายเงินเพิ่มได้จำนวนเงิน <span class="dotted-line-space"></span> บาท</div>
+              <div style="margin-bottom:16px;padding-left:80px;"><input type="checkbox" /> หักล้างเงินยืม</div>
+              <div style="margin-bottom:8px;">ลงชื่อ : <input type="text" style="width:210px;border:none;border-bottom:1px dotted #000;background:transparent;" value="" /></div>
+              <div style="margin-bottom:8px;padding-left:45px;font-size:15px;">
+                ( <input type="text" class="box_data1" style="width:190px;text-align:center;border-bottom:1px dotted #333;" value="" /> )
+              </div>
+              <div style="margin-bottom:8px;font-size:15px;">
+                ตำแหน่ง : <input type="text" style="width:150px;border:none;border-bottom:1px dotted #000;background:transparent;" value="" />
+                วันที่ : <input type="text" style="width:150px;border:none;border-bottom:1px dotted #000;background:transparent;" value="" />
+              </div>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- ส่วนที่ 3 -->
+  <tr height="24" class="print-bg-darkgray" bgcolor="#e6e6e6" style="border-top:1px solid #000;">
+    <td align="left"><span style = "font-weight:400;"</style>&nbsp;&nbsp;ส่วนที่ 3 : การคืนงบประมาณ</span></td>
+  </tr>
+  <tr>
+    <td align="left" style="padding:0px;">
+      <table width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout:fixed;border-collapse:collapse;">
+        <tr>
+          <td width="50%" valign="top" style="border-right:1px solid #000;padding:10px 10px 10px 15px;box-sizing:border-box;">
+            <div style="margin-bottom:10px;">เลขที่เอกสารการกันงบประมาณ : <input type="text" class="box_data1" style="width:237px;" value="" /></div>
+            <div style="margin-bottom:6px;">ลงชื่อผู้บันทึกจ่ายงบประมาณ : <input type="text" class="box_data1" style="width:250px;" value="" /></div>
+            <div style="margin-bottom:12px;padding-left:190px;font-size:15px;">
+              ( <input type="text" class="box_data1" style="width:230px;text-align:center;border-bottom:1px dotted #333;" value="" /> )
+            </div>
+            <div style="margin-bottom:6px;font-size:15px;">
+              ตำแหน่ง : <input type="text" class="box_data1" style="width:150px;" value="" />
+              &nbsp;วันที่ : <input type="text" class="box_data1" style="width:115px;" value="" />
+            </div>
+          </td>
+          <td width="50%" valign="top" style="padding:10px 10px 10px 20px;box-sizing:border-box;">
+            <div style="margin-bottom:10px;height:20px;">&nbsp;</div>
+            <div style="margin-bottom:6px;">อนุมัติโดย : <input type="text" class="box_data1" style="width:215px;" value="" /></div>
+            <div style="margin-bottom:12px;padding-left:65px;font-size:15px;">
+              ( <input type="text" class="box_data1" style="width:210px;text-align:center;border-bottom:1px dotted #333;" value="" /> )
+            </div>
+            <div style="margin-bottom:6px;font-size:15px;">
+              ตำแหน่ง : <input type="text" class="box_data1" style="width:150px;" value="" />
+              &nbsp;วันที่ : <input type="text" class="box_data1" style="width:115px;" value="" />
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- ส่วนที่ 4 -->
+  <tr height="24" class="print-bg-darkgray" bgcolor="#e6e6e6" style="border-top:1px solid #000;">
+    <td align="left"><span>&nbsp;&nbsp;ส่วนที่ 4 : การรับเงิน</span></td>
+  </tr>
+  <tr>
+    <td align="left" style="padding:0px;">
+      <table width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout:fixed;border-collapse:collapse;">
+        <tr>
+          <td width="50%" valign="top" style="border-right:1px solid #000;padding:10px 10px 10px 15px;box-sizing:border-box;">
+            <div style="margin-bottom:6px;font-size:15px;">
+              ลงชื่อผู้รับเงิน : <input type="text" class="box_data1" style="width:180px;" value="" />
+              &nbsp;วันที่ : <input type="text" class="box_data1" style="width:115px;" value="" />
+            </div>
+            <div style="margin-bottom:4px;padding-left:80px;font-size:15px;">
+              ( <input type="text" class="box_data1" style="width:180px;text-align:center;border-bottom:1px dotted #333;" value="" /> )
+            </div>
+          </td>
+          <td width="50%" valign="top" style="padding:10px 10px 10px 20px;box-sizing:border-box;">
+            <div style="margin-bottom:6px;font-size:15px;">
+              ลงชื่อผู้จ่ายเงิน : <input type="text" class="box_data1" style="width:180px;" value="" />
+              &nbsp;วันที่ : <input type="text" class="box_data1" style="width:115px;" value="" />
+            </div>
+            <div style="margin-bottom:4px;padding-left:85px;font-size:15px;">
+              ( <input type="text" class="box_data1" style="width:180px;text-align:center;border-bottom:1px dotted #333;" value="" /> )
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</div><!-- end form-wrap -->
+
+<script>
+function fmtN(n) {
+    return n.toLocaleString('th-TH', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function splitAmt(val) {
+    var n = parseFloat(val) || 0;
+    var baht   = Math.floor(n);
+    var satang = Math.round((n - baht) * 100);
+    return { baht: baht.toLocaleString('th-TH'), satang: satang < 10 ? '0'+satang : ''+satang };
+}
+function setText(id, val) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = val;
+}
+function getVal(id) {
+    return parseFloat(document.getElementById(id).value) || 0;
+}
+function setStatusEl(statusId, diffId, ok, diff) {
+    var s = document.getElementById(statusId);
+    var d = document.getElementById(diffId);
+    if (ok) {
+        s.textContent = '✅ ถูกต้อง';
+        s.style.color = '#1a7a4a';
+        d.textContent = '';
+    } else {
+        s.textContent = '❌ ไม่ถูกต้อง';
+        s.style.color = '#b03030';
+        d.textContent = 'ผลต่าง: ' + fmtN(Math.abs(diff)) + ' บาท';
+    }
+}
+
+function sync() {
+    /* ── รวมเงินหักล้าง = korTotal จาก 05 (ไม่คำนวณอัตโนมัติ) ── */
+    var total  = getVal('f_total');
+    var refund = getVal('f_refund');
+    var settle = getVal('f_settle'); // ค่า korTotal จาก GSheet
+
+    /* ── validation ── */
+    var amt1 = getVal('f_amt1');
+    var tax  = getVal('f_tax');
+    var wht  = getVal('f_wht');
+
+    // สมการ 1: amt1 + tax = wht + total
+    var left1  = Math.round((amt1 + tax) * 100) / 100;
+    var right1 = Math.round((wht + total) * 100) / 100;
+    var ok1    = Math.abs(left1 - right1) < 0.005;
+    document.getElementById('v1_left').textContent  = fmtN(left1)  + ' บ.';
+    document.getElementById('v1_right').textContent = fmtN(right1) + ' บ.';
+    setStatusEl('v1_status','v1_diff', ok1, left1 - right1);
+
+    // สมการ 2: korTotal(05) = grandTotal(06) + refund
+    var left2  = Math.round(settle * 100) / 100;
+    var right2 = Math.round((total + refund) * 100) / 100;
+    var ok2    = Math.abs(left2 - right2) < 0.005;
+    document.getElementById('v2_left').textContent  = fmtN(left2)  + ' บ.';
+    document.getElementById('v2_right').textContent = fmtN(right2) + ' บ.';
+    setStatusEl('v2_status','v2_diff', ok2, left2 - right2);
+
+    /* ── highlight input boxes ── */
+    ['f_amt1','f_tax','f_wht','f_total'].forEach(function(id){
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.style.borderColor = ok1 ? '#1a7a4a' : '#b03030';
+        el.style.background  = ok1 ? '#eaf5ef' : '#fdf0f0';
+    });
+
+    /* ── validation banner color ── */
+    var box = document.getElementById('val-box');
+    if (box) box.style.borderColor = (ok1 && ok2) ? '#1a7a4a' : '#b03030';
+
+    /* ── sync form ── */
+    var empid  = document.getElementById('f_empid').value;
+    var name   = document.getElementById('f_name').value;
+    var course = document.getElementById('f_course').value;
+    var item   = document.getElementById('f_item').value;
+    var acct   = document.getElementById('f_acct').value;
+    var cost   = document.getElementById('f_cost').value;
+    var budget = document.getElementById('f_budget').value;
+
+    var de = document.getElementById('d_empid');   if (de) de.value = empid;
+    var dn = document.getElementById('d_name_top'); if (dn) dn.value = name;
+    var dc = document.getElementById('d_course');   if (dc) dc.value = course;
+    setText('d_item',   item);
+    setText('d_acct',   acct);
+    setText('d_cost',   cost);
+    setText('d_budget', budget);
+
+    var a1 = splitAmt(amt1);    setText('d_amt1',    a1.baht);   setText('d_amt1s',   a1.satang);
+    var a2 = splitAmt(tax);     setText('d_tax',     a2.baht);   setText('d_taxs',    a2.satang);
+    var a3 = splitAmt(wht);     setText('d_wht',     a3.baht);   setText('d_whts',    a3.satang);
+    var a4 = splitAmt(total);   setText('d_total',   a4.baht);   setText('d_totals',  a4.satang);
+    var a5 = splitAmt(refund);  setText('d_refund',  a5.baht);   setText('d_refunds', a5.satang);
+    var a6 = splitAmt(settle);  setText('d_settle',  a6.baht);   setText('d_settles', a6.satang);
+    setText('d_name_sign1', name);
+}
+
+/* ── Preview ── */
+function showPreview() {
+    sync();
+    var formHTML = document.getElementById('form-wrap').innerHTML;
+    document.getElementById('preview-content').innerHTML = formHTML;
+    document.getElementById('preview-overlay').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+function closePreview() {
+    document.getElementById('preview-overlay').style.display = 'none';
+    document.body.style.overflow = '';
+}
+function closePreviewOutside(e) {
+    if (e.target === document.getElementById('preview-overlay')) closePreview();
+}
+
+/* sync() จะถูกเรียกหลัง loadFromGSheet เสร็จเท่านั้น */
+
+document.addEventListener('DOMContentLoaded', function() {
+  // ดึง no จาก sessionStorage (ส่งมาจากไฟล์ 01) เหมือนกับไฟล์ 05
+  let d = {};
+  try {
+    const slotRaw = sessionStorage.getItem('budgetSlotData') || localStorage.getItem('budgetSlotData');
+    if (slotRaw) d = JSON.parse(slotRaw);
+    else d = JSON.parse(sessionStorage.getItem('courseData') || '{}');
+  } catch(e) {}
+
+  const no08    = d.no || d.courseNo || '';
+  const course  = d.course || '';
+  const batch   = d.batch  || '';
+  console.log('[08] budgetSlotData:', d);
+  console.log('[08] no08:', no08, '| course:', course, '| batch:', batch);
+
+  // ข้อ 3: เลขที่หลักสูตร และชื่อหลักสูตร
+  const f_course = document.getElementById('f_course');
+  if (f_course && (no08 || course)) {
+    const batchText = batch ? ' รุ่นที่ ' + batch : '';
+    f_course.value = (no08 ? no08 + ' ' : '') + 'หลักสูตร "' + course + '"' + batchText;
+  }
+
+  // ข้อ 4: รายการ
+  const f_item = document.getElementById('f_item');
+  if (f_item && course) {
+    const batchText = batch ? ' รุ่นที่ ' + batch : '';
+    f_item.value = 'ค่าใช้จ่ายในการดำเนินการจัดหลักสูตร "' + course + '"' + batchText;
+  }
+
+  if (no08) {
+    loadFromGSheet(no08);
+  } else {
+    if (typeof sync === 'function') sync();
+  }
+});
+
+/* ฟังก์ชันช่วยแปลงฟอร์แมตวันที่ ISO (YYYY-MM-DD) เป็นวันที่ไทย */
+function thDateFormat(isoDateStr) {
+  if (!isoDateStr) return '';
+  try {
+    const parts = isoDateStr.split('-');
+    if (parts.length !== 3) return isoDateStr;
+    const y = parseInt(parts[0]);
+    const m = parseInt(parts[1]);
+    const d = parseInt(parts[2]);
+    
+    const thMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+    return `${d} ${thMonths[m - 1]} ${y + 543}`;
+  } catch (err) {
+    return isoDateStr;
+  }
+}
+
+/* ============================================================
+   GOOGLE SHEET API
+============================================================ */
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbySJROnBMkxFBNyPvET3DC5ihdCz03OPzvi2xXm6cMQpoPFsi2pAiTQAQIVSDUwQNVZ5w/exec';
+
+/* ── Loading overlay helpers (เหมือนไฟล์ 05) ── */
+function _showLoader08(msg) {
+  let el = document.getElementById('gs08-loader');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'gs08-loader';
+    el.style.cssText = 'position:fixed;inset:0;background:rgba(15,39,68,.55);z-index:9998;display:flex;align-items:center;justify-content:center;';
+    el.innerHTML =
+      '<div style="background:transparent;padding:16px;min-width:200px;max-width:280px;width:90%;' +
+      'font-family:Sarabun,sans-serif;text-align:center;box-sizing:border-box;">' +
+      '<svg width="48" height="48" viewBox="0 0 48 48" style="display:block;margin:0 auto 14px;animation:gs8spin .9s linear infinite;transform-origin:center;filter:drop-shadow(0 0 6px rgba(255,255,255,0.6));">' +
+      '<circle cx="24" cy="24" r="20" fill="none" stroke="#ffffff" stroke-width="4"/>' +
+      '<circle cx="24" cy="24" r="20" fill="none" stroke="#1a56db" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="35 90"/>' +
+      '</svg>' +
+      '<div id="gs08-loader-msg" style="font-size:15px;color:#ffffff;font-weight:600;line-height:1.6;' +
+      'text-shadow:0 2px 4px rgba(0,0,0,0.6), 0 4px 12px rgba(0,0,0,0.3);"></div>' +
+      '</div>';
+    document.head.insertAdjacentHTML('beforeend', '<style>@keyframes gs8spin{to{transform:rotate(360deg)}}</style>');
+    document.body.appendChild(el);
+  }
+  el.style.display = 'flex';
+  const m = document.getElementById('gs08-loader-msg');
+  if (m) m.textContent = msg || 'กำลังโหลด...';
+}
+
+function _hideLoader08() {
+  const el = document.getElementById('gs08-loader');
+  if (el) el.style.display = 'none';
+}
+
+function _showStatus08(msg, type) {
+  const colors = {
+    ok:    ['#d1fae5','#065f46','#10b981'],
+    warn:  ['#fef3c7','#92400e','#f59e0b'],
+    error: ['#fee2e2','#991b1b','#ef4444'],
+  };
+  const [bg, text, border] = colors[type] || colors.ok;
+  let el = document.getElementById('gs08-status');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'gs08-status';
+    el.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);' +
+      'z-index:9999;padding:12px 24px;border-radius:10px;font-family:Sarabun,sans-serif;' +
+      'font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.15);white-space:nowrap;max-width:90vw;';
+    document.body.appendChild(el);
+  }
+  el.style.background = bg;
+  el.style.color      = text;
+  el.style.border     = '1.5px solid ' + border;
+  el.textContent      = msg;
+  el.style.display    = 'block';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
+async function gsApi(action, data, no) {
+  try {
+    let url = GAS_URL + '?action=' + action;
+    if (no) url += '&no=' + encodeURIComponent(no);
+    const opts = data
+      ? { method: 'POST', body: new URLSearchParams({ action, data: JSON.stringify(data) }) }
+      : { method: 'GET' };
+    const res = await fetch(url, opts);
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || 'API error');
+    return json.data;
+  } catch(e) {
+    console.warn('gsApi error:', e);
+    return null;
+  }
+}
+
+async function loadFromGSheet(no) {
+  if (!no) return;
+  _showLoader08('📥 กำลังโหลดข้อมูล');
+  console.log('[08] loadFromGSheet called with no:', no);
+  try {
+  const gsRow = await gsApi('getByNo', null, no);
+  console.log('[08] gsRow:', gsRow);
+  if (!gsRow) {
+    _hideLoader08();
+    _showStatus08('⚠️ ไม่พบข้อมูลสำหรับเลขที่ ' + no, 'warn');
+    console.warn('ไม่พบข้อมูลใน GSheet สำหรับ no:', no); return;
+  }
+
+  // ดึงข้อมูลจาก GSheet เท่านั้น — ไม่บันทึกอะไรลง Sheet ทั้งสิ้น
+  const cr = gsRow.course   || {};
+  const gb = gsRow.budget   || {};
+  const g6 = gsRow.actual06 || {};
+
+  // ข้อ 3: อัปเดตจาก GSheet ถ้ามีข้อมูล course
+  if (cr.course) {
+    const batchText = cr.batch ? ' รุ่นที่ ' + cr.batch : '';
+    const f_course = document.getElementById('f_course');
+    if (f_course) f_course.value = (cr.no||no) + ' หลักสูตร "' + cr.course + '"' + batchText;
+    const f_item = document.getElementById('f_item');
+    if (f_item) f_item.value = 'ค่าใช้จ่ายในการดำเนินการจัดหลักสูตร "' + cr.course + '"' + batchText;
+  }
+
+  // ข้อ 6: จำนวนเงิน
+  // 2.1 ค่าใช้จ่ายหลัก ← actual06.totalVal
+  // 2.2 ภาษี 7%        ← actual06.totalVat
+  // 2.3 หักภาษี 1%     ← actual06.totalWht
+  // 2.4 รวมค่าใช้จ่าย  ← actual06.grandTotal
+  // 2.5 เงินเหลือส่งคืน← budget.gorTotal - actual06.grandTotal
+  // 2.6 รวมเงินหักล้าง ← budget.gorTotal
+  const totalVal     = parseFloat(g6.totalVal)    || 0;
+  const totalVat     = parseFloat(g6.totalVat)    || 0;
+  const totalWht     = parseFloat(g6.totalWht)    || 0;
+  const grandTotal06 = parseFloat(g6.grandTotal)  || 0;
+  const gorTotal     = parseFloat(gb.gorTotal)    || 0;
+  const refund       = Math.round((gorTotal - grandTotal06) * 100) / 100;
+
+  const set = (id, val) => { const el = document.getElementById(id); if(el) el.value = val.toFixed(2); };
+  set('f_amt1',   totalVal);
+  set('f_tax',    totalVat);
+  set('f_wht',    totalWht);
+  set('f_total',  grandTotal06);
+  set('f_refund', refund);
+  set('f_settle', gorTotal);
+
+  // ตรวจสอบสมการ 2: gorTotal = grandTotal06 + refund
+  const eq2_ok = Math.abs(gorTotal - (grandTotal06 + refund)) < 0.005;
+  console.log('สมการ 2:', gorTotal, '=', grandTotal06, '+', refund, '→', eq2_ok ? '✅' : '❌');
+
+  // sync หลังใส่ค่าครบแล้วเท่านั้น
+  if (typeof sync === 'function') sync();
+  _hideLoader08();
+  _showStatus08('✅ โหลดข้อมูลสำเร็จ', 'ok');
+  } catch(e) {
+    _hideLoader08();
+    _showStatus08('❌ โหลดไม่สำเร็จ: ' + e.message, 'error');
+    console.error('[08] loadFromGSheet error:', e);
+  }
+}
+
+
+/* ── SAVE PDF ── */
+function savePdf08(btn){
+  const el = document.getElementById('form-wrap');
+  if(!el){ alert('ไม่พบแบบฟอร์ม'); return; }
+  btn.disabled = true; btn.textContent = '⏳ กำลังสร้าง...';
+
+  // --- อ่าน computed style ของทุก element ก่อน clone ---
+  const allEls = el.querySelectorAll('*');
+  const elData = [];
+  allEls.forEach(e => {
+    const cs = window.getComputedStyle(e);
+    elData.push({
+      tag: e.tagName,
+      borderRight:  parseFloat(cs.borderRightWidth)  > 0 ? '1px solid #000' : 'none',
+      borderBottom: parseFloat(cs.borderBottomWidth) > 0
+        ? (cs.borderBottomStyle === 'dotted' ? '1px dotted #333' : '1px solid #000')
+        : 'none',
+      // เก็บ background
+      bg: cs.backgroundColor,
+    });
+  });
+
+  const clone = el.cloneNode(true);
+
+  // ลบ shadow/transition ทั้งหมด
+  clone.querySelectorAll('*').forEach(e => {
+    e.style.boxShadow = 'none';
+    e.style.outline   = 'none';
+    e.style.transition = 'none';
+  });
+  clone.style.background = '#fff';
+
+  // --- ตาราง: separate border ไม่ซ้อนเส้น ---
+  const outerTable = clone.querySelector('table');
+  if(outerTable){
+    outerTable.style.borderCollapse = 'separate';
+    outerTable.style.borderSpacing  = '0';
+    outerTable.style.borderTop      = '1px solid #000';
+    outerTable.style.borderLeft     = '1px solid #000';
+    outerTable.style.borderRight    = 'none';
+    outerTable.style.borderBottom   = 'none';
+  }
+  clone.querySelectorAll('table table').forEach(tbl => {
+    tbl.style.borderCollapse = 'separate';
+    tbl.style.borderSpacing  = '0';
+    tbl.style.border         = 'none';
+  });
+  const origCells = el.querySelectorAll('td, th');
+  const cloneCells = clone.querySelectorAll('td, th');
+  origCells.forEach((orig, i) => {
+    const cs = window.getComputedStyle(orig);
+    const cl = cloneCells[i];
+    if(!cl) return;
+    cl.style.borderTop    = 'none';
+    cl.style.borderLeft   = 'none';
+    cl.style.borderRight  = parseFloat(cs.borderRightWidth)  > 0 ? '1px solid #000' : 'none';
+    cl.style.borderBottom = parseFloat(cs.borderBottomWidth) > 0 ? '1px solid #000' : 'none';
+  });
+
+  // --- input/select: แปลงเป็น span คงเส้น dotted ---
+  const origInputs = el.querySelectorAll('input[type=text], input:not([type]), input[type=number], select, textarea');
+  const cloneInputs = clone.querySelectorAll('input[type=text], input:not([type]), input[type=number], select, textarea');
+  origInputs.forEach((orig, i) => {
+    const cl = cloneInputs[i];
+    if(!cl) return;
+    const cs = window.getComputedStyle(orig);
+    const span = document.createElement('span');
+    // คง border-bottom dotted ถ้ามี
+    const hasDotted = parseFloat(cs.borderBottomWidth) > 0 && cs.borderBottomStyle === 'dotted';
+    const hasSolid  = parseFloat(cs.borderBottomWidth) > 0 && cs.borderBottomStyle === 'solid';
+    span.style.cssText = [
+      `display:inline-block`,
+      `font-family:'TH Sarabun PSK','Sarabun',sans-serif`,
+      `font-size:${cs.fontSize}`,
+      `font-weight:${cs.fontWeight}`,
+      `color:#000`,
+      `width:${cs.width}`,
+      `text-align:${cs.textAlign}`,
+      `line-height:${cs.height}`,
+      `height:${cs.height}`,
+      `vertical-align:bottom`,
+      `background:transparent`,
+      hasDotted ? 'border-bottom:1px dotted #333' : (hasSolid ? 'border-bottom:1px solid #000' : ''),
+      `padding:0 2px`,
+      `box-sizing:border-box`,
+    ].filter(Boolean).join(';');
+    span.textContent = orig.tagName === 'SELECT'
+      ? (orig.options[orig.selectedIndex]?.text || '')
+      : orig.value;
+    cl.parentNode.replaceChild(span, cl);
+  });
+
+  // checkbox: แปลงเป็น [✓] หรือ [ ]
+  clone.querySelectorAll('input[type=checkbox]').forEach((cb, i) => {
+    const orig = el.querySelectorAll('input[type=checkbox]')[i];
+    const span = document.createElement('span');
+    span.style.cssText = 'display:inline-block;width:14px;height:14px;border:1px solid #000;text-align:center;line-height:14px;font-size:11px;vertical-align:middle;';
+    span.textContent = (orig && orig.checked) ? '✓' : '';
+    cb.parentNode.replaceChild(span, cb);
+  });
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;left:-9999px;top:0;width:1050px;background:#fff;padding:4px;';
+  wrap.appendChild(clone);
+  document.body.appendChild(wrap);
+
+  setTimeout(() => {
+    const ML=0.39, MT=0.8, MR=0.39, MB=0.8, SCALE=1.8;
+    const printW=8.27-ML-MR, printH=11.69-MT-MB;
+    html2canvas(clone, {scale:SCALE, useCORS:true, logging:false, backgroundColor:'#ffffff'}).then(canvas => {
+      const {jsPDF} = window.jspdf;
+      const pdf = new jsPDF({unit:'in', format:'a4', orientation:'portrait'});
+      const ratio = printW / (canvas.width / SCALE);
+      const totalH = (canvas.height / SCALE) * ratio;
+      let yOff=0, page=0;
+      while(yOff < totalH){
+        if(page > 0) pdf.addPage();
+        const srcY  = Math.round((yOff/ratio)*SCALE);
+        const srcH  = Math.round((printH/ratio)*SCALE);
+        const slice = document.createElement('canvas');
+        slice.width  = canvas.width;
+        slice.height = Math.min(srcH, canvas.height - srcY);
+        slice.getContext('2d').drawImage(canvas, 0, srcY, canvas.width, slice.height, 0, 0, canvas.width, slice.height);
+        pdf.addImage(slice.toDataURL('image/png',1), 'PNG', ML, MT, printW, (slice.height/SCALE)*ratio);
+        yOff += printH; page++;
+      }
+      pdf.save('แบบฟอร์ม_PWA27.pdf');
+    }).finally(() => {
+      document.body.removeChild(wrap);
+      btn.disabled = false; btn.textContent = '💾 บันทึก PDF';
+    });
+  }, 300);
+}
+</script>
+</body>
+</html>

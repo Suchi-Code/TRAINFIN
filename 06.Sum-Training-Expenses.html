@@ -1,0 +1,1729 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>รายงาน — กฝภ.1 กปภ.</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================ */
+:root{
+  --navy:#0f2744; --navy-mid:#1a3a5c; --blue:#1d5fa8; --blue-light:#3178c6;
+  --accent:#e8a020; --accent-light:#f5c842;
+  --gray-50:#f7f8fa; --gray-100:#eef0f4; --gray-200:#dde1e9;
+  --gray-400:#8f97a8; --text:#1e2533; --text-soft:#4f5a6e;
+  --border:#dde1e9; --green:#1a7a4a; --green-bg:#eaf5ef;
+  --amber-bg:#fef7ea; --amber:#b87000;
+  --info-bg:#eaf1fb; --info:#1d5fa8;
+  --red-bg:#fdf0f0; --red:#b03030;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',sans-serif;background:var(--gray-50);color:var(--text);font-size:14px;line-height:1.6}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.site-header{background:var(--navy);color:white;position:sticky;top:0;z-index:200;box-shadow:0 2px 12px rgba(0,0,0,.25)}
+.header-inner{max-width:1060px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.header-title{display:flex;align-items:center;gap:12px}
+.header-icon{width:38px;height:38px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.header-text h1{font-size:15px;font-weight:600}
+.header-text p{font-size:11px;color:rgba(255,255,255,.55);margin-top:1px}
+.btn-back{padding:6px 14px;border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.8);background:transparent;border-radius:6px;font-family:'Sarabun',sans-serif;font-size:12px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+.btn-back:hover{background:rgba(255,255,255,.1)}
+.btn-print-hdr{padding:6px 16px;background:var(--accent);color:var(--navy);border:none;border-radius:6px;font-family:'Sarabun',sans-serif;font-size:12px;font-weight:600;cursor:pointer}
+.btn-print-hdr:hover{background:var(--accent-light)}
+.btn-reset-hdr{padding:6px 14px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.25);border-radius:6px;font-family:'Sarabun',sans-serif;font-size:12px;cursor:pointer}
+.btn-reset-hdr:hover{background:rgba(255,255,255,.2)}
+
+/* ============================================================
+   REPORT TAB BAR
+   ============================================================ */
+.report-nav{background:var(--navy-mid);border-top:1px solid rgba(255,255,255,.08)}
+.report-nav-inner{max-width:1060px;margin:0 auto;padding:0 24px;display:flex;gap:0;overflow-x:auto}
+.report-nav-inner button{
+  color:rgba(255,255,255,.6);background:transparent;border:none;border-bottom:2px solid transparent;
+  font-family:'Sarabun',sans-serif;font-size:13px;padding:10px 18px;cursor:pointer;
+  white-space:nowrap;transition:all .15s;display:flex;align-items:center;gap:6px
+}
+.report-nav-inner button:hover{color:white;background:rgba(255,255,255,.06)}
+.report-nav-inner button.active{color:var(--accent-light);border-bottom-color:var(--accent);font-weight:500}
+
+/* ============================================================
+   PAGE LAYOUT
+   ============================================================ */
+.page{max-width:1060px;margin:0 auto;padding:24px 24px 60px}
+.report-panel{display:none}
+.report-panel.active{display:block}
+
+/* ============================================================
+   SHARED: META BOX
+   ============================================================ */
+.meta-box{background:white;border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:20px}
+.meta-title{font-size:11px;font-weight:700;color:var(--text-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
+.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.meta-wide{grid-column:1/-1}
+.meta-field{display:flex;flex-direction:column;gap:4px}
+.meta-field label{font-size:11px;font-weight:600;color:var(--text-soft)}
+.meta-field input,.meta-field select{padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-family:'Sarabun',sans-serif;font-size:13px;color:var(--text)}
+.meta-field input:focus,.meta-field select:focus{outline:none;border-color:var(--blue)}
+
+/* ============================================================
+   SHARED: TOOLBAR
+   ============================================================ */
+.toolbar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.btn-primary{padding:7px 18px;background:var(--blue);color:white;border:none;border-radius:6px;font-family:'Sarabun',sans-serif;font-size:13px;cursor:pointer;font-weight:500}
+.btn-primary:hover{background:var(--blue-light)}
+.btn-danger{padding:7px 14px;background:var(--red-bg);color:var(--red);border:1px solid var(--red);border-radius:6px;font-family:'Sarabun',sans-serif;font-size:13px;cursor:pointer}
+
+/* ============================================================
+   SHARED: TABLE
+   ============================================================ */
+.tbl-wrap{border-radius:10px;border:1px solid var(--border);overflow:hidden;margin-bottom:16px}
+table.rpt{width:100%;border-collapse:collapse;font-size:13px}
+table.rpt thead th{background:var(--navy);color:white;padding:10px 14px;font-weight:500;text-align:center}
+table.rpt thead th.left{text-align:left}
+table.rpt td{padding:7px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+table.rpt td.left{text-align:left}
+table.rpt tbody tr:last-child td{border-bottom:none}
+/* Row types */
+.rcat td{background:var(--navy);color:white;font-weight:700;font-size:13px;padding:9px 14px}
+.rgrp td{background:var(--navy-mid);color:white;font-size:12.5px;padding:7px 14px}
+.rsub td{background:white}
+.rsub td.ind{padding-left:28px}
+.rsub td.ind2{padding-left:42px}
+.rdyntotal td{background:var(--gray-50);font-size:12px;color:var(--text-soft)}
+.rsubtotal td{background:var(--gray-100);font-weight:600;color:var(--navy)}
+.rsectotal td{background:var(--info-bg);font-weight:700;color:var(--blue);border-top:2px solid var(--blue)}
+.rgrand td{background:var(--navy);color:var(--accent-light);font-weight:700;font-size:14px}
+.rgrand-final td{background:var(--navy);color:white;font-weight:700;font-size:15px;border-top:3px solid var(--accent);padding:12px 14px}
+/* inputs & values */
+.inp{width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:5px;font-family:'Sarabun',sans-serif;font-size:13px;text-align:right;color:var(--text)}
+.inp:focus{outline:none;border-color:var(--blue);background:#fafcff}
+.val{text-align:right;font-weight:500;color:var(--navy);white-space:nowrap;min-width:110px}
+.val.muted{color:var(--gray-400);font-weight:400;font-size:12px}
+
+/* ============================================================
+   ESTIMATE: FORMULA ROW
+   ============================================================ */
+.frow{display:flex;align-items:center;gap:4px;margin-top:5px;flex-wrap:wrap;font-size:12px;color:var(--text-soft)}
+.finp{width:66px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-family:'Sarabun',sans-serif;font-size:12px;text-align:right}
+.finp.sm{width:46px}
+.fres{text-align:right;font-size:12px;color:var(--text-soft);white-space:nowrap;vertical-align:top;padding-top:9px}
+
+/* ============================================================
+   DYNAMIC ROWS
+   ============================================================ */
+.drow,.hrow{display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:wrap;font-size:12.5px}
+.drow input[type=text],.hrow input[type=text]{flex:1.5;min-width:100px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-family:'Sarabun',sans-serif;font-size:12px}
+.drow input[type=number],.hrow input[type=number]{width:72px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:right;font-family:'Sarabun',sans-serif}
+.hrow select{padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-family:'Sarabun',sans-serif;font-size:12px}
+.drow .dval,.hrow .hval{min-width:90px;text-align:right;font-weight:500;color:var(--navy);font-size:12px}
+.drow button,.hrow button{padding:3px 9px;font-size:11px;border:1px solid var(--red);background:var(--red-bg);color:var(--red);border-radius:4px;cursor:pointer;font-family:'Sarabun',sans-serif}
+.add-btn{margin-top:4px;padding:4px 12px;font-size:11.5px;border:1px dashed var(--blue);background:var(--info-bg);color:var(--blue);border-radius:4px;cursor:pointer;font-family:'Sarabun',sans-serif}
+.add-btn:hover{background:var(--blue);color:white}
+
+/* ============================================================
+   GRAND TOTAL BANNER
+   ============================================================ */
+.grand-box{background:var(--navy);color:white;border-radius:10px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.grand-label{font-size:14px;font-weight:500;opacity:.8}
+.grand-sub{font-size:11px;opacity:.45;margin-top:2px}
+.grand-value{font-size:30px;font-weight:700;color:var(--accent-light)}
+
+/* ============================================================
+   PLACEHOLDER PANEL (สำหรับรายงานที่ยังไม่ได้สร้าง)
+   ============================================================ */
+.coming-soon{text-align:center;padding:60px 20px;color:var(--gray-400)}
+.coming-soon .cs-icon{font-size:48px;margin-bottom:12px}
+.coming-soon h3{font-size:16px;font-weight:500;color:var(--text-soft);margin-bottom:6px}
+.coming-soon p{font-size:13px}
+
+/* ============================================================
+   PRINT
+   ============================================================ */
+@page{size:A4 portrait;margin:10mm 12mm 15mm 12mm}
+@media print{
+  /* ซ่อน UI ทั่วไป */
+  .site-header,.report-nav,footer,.shared-meta-box,
+  .btn-print-hdr,.btn-reset-hdr,
+  .btn-lg,.add-btn,.sum-add-btn,.sum-del-btn,
+  .sum-meta-box,.sum-section-box,.sum-totbar,
+  #view-form,.action-bar,#sv-form{display:none!important}
+  /* หน้า body */
+  body{background:#fff!important;margin:0;padding:0}
+  /* ซ่อน panel ที่ไม่ active */
+  .report-panel{display:none!important}
+  .report-panel.active{display:block!important}
+  /* ซ่อน view ที่ไม่ใช่ preview */
+  .view{display:none!important}
+  .view.active{display:block!important}
+  .sv-view{display:none!important}
+  .sv-view.sv-active{display:block!important}
+  /* print wrap */
+  .print-wrap,.sum-print-wrap{
+    border:none!important;padding:0!important;
+    max-width:100%!important;margin:0!important;
+    box-shadow:none!important;border-radius:0!important;
+  }
+  .page{padding:0!important;max-width:100%!important}
+  .sm-page:first-child{margin-top:0!important;padding-top:0!important}
+  #sm_doc{padding:0!important;margin:0!important}
+  .no-print{display:none!important}
+  .edit-field {
+    border-bottom: none !important;
+  }
+}
+
+
+.doc-title h3{font-size:14px;font-weight:600;margin-top:3px}
+.doc-meta{margin:10px 0 16px;font-size:13px;line-height:1.8;text-align:center}
+.doc-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.doc-table th,.doc-table td{border:1px solid #333;padding:5px 9px;vertical-align:top}
+.doc-table th{background:#f0f0f0;font-weight:600;text-align:center;white-space:nowrap}
+.doc-table td.left{text-align:left}
+.doc-table td.right{text-align:right;white-space:nowrap}
+.doc-table td.center{text-align:center}
+.row-cat{background:#d9e1f2;font-weight:700}
+.row-grp{background:#e9ecf5;font-weight:600}
+.row-subtotal{background:#f0f0f0;font-weight:600}
+.row-sectotal{background:#d9e1f2;font-weight:700}
+.row-grand{background:#1a3a5c;color:#fff;font-weight:700;font-size:13.5px}
+.indent1{padding-left:18px!important}
+.indent2{padding-left:30px!important}
+.doc-note{margin-top:12px;font-size:12px;line-height:1.8}
+.doc-note p{margin-bottom:3px}
+
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ============================================================
+     HEADER
+     ============================================================ -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-title">
+      <div class="header-icon">📊</div>
+      <div class="header-text">
+        <h1>รายงาน — กองฝึกอบรมภูมิภาค 1</h1>
+        <p>การประปาส่วนภูมิภาค (กปภ.) · กฝภ.1</p>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="btn-back" onclick="confirmBack06()" style="cursor:pointer;text-decoration:none;">← ย้อนกลับ</button>
+
+    </div>
+  </div>
+
+
+</header>
+
+<div class="page">
+
+<!-- SHARED META BOX -->
+<div class="shared-meta-box">
+  <div class="shared-meta-title">📋 ข้อมูลโครงการ / หลักสูตร <span style="font-size:11px;font-weight:400;color:var(--gray-400)">(ใช้ร่วมกันทุกรายงาน)</span></div>
+  <div class="shared-meta-grid">
+    <div class="sum-field shared-wide"><label>ชื่อหลักสูตร</label><input type="text" id="sh_title" placeholder="ระบุชื่อหลักสูตร"></div>
+    <div class="sum-field"><label>รุ่นที่</label><input type="text" id="sh_run" placeholder="เช่น 1-2/69"></div>
+    <div class="sum-field"><label>เลขที่รุ่นหลักสูตร</label><input type="text" id="sh_runno" placeholder="เช่น 01320828" onblur="autoLoadFromSheet()"></div>
+    <div class="sum-field" style="grid-column:1/-1">
+      <label>วันที่อบรม</label>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <input type="date" id="sh_date" onchange="shSync();shSyncDateRange()" style="flex:1;min-width:130px;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-family:'Sarabun',sans-serif;font-size:13px;">
+        <span style="color:var(--text-soft);font-size:12px;white-space:nowrap">ถึง</span>
+        <input type="date" id="sh_date_end" onchange="shSync();shSyncDateRange()" style="flex:1;min-width:130px;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-family:'Sarabun',sans-serif;font-size:13px;">
+        <span id="sh_date_display" style="font-size:11px;color:var(--text-soft);white-space:nowrap"></span>
+      </div>
+    </div>
+    <div class="sum-field shared-wide"><label>สถานที่</label><input type="text" id="sh_location" placeholder="ระบุสถานที่"></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     PANEL: สรุปค่าใช้จ่ายจากการดำเนินการฝึกอบรม
+     ============================================================ -->
+<!-- ============================================================
+     PANEL: สรุปค่าใช้จ่ายจากการดำเนินการฝึกอบรม
+     ============================================================ -->
+<div class="report-panel active" id="panel-summary">
+  <div class="sv-view sv-active" id="sv-form">
+
+    <div class="sum-section-box">
+      <div class="sum-section-head">
+        <span class="sum-section-label">รายการใบเสร็จ / ใบสำคัญรับเงิน</span>
+        <button class="sum-add-btn" onclick="sumAddRow()">+ เพิ่มรายการ</button>
+      </div>
+      <div id="sm_rows"></div>
+      <div style="padding:10px 18px;border-top:1px solid var(--border)">
+        <button class="sum-add-btn" onclick="sumAddRow()" style="width:100%">+ เพิ่มรายการ</button>
+      </div>
+    </div>
+
+    <div class="sum-totbar">
+      <div>
+        <div class="sum-totbar-lbl">รวมเป็นเงินทั้งสิ้น</div>
+        <div class="sum-totbar-sub">มูลค่าสินค้า + ภาษีมูลค่าเพิ่ม + ภาษีหัก ณ ที่จ่าย</div>
+      </div>
+      <div class="sum-totbar-val" id="sm_grand">0.00 บาท</div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-top:20px;padding:16px 20px;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.05)">
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn-lg btn-save" id="btn-save-draft" onclick="sumSave()">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          บันทึกแบบร่าง
+        </button>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn-lg btn-next" onclick="sumGoPreview()">ดูตัวอย่างรายงาน →</button>
+      </div>
+    </div>
+
+
+  </div><div class="sv-view" id="sv-preview">
+    <div class="no-print" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;padding:14px 20px;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.05)">
+      <button class="btn-lg btn-prev" onclick="sumGoForm()">← แก้ไขข้อมูล</button>
+      
+      <button class="btn-lg btn-print-lg" onclick="window.print()">🖨️ พิมพ์แบบฟอร์ม</button>
+      <button onclick="savePdf06(this)" style="background:linear-gradient(135deg,#1a56db,#1241b0);color:#fff;border:none;border-radius:10px;padding:10px 28px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(26,86,219,.3);">💾 บันทึก PDF</button>
+    </div>
+    <div id="sm_doc" class="sum-print-wrap"></div>
+
+
+</div><!-- end .page -->
+
+<footer style="background:var(--navy);color:rgba(255,255,255,.4);text-align:center;padding:14px;font-size:11px">
+  <strong style="color:rgba(255,255,255,.65)">รายงาน · กฝภ.1 · กปภ.</strong> ·
+  ข้อมูลยังไม่ครบถ้วน อยู่ระหว่างปรับปรุงเพิ่มเติม
+</footer>
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+/* ---------- Tab switching ---------- */
+
+/* ---------- Helpers ---------- */
+const fmt  = n => Math.round(n).toLocaleString('th-TH');
+const gv   = id => parseFloat(document.getElementById(id)?.value) || 0;
+const sv   = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v > 0 ? fmt(v) + ' บาท' : '-'; };
+const fmtF = n => n > 0 ? fmt(n) + ' บ.' : '-';
+let dc = {};
+
+
+</script>
+
+<style>
+/* ---- Summary panel ---- */
+#panel-summary .sv-view{display:none}
+#panel-summary .sv-view.sv-active{display:block}
+.sum-meta-box{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:14px}
+.shared-meta-box{background:#fff;border:1px solid var(--blue);border-radius:10px;padding:14px 20px;margin-bottom:0;border-bottom:none;border-radius:10px 10px 0 0}
+.shared-meta-title{font-size:12px;font-weight:700;color:var(--blue);margin-bottom:10px}
+.shared-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.shared-wide{grid-column:1/-1}
+.sum-meta-title{font-size:11px;font-weight:700;color:var(--text-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
+.sum-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sum-wide{grid-column:1/-1}
+.sum-field{display:flex;flex-direction:column;gap:4px}
+.sum-field label{font-size:11px;font-weight:600;color:var(--text-soft)}
+.sum-field input{padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-family:'Sarabun',sans-serif;font-size:13px;color:var(--text)}
+.sum-field input:focus{outline:none;border-color:var(--blue)}
+.sum-section-box{background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px}
+.sum-section-head{display:flex;align-items:center;justify-content:space-between;padding:11px 18px;background:var(--navy)}
+.sum-section-label{font-size:13px;font-weight:600;color:#fff}
+.sum-add-btn{padding:5px 14px;background:var(--accent);color:var(--navy);border:none;border-radius:5px;font-family:'Sarabun',sans-serif;font-size:12px;font-weight:600;cursor:pointer}
+.sum-add-btn:hover{background:var(--accent-light)}
+.sum-row-card{border-bottom:1px solid var(--border);padding:14px 18px;background:#fff}
+.sum-row-card:last-child{border-bottom:none}
+.sum-row-card:nth-child(even){background:var(--gray-50)}
+.sum-row-top{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.sum-row-num{width:26px;height:26px;border-radius:50%;background:var(--navy);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sum-row-title{font-size:13px;font-weight:600;color:var(--navy)}
+.sum-merge-label{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--amber);background:var(--amber-bg);border:1px solid var(--accent);border-radius:4px;padding:2px 8px;cursor:pointer}
+.sum-merge-label input{margin:0;cursor:pointer}
+.sum-del-btn{margin-left:auto;padding:3px 10px;background:var(--red-bg);color:var(--red);border:1px solid var(--red);border-radius:4px;font-family:'Sarabun',sans-serif;font-size:11.5px;cursor:pointer}
+.sum-row-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sum-row-4col{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+.sum-inp{display:flex;flex-direction:column;gap:3px}
+.sum-inp label{font-size:11px;color:var(--text-soft);font-weight:500}
+.sum-inp input,.sum-inp select{padding:6px 8px;border:1px solid var(--border);border-radius:5px;font-family:'Sarabun',sans-serif;font-size:12.5px;color:var(--text)}
+.sum-inp input[type=number]{text-align:right}
+.sum-inp input:focus,.sum-inp select:focus{outline:none;border-color:var(--blue)}
+.sum-totbar{background:var(--navy);border-radius:10px;padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
+.sum-totbar-lbl{font-size:13px;color:rgba(255,255,255,.75);font-weight:500}
+.sum-totbar-sub{font-size:11px;color:rgba(255,255,255,.4);margin-top:2px}
+.sum-totbar-val{font-size:26px;font-weight:700;color:var(--accent-light);text-align:right}
+.btn-save{
+  background:linear-gradient(135deg,#1a7a4a,#22a05f);
+  color:#fff;
+  box-shadow:0 2px 8px rgba(26,122,74,.35);
+}
+.btn-save:hover{background:linear-gradient(135deg,#15693e,#1a8a50);transform:translateY(-1px);box-shadow:0 4px 12px rgba(26,122,74,.4)}
+
+
+/* =====================================================
+   LARGE ACTION BUTTONS — modern rounded style
+   ===================================================== */
+.btn-lg{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:11px 24px;
+  border-radius:12px;
+  font-family:'Sarabun',sans-serif;font-size:14px;font-weight:600;
+  cursor:pointer;border:none;
+  letter-spacing:.01em;
+  transition:all .2s cubic-bezier(.25,.8,.25,1);
+  white-space:nowrap;
+}
+.btn-lg:active{transform:translateY(0) scale(.97)!important;box-shadow:none!important}
+
+/* ดูตัวอย่างรายงาน → */
+.btn-next{
+  background:linear-gradient(135deg,var(--blue),#1450a3);
+  color:#fff;
+  box-shadow:0 3px 10px rgba(29,95,168,.4);
+}
+.btn-next:hover{background:linear-gradient(135deg,#2569c4,#0f3e8a);transform:translateY(-2px);box-shadow:0 6px 18px rgba(29,95,168,.45)}
+
+/* ← แก้ไขข้อมูล */
+.btn-prev{
+  background:#fff;
+  color:var(--text-soft);
+  border:1.5px solid var(--border)!important;
+  box-shadow:0 2px 6px rgba(0,0,0,.08);
+}
+.btn-prev:hover{background:var(--gray-50);border-color:var(--blue)!important;color:var(--blue);transform:translateY(-2px);box-shadow:0 5px 14px rgba(0,0,0,.12)}
+
+/* ↺ ล้างข้อมูล */
+.btn-secondary{
+  background:#fff;
+  color:var(--red);
+  border:1.5px solid #e8b4b4!important;
+  border-radius:12px;
+  font-family:'Sarabun',sans-serif;font-size:14px;font-weight:600;
+  padding:11px 24px;cursor:pointer;
+  box-shadow:0 2px 6px rgba(176,48,48,.1);
+  transition:all .2s cubic-bezier(.25,.8,.25,1);
+  display:inline-flex;align-items:center;gap:8px;
+}
+.btn-secondary:hover{background:var(--red-bg);border-color:var(--red)!important;transform:translateY(-2px);box-shadow:0 5px 14px rgba(176,48,48,.18)}
+
+/* 🖨 พิมพ์ / Export PDF */
+.btn-print-lg{
+  background:linear-gradient(135deg,#d4880f,var(--accent));
+  color:var(--navy);
+  box-shadow:0 3px 10px rgba(232,160,32,.45);
+}
+.btn-print-lg:hover{background:linear-gradient(135deg,#c07d0c,#f0b020);transform:translateY(-2px);box-shadow:0 6px 18px rgba(232,160,32,.5)}
+
+.sum-print-wrap{background:#fff;max-width:780px;margin:0 auto;padding:20px 28px;border:1px solid var(--border);font-family:'Sarabun',sans-serif;font-size:13px;line-height:1.5}
+.sm-page{page-break-after:always}
+.sm-page:last-child{page-break-after:avoid}
+.sm-pgnum{text-align:right;font-size:13px;margin-bottom:5px}
+.sm-hdr{text-align:center;margin-bottom:12px}
+.sm-hdr div{font-weight:700;font-size:14px;margin:2px 0}
+.sm-tbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+.sm-tbl th,.sm-tbl td{border:1px solid #000;padding:5px 6px;vertical-align:top}
+.sm-tbl th{font-weight:700;text-align:center;background:#f2f2f2;white-space:nowrap}
+.sm-cat td{font-weight:700}
+.sm-grp td{font-weight:700;padding-left:20px!important}
+.sm-carry td{font-weight:700;background:#fafafa}
+.sm-grand td{font-weight:700;background:#e6f2ff}
+.sm-tr{text-align:right;white-space:nowrap}
+.sm-tc{text-align:center}
+.sm-tl{text-align:left}
+.sm-ind1{padding-left:20px!important}
+.sm-ind2{padding-left:40px!important}
+.sm-lines div{margin-bottom:1px;line-height:1.4}
+
+</style>
+
+<script>
+/* ============================================================
+   SUMMARY REPORT — สรุปค่าใช้จ่ายฯ
+   ============================================================ */
+// ⚠️ ทุกหมวด (รวม "ค่าวัสดุสำนักงาน"/"ค่าวัสดุเบ็ดเตล็ด") ไม่ใส่เลขไว้ล่วงหน้าอีกต่อไป
+// เลขข้อทั้งหมด "dynamic" ตามหมวดที่ตั้งงบประมาณไว้ในไฟล์ 05 (ดู computeMajorNumbers())
+const SEC_OPTS = [
+  {v:'fuel',  l:'ค่าน้ำมันเชื้อเพลิงและหล่อลื่น'},
+  {v:'1',     l:'ค่าวัสดุสำนักงาน'},
+  {v:'2',     l:'ค่าวัสดุเบ็ดเตล็ด'},
+  {v:'lump',  l:'ค่าจ้างเหมา (รถตู้/พาหนะรับจ้าง)'},
+  {v:'venue', l:'ค่าเช่าสถานที่'},
+  {v:'3',     l:'ค่าอาหารและเครื่องดื่ม'},
+  {v:'4',     l:'ค่าเดินทางเจ้าหน้าที่ดำเนินการและประสานงาน (กฝภ.1)'},
+  {v:'ext',   l:'ค่าสมนาคุณวิทยากรภายนอก'},
+];
+
+// ลำดับตายตัวของหมวดทั้งหมด (ใช้คำนวณเลขข้อจริงตอนสร้างเอกสาร — ต้องตรงลำดับกับไฟล์ 05)
+const DYNAMIC_SEC_ORDER = ['fuel','1','2','lump','venue','3','4','ext'];
+
+// หมวดย่อยตามหมวดใหญ่
+const SUB_OPTS = {
+  '1': [
+    {v:'',    l:'— ไม่ระบุหมวดย่อย —'},
+    {v:'1_1', l:'ค่าเครื่องเขียนแบบพิมพ์'},
+    {v:'1_2', l:'ค่าถ่ายเอกสารและเข้าเล่ม'},
+  ],
+  'venue': [
+    {v:'',            l:'— ไม่ระบุหมวดย่อย —'},
+    {v:'venue_meet',  l:'ค่าเช่าห้องประชุม'},
+    {v:'venue_vip',   l:'ค่าเช่าห้องพัก ประธานในพิธี'},
+    {v:'venue_staff', l:'ค่าเช่าห้องพัก ผู้เข้าอบรม/เจ้าหน้าที่'},
+  ],
+  '3': [
+    {v:'',        l:'— ไม่ระบุหมวดย่อย —'},
+    {v:'3_12',    l:'อาหารกลางวัน / อาหารว่างและเครื่องดื่ม'},
+    {v:'3_dinner',l:'อาหารเย็น'},
+    {v:'3_3',     l:'อาหารเย็นวิทยากรภายนอก'},
+  ],
+  '4': [
+    {v:'',    l:'— ไม่ระบุหมวดย่อย —'},
+    {v:'4_1', l:'ค่าเบี้ยเลี้ยง'},
+    {v:'4_2', l:'ค่าที่พัก'},
+    {v:'4_3', l:'ค่าพาหนะ'},
+  ],
+  'ext': [
+    {v:'',           l:'— ไม่ระบุหมวดย่อย —'},
+    {v:'ext_honor',  l:'ค่าสมนาคุณวิทยากร'},
+    {v:'ext_lodging',l:'ค่าที่พักวิทยากร'},
+    {v:'ext_travel', l:'ค่าพาหนะ/เดินทางวิทยากร'},
+  ],
+};
+
+
+function getSubOpts(sec) {
+  return SUB_OPTS[sec] || [];
+}
+
+// ข้อมูล toggle ของหมวดต่างๆ จากไฟล์ 05 (โหลดตอน autoLoadFromSheet) — ใช้ตัดสินว่าหมวดไหน "ตั้งงบไว้"
+let BUDGET05 = null;
+let BUDGET05_TOGGLES = null;
+
+/* หมวดที่ "ตั้งงบประมาณไว้" ตามไฟล์ 05 — ถ้ายังไม่มีข้อมูลงบ (ยังไม่เคยบันทึกไฟล์05/โหลดไม่สำเร็จ)
+   fallback กลับไปใช้ตรรกะเดิม (หมวดที่มีรายการคีบิลจริงในรายงานนี้) เพื่อไม่ให้รายงานเก่าพัง */
+function getActiveSections(rows){
+  const t = BUDGET05_TOGGLES;
+  if (t) {
+    const b = BUDGET05 || {};
+    const set = new Set();
+    if (t.fuel && t.fuel.on) set.add('fuel');
+    if (!t.toggles || t.toggles.office !== false) set.add('1');
+    if (!t.toggles || t.toggles.misc   !== false) set.add('2');
+    if (t.lump  && t.lump.on)  set.add('lump');
+    if (t.venue && t.venue.on) set.add('venue');
+    if (!t.toggles || t.toggles.food        !== false) set.add('3');
+    if (!t.toggles || t.toggles.stafftravel !== false) set.add('4');
+    const extHasAmount = (Number(b.sec5)||0) + (Number(b.sec6)||0) > 0;
+    const extHasSpeakers = Array.isArray(t.EXT) && t.EXT.length > 0;
+    if (t.hasExternal !== false && (extHasAmount || extHasSpeakers)) set.add('ext');
+    return set;
+  }
+  return new Set((rows||[]).map(r=>r.secV||r.sec));
+}
+
+/* ─────────────────────────────────────────────────────
+   computeMajorNumbers — คำนวณเลขข้อ "ก.1, ก.2, ก.3..." แบบ dynamic
+   ยึดตามหมวดที่ "ตั้งงบประมาณไว้" ในไฟล์ 05 เป็นหลัก (ดู getActiveSections())
+   เรียงตามลำดับตายตัวใน DYNAMIC_SEC_ORDER (ต้องตรงกับลำดับหมวดในไฟล์ 05)
+───────────────────────────────────────────────────── */
+function computeMajorNumbers(rows){
+  const present = getActiveSections(rows);
+  const nums = {};
+  let n = 0;
+  DYNAMIC_SEC_ORDER.forEach(sec=>{
+    if(present.has(sec)){ n++; nums[sec] = String(n); }
+  });
+  return nums;
+}
+const DOC_OPTS = [
+  'ใบเสร็จรับเงิน/ใบกำกับภาษี',
+  'ใบสำคัญรับเงิน',
+  'บิลเงินสด',
+];
+let smCnt = 0;
+const TH_MON = ['','มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+function sumFmtDate(d){
+  if(!d) return '';
+  const parts = d.split('-');
+  if(parts.length===3){
+    const y=parseInt(parts[0])+543, m=parseInt(parts[1]), day=parseInt(parts[2]);
+    return `${day} ${TH_MON[m]} ${y}`;
+  }
+  return d;
+}
+const smF2 = n => n === 0 ? '-' : n.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const smFmt = n => n.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const smPS = () => document.getElementById('panel-summary');
+const shGet = id => {
+  // ถ้าเป็น alias ให้แปลงเป็น sh_* ก่อน
+  const alias = {'sm_title':'sh_title','sm_run':'sh_run','sm_runno':'sh_runno','sm_date':'sh_date','sm_location':'sh_location',
+                 'pf_title':'sh_title','pf_run':'sh_run','pf_runno':'sh_runno','pf_date':'sh_date','pf_location':'sh_location'};
+  const realId = alias[id] || id;
+  return document.getElementById(realId)?.value?.trim() || '';
+};
+function shSyncDateRange(){
+  const s = document.getElementById('sh_date')?.value || '';
+  const e = document.getElementById('sh_date_end')?.value || '';
+  const display = document.getElementById('sh_date_display');
+  if (!display) return;
+  if (s || e) {
+    const st = s ? sumFmtDate(s) : '—';
+    const et = e ? sumFmtDate(e) : '';
+    display.textContent = s === e || !e ? '📅 ' + st : '📅 ' + st + ' – ' + et;
+  } else {
+    display.textContent = '';
+  }
+}
+function shGetDateStr(){
+  const s = document.getElementById('sh_date')?.value || '';
+  const e = document.getElementById('sh_date_end')?.value || '';
+  if (!s && !e) return '';
+  if (!e || s === e) return sumFmtDate(s);
+  return sumFmtDate(s) + ' – ' + sumFmtDate(e);
+}
+
+function sumAddRow(){
+  smCnt++;
+  const id = 'smr'+smCnt;
+  const secOpts = SEC_OPTS.map(s=>`<option value="${s.v}">${s.l}</option>`).join('');
+  const subOpts = getSubOpts('1').map(s=>`<option value="${s.v}">${s.l}</option>`).join('');
+  const docOpts = DOC_OPTS.map(d=>`<option value="${d}">${d}</option>`).join('');
+  const div = document.createElement('div');
+  div.className = 'sum-row-card'; div.id = id;
+  const staffOpts = [
+    'นายคมกฤช รัตนธรรม',
+    'นายเจนณรงค์ ถานา',
+    'นายปิยังกูร วงศ์ไพบูลย์สุข',
+    'นายอภิรุต โกสิตานนท์',
+    'น.ส.ปวีณา ใจเรือน',
+  ].map(n=>`<option value="${n}">${n}</option>`).join('');
+  div.innerHTML = `
+    <div class="sum-row-top">
+      <div class="sum-row-num">${smCnt}</div>
+      <div class="sum-row-title">รายการที่ ${smCnt}</div>
+      <label class="sum-merge-label" id="${id}_mergelabel" style="display:none">
+        <input type="checkbox" id="${id}_merge" onchange="sumRenumber()">
+        <span>รวมลำดับกับรายการก่อนหน้า</span>
+      </label>
+      <button class="sum-del-btn" onclick="sumDelRow('${id}')">ลบ</button>
+    </div>
+    <div class="sum-row-grid">
+      <div class="sum-inp"><label>หมวดรายการ</label>
+        <select id="${id}_sec" onchange="sumSecChange('${id}')">${secOpts}</select></div>
+      <div class="sum-inp" id="${id}_sub_wrap" style="display:none"><label>หมวดย่อย (เก็บข้อมูล)</label>
+        <select id="${id}_sub" style="border:1.5px solid #f59e0b;background:#fffbeb;" onchange="sumSubChange('${id}')">${subOpts}</select></div>
+      <div class="sum-inp"><label>ประเภทเอกสาร</label>
+        <select id="${id}_doc">${docOpts}</select></div>
+      <div class="sum-inp sum-wide" id="${id}_name_wrap"><label>ชื่อผู้ขาย / บุคคล</label>
+        <input type="text" id="${id}_name" placeholder="เช่น บริษัท ซีพี แอ็กซ์ตร้า จำกัด (มหาชน)"></div>
+      <div class="sum-inp sum-wide" id="${id}_staff_wrap" style="display:none"><label>เจ้าหน้าที่ กฝภ.1</label>
+        <select id="${id}_staff">${staffOpts}</select></div>
+      <div class="sum-inp"><label>สาขา</label>
+        <input type="text" id="${id}_branch" placeholder="เช่น สาขาที่ 00172"></div>
+      <div class="sum-inp"><label>เลขประจำตัวผู้เสียภาษี</label>
+        <input type="text" id="${id}_taxid" placeholder="เช่น 0105526013919" maxlength="13"></div>
+      <div class="sum-inp sum-wide"><label>ที่อยู่</label>
+        <input type="text" id="${id}_addr1" placeholder="เลขที่ หมู่ ถนน ตำบล/แขวง"></div>
+      <div class="sum-inp"><label>ตำบล / แขวง</label>
+        <input type="text" id="${id}_tambon" placeholder="ตำบล/แขวง"></div>
+      <div class="sum-inp"><label>อำเภอ / เขต</label>
+        <input type="text" id="${id}_amphoe" placeholder="อำเภอ/เขต"></div>
+      <div class="sum-inp"><label>จังหวัด</label>
+        <input type="text" id="${id}_province" placeholder="จังหวัด"></div>
+      <div class="sum-inp"><label>รหัสไปรษณีย์</label>
+        <input type="text" id="${id}_zip" placeholder="00000" maxlength="5"></div>
+      <div class="sum-inp"><label>ลงวันที่</label>
+        <input type="date" id="${id}_date"></div>
+      <div class="sum-inp"><label>รหัสบัญชี</label>
+        <input type="text" id="${id}_acct" value="6212001"></div>
+    </div>
+    <div id="${id}_normal_4col" class="sum-row-4col">
+      <div class="sum-inp"><label>มูลค่าสินค้า (บาท)</label>
+        <input type="number" id="${id}_val" value="0" step="0.01" oninput="sumRowCalc('${id}')"></div>
+      <div class="sum-inp"><label>ภาษีมูลค่าเพิ่ม (บาท)</label>
+        <input type="number" id="${id}_vat" value="0" step="0.01" oninput="sumRowCalc('${id}')"></div>
+      <div class="sum-inp"><label>ภาษีหัก ณ ที่จ่าย (บาท)</label>
+        <input type="number" id="${id}_wht" value="0" step="0.01" oninput="sumRowCalc('${id}')"></div>
+      <div class="sum-inp"><label>จำนวนเงิน (บาท)</label>
+        <input type="number" id="${id}_total" value="0" step="0.01" style="background:var(--info-bg);font-weight:600" readonly></div>
+    </div>
+    <div id="${id}_combined_3_12" style="display:none;background:var(--info-bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-top:6px;">
+      <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:8px;">3.1 อาหารกลางวัน</div>
+      <div class="sum-row-4col" style="margin-bottom:10px;">
+        <div class="sum-inp"><label>มูลค่าสินค้า 3.1 (บาท)</label>
+          <input type="number" id="${id}_v31" value="0" step="0.01" oninput="sumRowCalc312('${id}')"></div>
+        <div class="sum-inp"><label>ภาษีมูลค่าเพิ่ม 3.1 (บาท)</label>
+          <input type="number" id="${id}_vat31" value="0" step="0.01" oninput="sumRowCalc312('${id}')"></div>
+      </div>
+      <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:8px;">3.2 อาหารว่างและเครื่องดื่ม</div>
+      <div class="sum-row-4col" style="margin-bottom:10px;">
+        <div class="sum-inp"><label>มูลค่าสินค้า 3.2 (บาท)</label>
+          <input type="number" id="${id}_v32" value="0" step="0.01" oninput="sumRowCalc312('${id}')"></div>
+        <div class="sum-inp"><label>ภาษีมูลค่าเพิ่ม 3.2 (บาท)</label>
+          <input type="number" id="${id}_vat32" value="0" step="0.01" oninput="sumRowCalc312('${id}')"></div>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:10px;">
+        <div class="sum-row-4col">
+          <div class="sum-inp"><label style="color:var(--blue);font-weight:700;">รวมมูลค่าสินค้า 3.1+3.2 (บาท)</label>
+            <input type="number" id="${id}_val312" value="0" step="0.01" style="background:#dbeafe;font-weight:600" readonly></div>
+          <div class="sum-inp"><label style="color:var(--blue);font-weight:700;">รวมภาษีมูลค่าเพิ่ม 3.1+3.2 (บาท)</label>
+            <input type="number" id="${id}_vat312" value="0" step="0.01" style="background:#dbeafe;font-weight:600" readonly></div>
+          <div class="sum-inp"><label>ภาษีหัก ณ ที่จ่าย (บาท)</label>
+            <input type="number" id="${id}_wht" value="0" step="0.01" oninput="sumRowCalc('${id}')"></div>
+          <div class="sum-inp"><label>จำนวนเงิน (บาท)</label>
+            <input type="number" id="${id}_total" value="0" step="0.01" style="background:var(--info-bg);font-weight:600" readonly></div>
+        </div>
+      </div>
+    </div>`;
+  smPS().querySelector('#sm_rows').appendChild(div);
+  sumSecChange(id);
+  sumRenumber();
+  sumCalc();
+}
+
+function sumSecChange(id){
+  const ps  = smPS();
+  const sec = ps.querySelector(`#${id}_sec`)?.value;
+  const nameWrap  = ps.querySelector(`#${id}_name_wrap`);
+  const staffWrap = ps.querySelector(`#${id}_staff_wrap`);
+  const subWrap   = ps.querySelector(`#${id}_sub_wrap`);
+
+  // อ่าน sub เดิมก่อน rebuild (rebuild แล้ว dropdown จะ reset เป็น option แรกเสมอ)
+  const subSelect = ps.querySelector(`#${id}_sub`);
+  const prevSub = subSelect?.value || '';
+
+  // อัปเดต dropdown หมวดย่อยตามหมวดใหญ่ที่เลือก
+  if(subSelect) {
+    const newSubOpts = getSubOpts(sec);
+    subSelect.innerHTML = newSubOpts.map(s=>`<option value="${s.v}">${s.l}</option>`).join('');
+    // restore ค่าเดิมถ้ายัง option นั้นอยู่ใน sec ใหม่
+    if(prevSub && [...subSelect.options].some(o => o.value === prevSub)){
+      subSelect.value = prevSub;
+    }
+  }
+
+  // แสดง/ซ่อน sub-dropdown (หมวดที่มีหมวดย่อย)
+  const SECS_WITH_SUB = ['1','3','4','venue','ext'];
+  if(subWrap) subWrap.style.display = SECS_WITH_SUB.includes(sec) ? '' : 'none';
+
+  if(sec === '4'){
+    // ใช้ sub ที่เลือกอยู่ตอนนี้ (ถ้ายังไม่มีให้ default เป็น '' = 4_1 logic)
+    const curSub = ps.querySelector(`#${id}_sub`)?.value || '';
+    apply4Logic(ps, id, curSub);
+  } else {
+    if(nameWrap)  nameWrap.style.display  = '';
+    if(staffWrap) staffWrap.style.display = 'none';
+    const docSel = ps.querySelector(`#${id}_doc`); if(docSel) docSel.disabled = false;
+    clearAddressFields(ps, id);
+    const staffSelOut = ps.querySelector(`#${id}_staff`);
+    if(staffSelOut) staffSelOut.selectedIndex = 0;
+  }
+  sumCalc();
+}
+
+
+/* ─────────────────────────────────────────────────────
+   apply4Logic — จัดการช่องกรอกเมื่อเลือกหมวด 4
+   sub = '' | '4_1' → ล็อกที่อยู่ กฝภ.1 (ใบสำคัญรับเงิน)
+   sub = '4_3'      → กรอกเองได้ (เหมือนหมวดอื่นๆ)
+───────────────────────────────────────────────────── */
+function apply4Logic(ps, id, sub){
+  const nameWrap  = ps.querySelector(`#${id}_name_wrap`);
+  const staffWrap = ps.querySelector(`#${id}_staff_wrap`);
+
+  if(sub === '4_3'){
+    // ── 4.3 ค่าพาหนะ: กรอกเสรี เหมือนหมวดอื่น ──
+    if(nameWrap)  nameWrap.style.display  = '';
+    if(staffWrap) staffWrap.style.display = 'none';
+    const staffSel43 = ps.querySelector(`#${id}_staff`);
+    if(staffSel43) staffSel43.selectedIndex = 0;
+    // ปลดล็อก doc
+    const docSel = ps.querySelector(`#${id}_doc`);
+    if(docSel) docSel.disabled = false;
+    // ปลดล็อกที่อยู่ + แสดงสาขา/เลขภาษี
+    clearAddressFields(ps, id);
+  } else {
+    // ── 4.1 ค่าเบี้ยเลี้ยง/ที่พัก หรือไม่ใส่ sub: ล็อกที่อยู่ กฝภ.1 ──
+    if(nameWrap)  nameWrap.style.display  = 'none';
+    if(staffWrap) staffWrap.style.display = '';
+    const nameEl41 = ps.querySelector(`#${id}_name`);
+    if(nameEl41) nameEl41.value = '';
+    const docSel = ps.querySelector(`#${id}_doc`);
+    if(docSel){
+      for(let i=0;i<docSel.options.length;i++){
+        if(docSel.options[i].value === 'ใบสำคัญรับเงิน'){ docSel.selectedIndex = i; break; }
+      }
+      docSel.disabled = true;
+    }
+    const f = (fid, val) => {
+      const el = ps.querySelector(`#${id}_${fid}`);
+      if(el){ el.value=val; el.readOnly=true; el.style.background='var(--gray-100)'; }
+    };
+    f('addr1','98/52 ม.10 ถ.คันคลองชลประทาน');
+    f('tambon','สุเทพ'); f('amphoe','เมืองเชียงใหม่');
+    f('province','เชียงใหม่'); f('zip','50200');
+    const b = ps.querySelector(`#${id}_branch`)?.closest('.sum-inp'); if(b) b.style.display='none';
+    const t = ps.querySelector(`#${id}_taxid`)?.closest('.sum-inp');  if(t) t.style.display='none';
+  }
+}
+
+/* trigger เมื่อ sub dropdown เปลี่ยน */
+function sumSubChange(id){
+  const ps  = smPS();
+  const sec = ps.querySelector(`#${id}_sec`)?.value;
+  const sub = ps.querySelector(`#${id}_sub`)?.value || '';
+  if(sec === '4') apply4Logic(ps, id, sub);
+  if(sec === '3') apply3_12Logic(ps, id, sub);
+  sumCalc();
+}
+
+/* ─────────────────────────────────────────────────────
+   apply3_12Logic — แสดง 2 บรรทัดย่อย (3.1 + 3.2) เมื่อเลือก 3_12
+───────────────────────────────────────────────────── */
+function apply3_12Logic(ps, id, sub){
+  const combined   = ps.querySelector(`#${id}_combined_3_12`);
+  const normal4col = ps.querySelector(`#${id}_normal_4col`);
+  if(sub === '3_12'){
+    if(combined)   combined.style.display = '';
+    if(normal4col) normal4col.style.display = 'none';
+    sumRowCalc312(id);
+  } else {
+    if(combined)   combined.style.display = 'none';
+    if(normal4col) normal4col.style.display = '';
+  }
+}
+function clearAddressFields(ps, id) {
+  // ล้างและคืนช่องที่อยู่
+  const f = (fid) => { const el=ps.querySelector(`#${id}_${fid}`); if(el){ el.value=''; el.readOnly=false; el.style.background=''; } };
+  f('addr1'); f('tambon'); f('amphoe'); f('province'); f('zip');
+  // แสดงช่องสาขา/เลขภาษีคืน
+  const b = ps.querySelector(`#${id}_branch`)?.closest('.sum-inp'); if(b) b.style.display='';
+  const t = ps.querySelector(`#${id}_taxid`)?.closest('.sum-inp');  if(t) t.style.display='';
+}
+
+function sumDelRow(id){
+  smPS().querySelector('#'+id)?.remove();
+  sumRenumber();
+  sumCalc();
+}
+
+function sumRenumber(){
+  const ps = smPS();
+  const cards = Array.from(ps.querySelectorAll('#sm_rows .sum-row-card'));
+  let displaySeq = 0;
+  cards.forEach((card, i) => {
+    const id = card.id;
+    const mergeLabel = card.querySelector('.sum-merge-label');
+    const mergeCb    = card.querySelector(`#${id}_merge`);
+    const numEl      = card.querySelector('.sum-row-num');
+    const titleEl    = card.querySelector('.sum-row-title');
+    // ซ่อน checkbox รายการแรก, แสดงรายการถัดไป
+    if(i === 0){
+      if(mergeLabel) mergeLabel.style.display = 'none';
+      if(mergeCb) mergeCb.checked = false;
+    } else {
+      if(mergeLabel) mergeLabel.style.display = '';
+    }
+    // คำนวณ display seq
+    const isMerged = mergeCb && mergeCb.checked;
+    if(!isMerged) displaySeq++;
+    numEl.textContent   = displaySeq;
+    titleEl.textContent = `รายการที่ ${i+1}`;
+    // highlight แถวที่ merge
+    card.style.borderLeft = isMerged ? '4px solid var(--accent)' : '';
+    card.style.background = isMerged ? 'var(--amber-bg)' : '';
+  });
+}
+
+function sumRowCalc(id){
+  const ps = smPS();
+  // ถ้าเป็นแถว 3_12 (combined) ให้ใช้ sumRowCalc312 แทนเพื่อหลีกเลี่ยง
+  // duplicate id ระหว่าง normal_4col (ซ่อน) กับ combined_3_12 (แสดง)
+  const subEl = ps.querySelector(`#${id}_sub`);
+  if(subEl && subEl.value === '3_12'){
+    sumRowCalc312(id);
+    return;
+  }
+  const v   = parseFloat(ps.querySelector(`#${id}_val`)?.value)||0;
+  const vat = parseFloat(ps.querySelector(`#${id}_vat`)?.value)||0;
+  const wht = parseFloat(ps.querySelector(`#${id}_wht`)?.value)||0;
+  const tot = v+vat-wht;
+  const el  = ps.querySelector(`#${id}_total`);
+  if(el) el.value = tot.toFixed(2);
+  sumCalc();
+}
+
+/* คำนวณผลรวม 3.1+3.2 แบบ combined row */
+function sumRowCalc312(id){
+  const ps = smPS();
+  const v31  = parseFloat(ps.querySelector(`#${id}_v31`)?.value)||0;
+  const vat31= parseFloat(ps.querySelector(`#${id}_vat31`)?.value)||0;
+  const v32  = parseFloat(ps.querySelector(`#${id}_v32`)?.value)||0;
+  const vat32= parseFloat(ps.querySelector(`#${id}_vat32`)?.value)||0;
+  const sumV   = v31 + v32;
+  const sumVat = vat31 + vat32;
+
+  // อัปเดตช่องแสดงผลรวม 3.1+3.2
+  const val312El = ps.querySelector(`#${id}_val312`);
+  const vat312El = ps.querySelector(`#${id}_vat312`);
+  if(val312El) val312El.value = sumV.toFixed(2);
+  if(vat312El) vat312El.value = sumVat.toFixed(2);
+
+  // sync _val/_vat ใน normal_4col (ซ่อนอยู่ แต่ sumCalc อ่านจากตรงนี้)
+  const normalDiv = ps.querySelector(`#${id}_normal_4col`);
+  if(normalDiv){
+    const valEl = normalDiv.querySelector(`#${id}_val`);
+    const vatEl = normalDiv.querySelector(`#${id}_vat`);
+    if(valEl) valEl.value = sumV.toFixed(2);
+    if(vatEl) vatEl.value = sumVat.toFixed(2);
+  }
+
+  // อ่าน wht จาก combined box (ไม่ใช่ normal_4col ที่ซ่อนอยู่)
+  // querySelector จะเจอ _wht ใน normal_4col ก่อน ต้องหาจาก combined_3_12 แทน
+  const combinedDiv = ps.querySelector(`#${id}_combined_3_12`);
+  const wht = combinedDiv
+    ? parseFloat(combinedDiv.querySelector(`[id$="_wht"]`)?.value)||0
+    : parseFloat(ps.querySelectorAll(`[id="${id}_wht"]`)[1]?.value)||0;
+
+  const tot = sumV + sumVat - wht;
+
+  // เขียน _total ลง combined box โดยตรง (ไม่ใช้ sumRowCalc เพราะจะเจอ _total ตัวแรกใน normal_4col)
+  const totalEls = ps.querySelectorAll(`[id="${id}_total"]`);
+  // totalEls[0] = normal_4col (ซ่อน), totalEls[1] = combined_3_12 (แสดง)
+  if(totalEls[0]) totalEls[0].value = tot.toFixed(2); // sync ไว้ด้วยกัน
+  if(totalEls[1]) totalEls[1].value = tot.toFixed(2);
+
+  sumCalc();
+}
+
+function sumCalc(){
+  let gv2=0,gvat=0,gwht=0,gtot=0;
+  smPS().querySelectorAll('#sm_rows .sum-row-card').forEach(card=>{
+    const id=card.id;
+    gv2  += parseFloat(smPS().querySelector(`#${id}_val`)?.value)||0;
+    gvat += parseFloat(smPS().querySelector(`#${id}_vat`)?.value)||0;
+    gwht += parseFloat(smPS().querySelector(`#${id}_wht`)?.value)||0;
+    gtot += parseFloat(smPS().querySelector(`#${id}_total`)?.value)||0;
+  });
+  const el = smPS().querySelector('#sm_grand');
+  if(el) el.textContent = smFmt(gtot)+' บาท';
+}
+
+function sumGoPreview(){
+  sumBuildDoc();
+  smPS().querySelector('#sv-form').classList.remove('sv-active');
+  smPS().querySelector('#sv-preview').classList.add('sv-active');
+}
+function sumGoForm(){
+  smPS().querySelector('#sv-preview').classList.remove('sv-active');
+  smPS().querySelector('#sv-form').classList.add('sv-active');
+}
+
+
+function sumCollectState(){
+  const ps = smPS();
+  const meta = {};
+  // อ่านจาก sh_* โดยตรงเสมอ
+  ['title','run','runno','date','location'].forEach(k=>{
+    meta['sm_'+k] = document.getElementById('sh_'+k)?.value?.trim() || '';
+  });
+  meta['sm_date_end'] = document.getElementById('sh_date_end')?.value?.trim() || '';
+  const rows = [];
+  ps.querySelectorAll('#sm_rows .sum-row-card').forEach(card=>{
+    const id = card.id;
+    const fields = ['sec','sub','doc','name','staff','branch','taxid','addr1','tambon','amphoe','province','zip','date','acct','val','vat','wht','total'];
+    const row = {id};
+    fields.forEach(f=>{ row[f] = ps.querySelector(`#${id}_${f}`)?.value||''; });
+    // BUG FIX: ช่อง #${id}_staff เป็น <select> ที่มี option แรกเป็นค่า default เสมอ
+    // (แม้จะถูกซ่อนด้วย display:none) ทำให้ทุกแถวที่ไม่ใช่หมวด 4 (เจ้าหน้าที่)
+    // ได้ค่า staff ติดมาด้วยทั้งที่ผู้ใช้ไม่ได้กรอก/เลือก — เคลียร์ทิ้งถ้าไม่ใช่หมวด 4
+    if(row.sec !== '4') row.staff = '';          // หมวดอื่น: ไม่มี staff
+    if(row.sec === '4' && row.sub !== '4_3') row.name = '';   // 4_1: ใช้ staff ไม่ใช้ name
+    if(row.sec === '4' && row.sub === '4_3') row.staff = '';  // 4_3: ใช้ name ไม่ใช้ staff
+    row.merge = ps.querySelector(`#${id}_merge`)?.checked || false;
+    // เก็บข้อมูล combined 3.1+3.2 ถ้ามี
+    if(row.sub === '3_12'){
+      row.v31   = parseFloat(ps.querySelector(`#${id}_v31`)?.value)||0;
+      row.vat31 = parseFloat(ps.querySelector(`#${id}_vat31`)?.value)||0;
+      row.v32   = parseFloat(ps.querySelector(`#${id}_v32`)?.value)||0;
+      row.vat32 = parseFloat(ps.querySelector(`#${id}_vat32`)?.value)||0;
+    }
+    rows.push(row);
+  });
+
+  // คำนวณ "ใช้จริง" แยกแต่ละหมวดใหญ่ + หมวดย่อย
+  const actualBySection = {};
+  rows.forEach(r => {
+    const sec = r.sec || '';
+    const sub = r.sub || '';  // '1_1', '1_2', '3_12', '3_3', '4_3', หรือ ''
+    const total = parseFloat(r.total) || 0;
+    if (!actualBySection[sec]) actualBySection[sec] = { total: 0, subs: {}, items: [] };
+    actualBySection[sec].total += total;
+    if (sub === '3_12') {
+      // แยก 3_1 และ 3_2 ออกจาก combined row
+      const t31 = (r.v31||0) + (r.vat31||0);
+      const t32 = (r.v32||0) + (r.vat32||0);
+      if (!actualBySection[sec].subs['3_1']) actualBySection[sec].subs['3_1'] = 0;
+      if (!actualBySection[sec].subs['3_2']) actualBySection[sec].subs['3_2'] = 0;
+      actualBySection[sec].subs['3_1'] += t31;
+      actualBySection[sec].subs['3_2'] += t32;
+    } else if (sub) {
+      // หมวดย่อยอื่นๆ
+      if (!actualBySection[sec].subs[sub]) actualBySection[sec].subs[sub] = 0;
+      actualBySection[sec].subs[sub] += total;
+    }
+    // เก็บชื่อผู้ขาย/วิทยากร (หมวดวิทยากรภายนอก)
+    const name = r.name || r.staff || '';
+    if (name && sec === 'ext') {
+      actualBySection[sec].items.push({ name, val: parseFloat(r.val)||0, total });
+    }
+  });
+
+  const grandTotal = rows.reduce((a,r)=>a+(parseFloat(r.total)||0), 0);
+
+  return { meta, rows, actualBySection, grandTotal };
+}
+
+async function sumSave(){
+  const state = sumCollectState();
+  const runno  = shGet('sm_runno') || shGet('sh_runno') || '';
+  const title  = shGet('sm_title') || shGet('sm_run') || '(ไม่มีชื่อ)';
+
+  if(!state.rows.length){ alert('⚠️ กรุณาเพิ่มรายการก่อนบันทึก'); return; }
+  if(!runno){ alert('⚠️ กรุณาระบุ "เลขที่รุ่นหลักสูตร" ก่อนบันทึก'); return; }
+
+  showGsLoader('💾 กำลังบันทึกข้อมูล');
+
+  try {
+    // 1. บันทึก/อัปเดต courses (meta)
+    const coursePayload = {
+      no:        shGet('sm_runno'),
+      course:    shGet('sm_title'),
+      batch:     shGet('sm_run'),
+      dateStart: document.getElementById('sh_date')?.value || '',
+      dateEnd:   document.getElementById('sh_date_end')?.value || '',
+      location:  shGet('sm_location'),
+      savedAt:   new Date().toISOString()
+    };
+    // ใช้ updateCourseField (merge กับแถวเดิม) แทน saveCourse (overwrite ทั้งแถว)
+    // เพื่อไม่ให้ลบ courseNum / year ที่บันทึกไว้จากหน้า training_courses
+    await gsApi('updateCourseField', coursePayload);
+    // 2. บันทึก actual06 (รายการใบเสร็จ)
+    await gsApi('saveActual06', buildGs06Payload(state));
+
+    syncActualTo01(state, title);
+    hideGsLoader();
+
+    // ปิด back-confirm overlay ถ้ามี
+    document.getElementById('back-confirm-overlay-06')?.remove();
+
+    // popup ยืนยัน
+    const course = shGet('sm_title') || '';
+    const pop = document.createElement('div');
+    pop.id = 'save06-done-overlay';
+    pop.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;';
+    pop.innerHTML = `
+      <div style="background:#fff;border-radius:16px;padding:32px 36px;max-width:400px;width:92%;
+        box-shadow:0 24px 64px rgba(0,0,0,.25);font-family:'Sarabun',sans-serif;text-align:center;">
+        <div style="width:56px;height:56px;background:#d1fae5;border-radius:50%;display:flex;align-items:center;
+          justify-content:center;margin:0 auto 14px;font-size:28px;">✅</div>
+        <div style="font-size:17px;font-weight:700;color:#065f46;margin-bottom:6px;">บันทึกแล้ว</div>
+        <div style="font-size:13px;color:#374151;margin-bottom:4px;">${course}</div>
+        ${runno ? `<div style="font-size:12px;color:#9ca3af;margin-bottom:16px;">เลขที่: ${runno}</div>` : '<div style="margin-bottom:16px;"></div>'}
+        <div style="display:flex;gap:10px;justify-content:center;">
+          <button onclick="document.getElementById('save06-done-overlay').remove();location.href='01.Main-Reports.html';"
+            style="background:linear-gradient(135deg,#1a56db,#1241b0);color:#fff;border:none;border-radius:8px;
+            padding:10px 24px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;
+            box-shadow:0 3px 12px rgba(26,86,219,.3);">กลับหน้าหลัก</button>
+          <button onclick="document.getElementById('save06-done-overlay').remove();"
+            style="background:#f3f4f6;color:#374151;border:1.5px solid #d1d5db;border-radius:8px;
+            padding:10px 24px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">
+            กรอกต่อ</button>
+        </div>
+      </div>`;
+    document.body.appendChild(pop);
+
+  } catch(err) {
+    hideGsLoader();
+    alert('❌ บันทึกไม่สำเร็จ: ' + err.message + '\n\nกรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต');
+  }
+}
+function buildGs06Payload(state){
+
+  // งบประมาณ = ใช้จริงเสมอ ไม่ต้องคีบิล
+  let totalVal = 0, totalVat = 0, totalWht = 0;
+  (state.rows || []).forEach(r => {
+    totalVal += parseFloat(r.val) || 0;
+    totalVat += parseFloat(r.vat) || 0;
+    totalWht += parseFloat(r.wht) || 0;
+  });
+  const bySec = state.actualBySection || {};
+  const secTotal = k => bySec[k]?.total || 0;
+  const sub      = (k,s) => bySec[k]?.subs?.[s] || 0;
+
+  const secExtTotal = secTotal('ext');
+
+  return {
+    no:   state.meta.sm_runno || '',
+    secFuel: secTotal('fuel'),
+    sec1: secTotal('1'),
+    sec2: secTotal('2'),
+
+    secLump: secTotal('lump'),
+
+    sec1_1: sub('1','1_1'),
+    sec1_2: sub('1','1_2'),
+
+    secVenue:       secTotal('venue'),
+    secVenueMeeting:sub('venue','venue_meet'),
+    secVenueVip:    sub('venue','venue_vip'),
+    secVenueStaff:  sub('venue','venue_staff'),
+
+    sec3_1:    sub('3','3_1'),
+    sec3_2:    sub('3','3_2'),
+    sec3Dinner:sub('3','3_dinner'),
+    sec3_3:    sub('3','3_3'),
+    sec3:      secTotal('3'),
+
+    sec4_1: sub('4','4_1'),
+    sec4_2: sub('4','4_2'),
+    sec4_3: sub('4','4_3'),
+    sec4:   secTotal('4'),
+
+    secExtHonor:  sub('ext','ext_honor'),
+    secExtLodging:sub('ext','ext_lodging'),
+    secExtTravel: sub('ext','ext_travel'),
+    secExt:  secExtTotal,
+    sec5:    secExtTotal, // คงชื่อเดิมไว้เพื่อ backward-compat กับไฟล์ 07 ที่อ่าน sec5
+
+    grandTotal: state.grandTotal || 0,
+    totalVal, totalVat, totalWht,
+    rowsJson:   JSON.stringify(state.rows || []),
+    savedAt:    new Date().toISOString()
+  };
+}
+
+/* ============================================================
+   GOOGLE SHEET API
+============================================================ */
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbySJROnBMkxFBNyPvET3DC5ihdCz03OPzvi2xXm6cMQpoPFsi2pAiTQAQIVSDUwQNVZ5w/exec';
+
+/* gsApi — ใช้ fetch() (GAS รองรับ CORS)
+   GET  → action + no param
+   POST → action + data (JSON body via URLSearchParams)
+   GAS ต้อง return JSON: { ok: true, data: {...} } หรือ { ok: false, error: '...' }
+*/
+async function gsApi(action, data, no) {
+  const GAS = GAS_URL;
+  try {
+    let res;
+    if (data) {
+      // POST — ส่งเป็น form data (GAS รับได้ทั้ง GET และ POST)
+      const params = new URLSearchParams({ action, data: JSON.stringify(data) });
+      if (no) params.append('no', no);
+      res = await fetch(GAS, { method: 'POST', body: params });
+    } else {
+      // GET
+      let url = GAS + '?action=' + encodeURIComponent(action);
+      if (no) url += '&no=' + encodeURIComponent(no);
+      res = await fetch(url);
+    }
+    const json = await res.json();
+    if (json.ok) return json.data;
+    throw new Error(json.error || 'API error');
+  } catch(e) {
+    throw e;
+  }
+}
+function syncActualTo01(state, draftName) {
+  try {
+    const TMS_KEY = 'tms_saved_slots';
+
+
+    const slots = JSON.parse(localStorage.getItem(TMS_KEY)||'[]');
+    const course  = state.meta.sm_title || '';
+    const batch   = state.meta.sm_run   || '';
+    const no      = state.meta.sm_runno || '';
+
+    // สร้าง actualData object สำหรับเก็บ
+    const actual = {
+      grandTotal: state.grandTotal,
+      bySection: state.actualBySection,
+      draftName,
+      savedAt: new Date().toISOString(),
+      rows: state.rows.map(r => ({
+        sec: r.sec, sub: r.sub||'', name: r.name || r.staff || '',
+        val: parseFloat(r.val)||0,
+        vat: parseFloat(r.vat)||0,
+        wht: parseFloat(r.wht)||0,
+        total: parseFloat(r.total)||0
+      }))
+    };
+
+    // หา slot ด้วย no (primary) ก่อน, fallback course+batch
+    let idx = no ? slots.findIndex(s => s.no && s.no === no) : -1;
+    if (idx < 0 && course && batch) idx = slots.findIndex(s => s.course === course && s.batch === batch);
+
+    if (idx >= 0) {
+      slots[idx].actual06 = actual;
+      slots[idx].actual   = actual;
+      slots[idx].actualSavedAt = actual.savedAt;
+      if (no && !slots[idx].no) slots[idx].no = no;
+    } else {
+      slots.unshift({
+        id: Date.now(), course, batch, no,
+        date: state.meta.sm_date || '',
+        dateStart: state.meta.sm_date || '',
+        dateEnd: state.meta.sm_date_end || '',
+        location: state.meta.sm_location || '',
+        savedAt: new Date().toLocaleString('th-TH',{dateStyle:'short',timeStyle:'short'}),
+        actual06: actual, actual
+      });
+    }
+    localStorage.setItem(TMS_KEY, JSON.stringify(slots.slice(0, 20)));
+    sessionStorage.setItem('actualData_'+no+'_'+course+'_'+batch, JSON.stringify(actual));
+    sessionStorage.setItem('latestActual', JSON.stringify({ no, course, batch, actual }));
+  } catch(e) { console.warn('syncActualTo01 error:', e); }
+}
+
+
+/* ============================================================
+   AUTO-LOAD FROM GOOGLE SHEET BY เลขที่หลักสูตร
+   ============================================================ */
+let _lastAutoLoadNo = '';
+
+async function autoLoadFromSheet(){
+  const no = document.getElementById('sh_runno')?.value?.trim() || '';
+  if(!no || no === _lastAutoLoadNo) return;
+  _lastAutoLoadNo = no;
+
+  showGsLoader('📥 กำลังโหลดข้อมูล');
+
+  try {
+    // GAS action getByNo คืน { course, budget, actual06, actual07 }
+    const result = await gsApi('getByNo', null, no);
+
+    const course   = result && result.course   ? result.course   : null;
+    const actual06 = result && result.actual06 ? result.actual06 : null;
+    const budget05 = result && result.budget   ? result.budget   : null;
+
+    // เก็บ toggle ของหมวดต่างๆ จากไฟล์ 05 ไว้ใช้คำนวณเลขข้อ dynamic (computeMajorNumbers)
+    BUDGET05 = budget05;
+    BUDGET05_TOGGLES = null;
+    if (budget05 && budget05.spkJson) {
+      try {
+        BUDGET05_TOGGLES = typeof budget05.spkJson === 'string' ? JSON.parse(budget05.spkJson) : budget05.spkJson;
+      } catch(e) { BUDGET05_TOGGLES = null; }
+    }
+
+    if(!course && !actual06){
+      hideGsLoader();
+      showGsStatus('⚠️ ไม่พบข้อมูลเลขที่ ' + no, 'warn');
+      return;
+    }
+
+    showGsLoader('📥 พบข้อมูลแล้ว กำลังนำเข้าฟอร์ม...');
+
+    // เติม meta จาก courses sheet
+    if(course){
+      if(course.course)   { const el=document.getElementById('sh_title');    if(el) el.value=course.course; }
+      if(course.batch)    { const el=document.getElementById('sh_run');      if(el) el.value=course.batch; }
+      if(course.location) { const el=document.getElementById('sh_location'); if(el) el.value=course.location; }
+      const ds = String(course.dateStart||'').trim();
+      const de = String(course.dateEnd||'').trim();
+      if(ds && /^\d{4}-\d{2}-\d{2}$/.test(ds)){ const el=document.getElementById('sh_date');     if(el) el.value=ds; }
+      if(de && /^\d{4}-\d{2}-\d{2}$/.test(de)){ const el=document.getElementById('sh_date_end'); if(el) el.value=de; }
+      shSyncDateRange();
+    }
+
+    // restore rows จาก actual06 sheet
+    let rows = [];
+    if(actual06 && actual06.rowsJson){
+      try {
+        rows = typeof actual06.rowsJson === 'string'
+          ? JSON.parse(actual06.rowsJson)
+          : actual06.rowsJson;
+      } catch(e){ rows = []; }
+    }
+    if(rows.length > 0){
+      smPS().querySelector('#sm_rows').innerHTML = '';
+      smCnt = 0;
+      restoreRowsFromGs(rows);
+      sumRenumber();
+      sumCalc();
+    }
+
+    hideGsLoader();
+    const rowMsg = rows.length > 0
+      ? ' · ' + rows.length + ' รายการใบเสร็จ'
+      : ' (ยังไม่มีรายการใบเสร็จ)';
+    showGsStatus('✅ โหลดข้อมูลสำเร็จ' + rowMsg, 'ok');
+
+  } catch(e) {
+    hideGsLoader();
+    showGsStatus('❌ โหลดไม่สำเร็จ: ' + e.message, 'error');
+    console.warn('autoLoadFromSheet error:', e);
+  }
+}
+
+/* ── Loading overlay helpers ── */
+function showGsLoader(msg){
+  let el = document.getElementById('gs-loader-overlay');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'gs-loader-overlay';
+    el.style.cssText = [
+      'position:fixed','inset:0','background:rgba(15,39,68,.55)',
+      'z-index:9998','display:flex','align-items:center','justify-content:center'
+    ].join(';');
+    el.innerHTML = '<div id="gs-loader-box" style="background:transparent;padding:16px;min-width:200px;max-width:280px;width:90%;font-family:Sarabun,sans-serif;text-align:center;box-sizing:border-box;">' +
+        // ใส่ filter drop-shadow เป็นออร่าสีขาวฟุ้งๆ (rgba 255, 255, 255, 0.7) เพื่อดันให้ Spinner เด่นชัด
+        '<svg width="48" height="48" viewBox="0 0 48 48" style="display:block;margin:0 auto 14px;animation:gs-spin .9s linear infinite;transform-origin:center;filter:drop-shadow(0 0 6px rgba(255,255,255,0.7));">' +
+        // 1. เส้นฐานวงกลมเปลี่ยนเป็นสีขาวทึบ (#ffffff)
+        '<circle cx="24" cy="24" r="20" fill="none" stroke="#ffffff" stroke-width="4"/>' +
+        // 2. ตัวหมุนสีน้ำเงินเดิม (#1a56db) ปรับความหนาขึ้นเป็น 4.5 ให้ตัดกับเส้นสีขาวชัดๆ
+        '<circle cx="24" cy="24" r="20" fill="none" stroke="#1a56db" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="30 96"/>' +
+        '<\/svg>' +
+        // 3. ตัวหนังสือสีขาว พร้อมเงาสีดำหนุนด้านหลัง 2 ชั้น เพื่อให้อ่านง่ายบนทุกพื้นผิว
+        '<div id="gs-loader-msg" style="font-size:15px;color:#ffffff;font-weight:600;line-height:1.6;text-shadow:0 2px 4px rgba(0,0,0,0.6), 0 4px 12px rgba(0,0,0,0.3);"><\/div>' +
+      '<\/div>';
+    document.head.insertAdjacentHTML('beforeend','<style>@keyframes gs-spin{to{transform:rotate(360deg)}}<\/style>');
+    document.body.appendChild(el);
+  }
+  el.style.display = 'flex';
+  document.getElementById('gs-loader-msg').textContent = msg || 'กำลังโหลด...';
+}
+
+function hideGsLoader(){
+  const el = document.getElementById('gs-loader-overlay');
+  if(el) el.style.display = 'none';
+}
+
+function showGsStatus(msg, type){
+  const colors = {
+    ok:    ['#d1fae5','#065f46','#10b981'],
+    warn:  ['#fef3c7','#92400e','#f59e0b'],
+    error: ['#fee2e2','#991b1b','#ef4444']
+  };
+  const [bg, text, border] = colors[type] || colors.ok;
+  let el = document.getElementById('gs-status-bar');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'gs-status-bar';
+    el.style.cssText = [
+      'position:fixed','bottom:20px','left:50%','transform:translateX(-50%)',
+      'z-index:9999','padding:12px 24px','border-radius:10px',
+      'font-family:Sarabun,sans-serif','font-size:14px','font-weight:600',
+      'box-shadow:0 4px 20px rgba(0,0,0,.15)','white-space:nowrap','max-width:90vw'
+    ].join(';');
+    document.body.appendChild(el);
+  }
+  el.style.background   = bg;
+  el.style.color        = text;
+  el.style.border       = '1.5px solid ' + border;
+  el.textContent        = msg;
+  el.style.display      = 'block';
+  clearTimeout(el._t);
+  el._t = setTimeout(()=>{ el.style.display='none'; }, 4000);
+}
+function restoreRowsFromGs(rows){
+  const ps = smPS();
+  for(const r of rows){
+    sumAddRow();
+    const newId = `smr${smCnt}`;
+
+    // 1. set sec
+    const secEl = ps.querySelector(`#${newId}_sec`);
+    if(secEl) secEl.value = r.sec||'1';
+    sumSecChange(newId);
+
+    // 2. set sub → trigger logic (สร้าง fields ที่ขึ้นกับ sub)
+    const subEl = ps.querySelector(`#${newId}_sub`);
+    if(subEl && r.sub) subEl.value = r.sub;
+    if(r.sub) sumSubChange(newId);
+
+    // 3. restore ทุก field ทั่วไปที่มีใน row — ครอบคลุมทุกหมวด
+    const commonFields = [
+      'doc','name','staff','branch','taxid',
+      'addr1','tambon','amphoe','province','zip',
+      'date','acct','val','vat','wht','total'
+    ];
+    commonFields.forEach(f => {
+      if(f === 'staff' && !(r.sec === '4' && r.sub !== '4_3')) return;
+      if(f === 'name'  &&   r.sec === '4' && r.sub !== '4_3') return;
+      const el = ps.querySelector(`#${newId}_${f}`);
+      if(el && r[f] !== undefined && r[f] !== '') el.value = r[f];
+    });
+
+    // 4. สำหรับ 3_12 — restore ช่องแยก 3.1 / 3.2 ด้วย
+    if(r.sub === '3_12'){
+      const fv31   = ps.querySelector(`#${newId}_v31`);
+      const fvat31 = ps.querySelector(`#${newId}_vat31`);
+      const fv32   = ps.querySelector(`#${newId}_v32`);
+      const fvat32 = ps.querySelector(`#${newId}_vat32`);
+      if(fv31)   fv31.value   = r.v31   ?? 0;
+      if(fvat31) fvat31.value = r.vat31 ?? 0;
+      if(fv32)   fv32.value   = r.v32   ?? 0;
+      if(fvat32) fvat32.value = r.vat32 ?? 0;
+      sumRowCalc312(newId);
+    }
+
+    // 5. merge checkbox
+    if(r.merge){ const cb = ps.querySelector(`#${newId}_merge`); if(cb) cb.checked = true; }
+
+    sumRowCalc(newId);
+  }
+}
+
+function sumBuildDoc(){
+  const ps = smPS();
+  const title = shGet('sm_title');
+  const run   = shGet('sm_run');
+  const runno = shGet('sm_runno');
+  const date  = shGetDateStr();
+  const place = shGet('sm_location');
+
+  // collect rows
+  const rows = [];
+  let seq = 0;
+  ps.querySelectorAll('#sm_rows .sum-row-card').forEach((card,idx)=>{
+    const id = card.id;
+    const secV = ps.querySelector(`#${id}_sec`)?.value||'2';
+    const subV = ps.querySelector(`#${id}_sub`)?.value||'';  // '1_1','1_2','' — เก็บไว้แต่ไม่แสดงในรายงาน
+    const isMerged = idx > 0 && (ps.querySelector(`#${id}_merge`)?.checked || false);
+    if(!isMerged) seq++;
+    const isStaff = secV === '4' && subV !== '4_3';
+    rows.push({
+      seq, isMerged, secV, subV,
+      doc     : ps.querySelector(`#${id}_doc`)?.value||'',
+      name    : isStaff
+                  ? (ps.querySelector(`#${id}_staff`)?.value||'')
+                  : (ps.querySelector(`#${id}_name`)?.value||''),
+      branch  : ps.querySelector(`#${id}_branch`)?.value||'',
+      taxid   : ps.querySelector(`#${id}_taxid`)?.value||'',
+      addr1   : ps.querySelector(`#${id}_addr1`)?.value||'',
+      tambon  : ps.querySelector(`#${id}_tambon`)?.value||'',
+      amphoe  : ps.querySelector(`#${id}_amphoe`)?.value||'',
+      province: ps.querySelector(`#${id}_province`)?.value||'',
+      zip     : ps.querySelector(`#${id}_zip`)?.value||'',
+      date    : ps.querySelector(`#${id}_date`)?.value||'',
+      acct    : ps.querySelector(`#${id}_acct`)?.value||'6212001',
+      val  : parseFloat(ps.querySelector(`#${id}_val`)?.value)||0,
+      vat  : parseFloat(ps.querySelector(`#${id}_vat`)?.value)||0,
+      wht  : parseFloat(ps.querySelector(`#${id}_wht`)?.value)||0,
+      total: parseFloat(ps.querySelector(`#${id}_total`)?.value)||0,
+    });
+  });
+
+  // คำนวณเลขข้อ dynamic ตามหมวดที่มีรายการจริงในรายงานนี้ แล้วเติม label ให้แต่ละแถว
+  const majorNums = computeMajorNumbers(rows);
+  rows.forEach(r=>{
+    const baseLabel = SEC_OPTS.find(s=>s.v===r.secV)?.l || '';
+    r.secL = DYNAMIC_SEC_ORDER.includes(r.secV)
+      ? `${majorNums[r.secV] || ''}. ${baseLabel}`
+      : baseLabel; // '1.'/'2.' ฝังเลขไว้ใน label อยู่แล้ว
+  });
+
+  const PER_PAGE = 5;
+  const totalPages = Math.max(1, Math.ceil(rows.length / PER_PAGE));
+  let gVal=0,gVat=0,gWht=0,gTotal=0;
+  rows.forEach(r=>{gVal+=r.val;gVat+=r.vat;gWht+=r.wht;gTotal+=r.total;});
+
+  let html = '';
+  for(let p=0;p<totalPages;p++){
+    const pageRows = rows.slice(p*PER_PAGE,(p+1)*PER_PAGE);
+    const carryVal   = rows.slice(0,p*PER_PAGE).reduce((a,r)=>a+r.val,0);
+    const carryVat   = rows.slice(0,p*PER_PAGE).reduce((a,r)=>a+r.vat,0);
+    const carryWht   = rows.slice(0,p*PER_PAGE).reduce((a,r)=>a+r.wht,0);
+    const carryTotal = rows.slice(0,p*PER_PAGE).reduce((a,r)=>a+r.total,0);
+    const isFirst = p===0, isLast = p===totalPages-1;
+
+    let pg = `<div class="sm-page">`;
+    pg += `<div class="sm-pgnum">หน้า ${p+1}/${totalPages}</div>`;
+    if(isFirst){
+      pg += `<div class="sm-hdr">
+         <div style="width: 100%; margin-bottom: 1px;">
+           <input class="rpt-edit" type="text" value="สรุปค่าใช้จ่ายการดำเนินการฝึกอบรม" 
+                  style="width: 100%; text-align: center; font-weight: bold; font-family: 'Sarabun', sans-serif; background: transparent; border: none; outline: none; padding: 2px 0 2px 0; line-height: 1.5;">
+         </div>
+         <div style="width: 100%; margin-bottom: 1px;">
+           <input class="rpt-edit" type="text" value="หลักสูตร ${title} รุ่นที่ ${run}" 
+                  style="width: 100%; text-align: center;font-weight: bold; font-family: 'Sarabun', sans-serif; background: transparent; border: none; outline: none; padding: 2px 0 2px 0; line-height: 1.5;">
+         </div>
+         <div style="width: 100%; margin-bottom: 1px;">
+           <input class="rpt-edit" type="text" value="เลขที่รุ่นหลักสูตร ${runno} ในวันที่ ${date}" 
+                  style="width: 100%; text-align: center;font-weight: bold; font-family: 'Sarabun', sans-serif; background: transparent; border: none; outline: none; padding: 2px 0 2px 0; line-height: 1.5;">
+         </div>
+         <div style="width: 100%; margin-bottom: 1px;">
+           <input class="rpt-edit" type="text" value="ณ ${place}" 
+                  style="width: 100%; text-align: center;font-weight: bold; font-family: 'Sarabun', sans-serif; background: transparent; border: none; outline: none; padding: 2px 0 2px 0; line-height: 1.5;">
+         </div>
+       </div>`;
+    }
+    pg += `<table class="sm-tbl">
+      <thead><tr>
+        <th style="width:6%">ลำดับที่</th>
+        <th style="width:44%">รายการ</th>
+        <th style="width:10%">รหัสบัญชี</th>
+        <th style="width:10%">มูลค่าสินค้า</th>
+        <th style="width:10%">ภาษีมูลค่าเพิ่ม</th>
+        <th style="width:10%">ภาษีหัก ณ ที่จ่าย</th>
+        <th style="width:10%">จำนวนเงิน</th>
+      </tr></thead><tbody>`;
+
+    if(isFirst) pg += `<tr class="sm-cat"><td class="sm-tl" colspan="7">ก. ค่าดำเนินการฝึกอบรม</td></tr>`;
+    if(!isFirst) pg += `<tr class="sm-carry"><td class="sm-tc" colspan="3">ยกยอดมา</td>
+      <td class="sm-tr">${smFmt(carryVal)}</td><td class="sm-tr">${smF2(carryVat)}</td>
+      <td class="sm-tr">${smF2(carryWht)}</td><td class="sm-tr">${smFmt(carryTotal)}</td></tr>`;
+
+    let lastSec = '';
+    const seqSpan = {};
+    pageRows.forEach(r => { seqSpan[r.seq] = (seqSpan[r.seq]||0) + 1; });
+    const seqRendered = {};
+    pageRows.forEach(r => {
+      // 1. ตรวจสอบการเปลี่ยนหมวดหมู่ (เพื่อใส่หัวข้อหมวดใหญ่ เช่น 2. ค่าวัสดุเบ็ดเตล็ด)
+      if (r.secV !== lastSec) {
+        pg += `<tr class="sm-grp"><td class="sm-ind1 sm-tl" colspan="7">${r.secL}</td></tr>`;
+        lastSec = r.secV;
+      }
+
+      // 2. [จุดนี้!] แทรกบรรทัด x.1 หลังจากที่บรรทัดหัวข้อหมวด 2 (ค่าวัสดุเบ็ดเตล็ด) ถูกใส่ลงไปแล้ว
+      if (r.secV === '2' && !window.hasAddedOthers) {
+        pg += `<tr>
+                 <td class="sm-tl" colspan="7" style="padding-left: 20px; font-weight: bold; font-style: normal;">
+                  &nbsp;&nbsp;&nbsp;${majorNums['2'] || ''}.1 ค่าใช้จ่ายอื่นๆ (ว.119)
+                 </td>
+               </tr>`;
+        window.hasAddedOthers = true; 
+      }
+
+      // 3. แสดงข้อมูลแถวรายการ (แสดงตามปกติ)
+      const showSeq = !seqRendered[r.seq];
+      const span = seqSpan[r.seq] || 1;
+      if (showSeq) seqRendered[r.seq] = true;
+      
+      pg += `<tr>
+        ${showSeq ? `<td class="sm-tc" rowspan="${span}">${r.seq}</td>` : ''}
+        <td class="sm-tl sm-lines">
+          <div>${r.doc}</div><div>${r.name}</div>
+          ${r.branch ? `<div>${r.branch}</div>` : ''}
+          ${r.taxid ? `<div>เลขประจำตัวผู้เสียภาษี ${r.taxid}</div>` : ''}
+          
+          ${(r.addr1 || r.tambon) ? 
+            `<div>ที่อยู่ ${r.addr1 || ''} ${r.tambon ? 'ต.' + r.tambon : ''}</div>` 
+            : ''}
+          
+          ${(r.amphoe || r.province || r.zip) ? 
+            `<div>${[r.amphoe ? 'อ.' + r.amphoe : '', r.province ? 'จ.' + r.province : '', r.zip].filter(Boolean).join(' ')}</div>` 
+            : ''}
+            
+          <div>ลงวันที่ ${sumFmtDate(r.date)}</div>
+        </td>
+        <td class="sm-tc">${r.acct}</td>
+        <td class="sm-tr">${smFmt(r.val)}</td>
+        <td class="sm-tr">${smF2(r.vat)}</td>
+        <td class="sm-tr">${smF2(r.wht)}</td>
+        <td class="sm-tr">${smFmt(r.total)}</td></tr>`;
+    });
+    // Reset ตัวแปรหลังจบลูปหน้าปัจจุบัน
+    window.hasAddedOthers = false;
+
+    if(!isLast){
+      const sv=carryVal+pageRows.reduce((a,r)=>a+r.val,0);
+      const svat=carryVat+pageRows.reduce((a,r)=>a+r.vat,0);
+      const swht=carryWht+pageRows.reduce((a,r)=>a+r.wht,0);
+      const st=carryTotal+pageRows.reduce((a,r)=>a+r.total,0);
+      pg += `<tr class="sm-carry"><td class="sm-tc" colspan="3">ยกยอดไป</td>
+        <td class="sm-tr">${smFmt(sv)}</td><td class="sm-tr">${smF2(svat)}</td>
+        <td class="sm-tr">${smF2(swht)}</td><td class="sm-tr">${smFmt(st)}</td></tr>`;
+    } else {
+      pg += `<tr class="sm-grand"><td class="sm-tc" colspan="3">รวมเงินยืมทั้งสิ้น</td>
+        <td class="sm-tr">${smFmt(gVal)}</td><td class="sm-tr">${smF2(gVat)}</td>
+        <td class="sm-tr">${smF2(gWht)}</td><td class="sm-tr">${smFmt(gTotal)}</td></tr>`;
+    }
+    pg += `</tbody></table></div>`;
+    html += pg;
+  }
+  ps.querySelector('#sm_doc').innerHTML = html;
+}
+
+/* ── CONFIRM BACK (3.2) ── */
+function confirmBack06() {
+  const pop = document.createElement('div');
+  pop.id = 'back-confirm-overlay-06';
+  pop.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  pop.innerHTML = `
+    <div style="background:#fff;border-radius:14px;padding:28px 32px;max-width:380px;width:90%;
+      box-shadow:0 20px 60px rgba(0,0,0,.25);font-family:'Sarabun',sans-serif;text-align:center;">
+      <div style="font-size:36px;margin-bottom:10px;">💾</div>
+      <div style="font-size:16px;font-weight:700;color:#111827;margin-bottom:8px;">บันทึกรายการใบเสร็จก่อนออก?</div>
+      <div style="font-size:13px;color:#6b7280;margin-bottom:22px;line-height:1.6;">
+        </div>
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button onclick="document.getElementById('back-confirm-overlay-06').remove();sumSave();"
+          style="background:linear-gradient(135deg,#1a56db,#1241b0);color:#fff;border:none;border-radius:8px;
+          padding:10px 28px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;
+          box-shadow:0 3px 12px rgba(26,86,219,.3);">💾 บันทึก</button>
+        <button onclick="document.getElementById('back-confirm-overlay-06').remove();location.href='01.Main-Reports.html';"
+          style="background:#f3f4f6;color:#374151;border:1.5px solid #d1d5db;border-radius:8px;
+          padding:10px 24px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">
+          ไม่บันทึก</button>
+      </div>
+    </div>`;
+  document.body.appendChild(pop);
+}
+/* ── SAVE PDF ── */
+function savePdf06(btn){
+  const el = document.getElementById('sm_doc');
+  if(!el || !el.innerHTML.trim()){ alert('กรุณาดูสรุปเอกสารก่อน'); return; }
+  const safe  = s => s.replace(/[/\\:*?"<>|]/g,'_').trim();
+  const fname = safe(`สรุปค่าใช้จ่าย_${shGet('sm_title')||''}_รุ่น${shGet('sm_run')||''}_${shGet('sm_runno')||''}`) || 'sum_06';
+  btn.disabled = true; btn.textContent = '⏳ กำลังสร้าง...';
+  const clone = el.cloneNode(true);
+  /* ลบ border/shadow ทุก element */
+  clone.querySelectorAll('*').forEach(e => {
+    e.style.boxShadow    = 'none';
+    e.style.outline      = 'none';
+    e.style.borderRadius = '0';
+    e.style.borderLeft   = 'none';
+    e.style.borderRight  = 'none';
+    e.style.borderTop    = 'none';
+    e.style.borderBottom = 'none';
+  });
+  /* ลบกรอบของ sum-print-wrap เอง */
+  clone.style.border     = 'none';
+  clone.style.boxShadow  = 'none';
+  clone.style.background = '#fff';
+  clone.style.maxWidth   = '100%';
+  clone.style.padding    = '0';
+  /* แปลง input → div */
+  clone.querySelectorAll('input[type=text],input:not([type])').forEach(inp => {
+    const cs = window.getComputedStyle(inp);
+    const d  = document.createElement('div');
+    d.style.cssText = `border:none;background:transparent;font-family:Sarabun,sans-serif;font-size:${cs.fontSize};font-weight:${cs.fontWeight};color:#000;text-align:${cs.textAlign};width:100%;line-height:1.5;`;
+    d.textContent = inp.value;
+    inp.parentNode.replaceChild(d, inp);
+  });
+  /* ล้าง border เดิมของ sm-tbl และ doc-table ทั้งหมดก่อน แล้วค่อย inject ใหม่ */
+  clone.querySelectorAll('table').forEach(tbl => {
+    tbl.style.borderCollapse = 'separate';
+    tbl.style.borderSpacing  = '0';
+    tbl.style.boxShadow      = 'none';
+    // ใส่เส้นขอบ ล่าง และ ขวา ให้กับตัวตารางหลัก
+    tbl.style.borderBottom   = '1px solid #000';
+    tbl.style.borderRight    = '1px solid #000';
+    tbl.style.borderTop      = 'none';
+    tbl.style.borderLeft     = 'none';
+  });
+
+  clone.querySelectorAll('table th, table td').forEach(cell => {
+    // ให้ทุกเซลล์มีเส้นขอบเฉพาะ บน และ ซ้าย (เส้นจะไม่ซ้อนกัน และไม่หายเวลาขึ้นหน้าใหม่)
+    cell.style.borderTop    = '1px solid #000';
+    cell.style.borderLeft   = '1px solid #000';
+    cell.style.borderBottom = 'none';
+    cell.style.borderRight  = 'none';
+    cell.style.background   = '#fff';
+    cell.style.boxShadow    = 'none';
+  });
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;background:#fff;font-family:Sarabun,sans-serif;border:none;box-shadow:none;padding:0;';
+  wrap.appendChild(clone);
+  document.body.appendChild(wrap);
+  setTimeout(()=>{
+    const ML=0.39,MT=1.0,MR=0.39,MB=1.7,SCALE=2;
+    const printW=8.27-ML-MR, printH=11.69-MT-MB;
+    html2canvas(clone,{scale:SCALE,useCORS:true,logging:false,backgroundColor:'#ffffff'}).then(canvas=>{
+      const {jsPDF}=window.jspdf;
+      const pdf=new jsPDF({unit:'in',format:'a4',orientation:'portrait'});
+      const ratio=printW/(canvas.width/SCALE);
+      const totalH=(canvas.height/SCALE)*ratio;
+      let yOff=0,page=0;
+      while(yOff<totalH){
+        if(page>0) pdf.addPage();
+        const srcY=Math.round((yOff/ratio)*SCALE);
+        const srcH=Math.round((printH/ratio)*SCALE);
+        const slice=document.createElement('canvas');
+        slice.width=canvas.width;
+        slice.height=Math.min(srcH,canvas.height-srcY);
+        slice.getContext('2d').drawImage(canvas,0,srcY,canvas.width,slice.height,0,0,canvas.width,slice.height);
+        pdf.addImage(slice.toDataURL('image/png',1),'PNG',ML,MT,printW,(slice.height/SCALE)*ratio);
+        yOff+=printH; page++;
+      }
+      pdf.save(fname+'.pdf');
+    }).finally(()=>{
+      document.body.removeChild(wrap);
+      btn.disabled=false; btn.textContent='💾 บันทึก PDF';
+    });
+  },300);
+}
+
+/* ============================================================
+   โหลดข้อมูลจาก 01.Main-Reports ผ่าน sessionStorage
+   (อยู่ใน script block เดียวกับ autoLoadFromSheet และ shSyncDateRange)
+============================================================ */
+document.addEventListener('DOMContentLoaded', function loadFromMain(){
+  try {
+    // ลำดับความสำคัญ:
+    // 1. courseData จาก sessionStorage (ส่งมาโดย passData() ใน 01 — ข้อมูลปัจจุบันที่ user เลือก)
+    // 2. budgetSlotData จาก sessionStorage (ถ้า 01 ส่งมาพร้อมกัน)
+    // ไม่อ่าน localStorage.budgetSlotData เพราะอาจค้างจากหลักสูตรเก่า
+
+    const rawCourse = sessionStorage.getItem('courseData');
+    const rawSlot   = sessionStorage.getItem('budgetSlotData');
+
+    // courseData คือแหล่งข้อมูลหลัก (มี no, course, batch, dateStart, dateEnd, location)
+    let cd = null;
+    try { cd = rawCourse ? JSON.parse(rawCourse) : null; } catch(e){}
+
+    // budgetSlotData ใช้เสริม ถ้า courseData ไม่มี (เปิดตรงโดยไม่ผ่าน 01)
+    let slot = null;
+    try { slot = rawSlot ? JSON.parse(rawSlot) : null; } catch(e){}
+
+    // ใช้ courseData เป็นหลัก — slot เสริมเฉพาะกรณีไม่มี courseData
+    const d = cd || slot;
+    if (!d) return;
+
+    // เติม meta fields — courseData ใช้ field: course, batch, no, location
+    const course   = d.course   || '';
+    const batch    = d.batch    || '';
+    const no       = d.no       || '';
+    const location = d.location || '';
+
+    if (course)   { const el = document.getElementById('sh_title');    if(el) el.value = course; }
+    if (batch)    { const el = document.getElementById('sh_run');      if(el) el.value = batch; }
+    if (no)       { const el = document.getElementById('sh_runno');    if(el) el.value = no; }
+    if (location) { const el = document.getElementById('sh_location'); if(el) el.value = location; }
+
+    // วันที่ — รองรับ dateStart/dateEnd และ date แบบ "YYYY-MM-DD_YYYY-MM-DD"
+    const dateVal    = d.dateStart ||
+                       (d.date && !d.date.includes('_') ? d.date :
+                       (d.date ? d.date.split('_')[0] : ''));
+    const dateEndVal = d.dateEnd ||
+                       (d.date && d.date.includes('_') ? d.date.split('_')[1] : dateVal);
+
+    if (dateVal    && /^\d{4}-\d{2}-\d{2}$/.test(dateVal))
+      { const el = document.getElementById('sh_date');     if(el) el.value = dateVal; }
+    if (dateEndVal && /^\d{4}-\d{2}-\d{2}$/.test(dateEndVal))
+      { const el = document.getElementById('sh_date_end'); if(el) el.value = dateEndVal; }
+
+    window._dateStart = dateVal    || '';
+    window._dateEnd   = dateEndVal || '';
+    shSyncDateRange();
+
+    // ถ้ามี no → reset แล้วดึงข้อมูลจาก Google Sheet อัตโนมัติ
+    if (no) {
+      _lastAutoLoadNo = '';   // force reload แม้ no เดิม
+      setTimeout(autoLoadFromSheet, 400);
+    }
+
+  } catch(e) { console.warn('loadFromMain error:', e); }
+});
+</script>
+</html>
