@@ -1,17 +1,14 @@
 {
-  "name": "tms-pdf-server",
+  "name": "trainfin-pdf-server",
   "version": "1.0.0",
-  "description": "Puppeteer PDF generation server สำหรับระบบรายงานการฝึกอบรม กฝภ.1 (แทนที่ html2canvas + jsPDF เดิม)",
-  "main": "pdf-server.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node pdf-server.js"
-  },
-  "engines": {
-    "node": ">=18"
+    "start": "node server.js",
+    "build": "puppeteer browsers install chrome"
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^4.19.2",
-    "puppeteer": "^22.15.0"
+    "express": "^4.18.2",
+    "puppeteer": "^22.0.0"
   }
 }
