@@ -1,6 +1,7 @@
 const express   = require('express');
 const cors      = require('cors');
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-core');
+const chromium  = require('@sparticuz/chromium');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -8,21 +9,12 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json({ limit: '20mb' }));
 
-// ฟังก์ชันสำหรับเปิด Browser แบบติดตัวแปรสภาพแวดล้อมบน Linux/Render
 async function getBrowser() {
   return await puppeteer.launch({
-    headless: true,
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-accelerated-2d-canvas',
-      '--disable-gpu',
-      '--no-first-run',
-      '--no-zygote',
-      '--single-process',
-    ],
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath: await chromium.executablePath(),
+    headless: chromium.headless,
   });
 }
 
@@ -41,7 +33,6 @@ app.post('/pdf', async (req, res) => {
   try {
     let browser = await browserPromise;
     
-    // เช็คว่า Browser ค้าง/ดับไปหรือยัง ถ้าดับให้เปิดใหม่
     if (!browser.isConnected()) {
       browserPromise = getBrowser();
       browser = await browserPromise;
