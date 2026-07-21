@@ -1,0 +1,17 @@
+{
+  "name": "tms-pdf-server",
+  "version": "1.0.0",
+  "description": "Puppeteer PDF generation server สำหรับระบบรายงานการฝึกอบรม กฝภ.1 (แทนที่ html2canvas + jsPDF เดิม)",
+  "main": "pdf-server.js",
+  "scripts": {
+    "start": "node pdf-server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "puppeteer": "^22.15.0"
+  }
+}
