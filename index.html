@@ -220,7 +220,7 @@
   // ============================================================
   const SUPABASE_URL      = 'https://dcaydbxyjisegqzzildq.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjYXlkYnh5amlzZWdxenppbGRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2OTk5NDgsImV4cCI6MjEwMDI3NTk0OH0.cEk8k90NeTTnkZV0Sny7nuN8UbW15_eW8S_HTQSBwwA';
-  const supabase          = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const supabase          = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   const MAIN_URL = 'training_courses_gfr1.html';
   let pwVisible  = false;
