@@ -24,7 +24,7 @@ async function getBrowser() {
 // เริ่มเปิด Browser ตอนรันเซิร์ฟเวอร์
 browserPromise = getBrowser();
 
-app.post('/generate-pdf', async (req, res) => {
+app.post(['/pdf', '/generate-pdf'], async (req, res) => {
   const { html, filename } = req.body;
   if (!html) {
     return res.status(400).json({ error: 'ไม่มีข้อมูล HTML' });
