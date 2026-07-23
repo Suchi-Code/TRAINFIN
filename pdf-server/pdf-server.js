@@ -42,6 +42,8 @@ app.post(['/pdf', '/generate-pdf'], async (req, res) => {
 
     page = await browser.newPage();
 
+    // ✨ เพิ่มบรรทัดนี้ใหม่เข้าไปครับ ✨
+    await page.emulateMediaType('print');
     await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
 
     const pdfBuffer = await page.pdf({
