@@ -1,75 +1,63 @@
-const express   = require('express');
-const cors      = require('cors');
-const puppeteer = require('puppeteer-core');
-const chromium  = require('@sparticuz/chromium');
+const express = require('express');
+const puppeteer = require('puppeteer');
+const cors = require('cors');
 
-const app  = express();
-const PORT = process.env.PORT || 3000;
-
+const app = express();
 app.use(cors());
-app.use(express.json({ limit: '20mb' }));
+app.use(express.json({ limit: '50mb' })); // ป้องกัน HTML ขนาดใหญ่เกินไป
 
-async function getBrowser() {
-  return await puppeteer.launch({
-    args: chromium.args,
-    defaultViewport: chromium.defaultViewport,
-    executablePath: await chromium.executablePath(),
-    headless: chromium.headless,
-  });
-}
-
-let browserPromise = getBrowser();
-
-app.get('/health', (req, res) => res.json({ ok: true }));
-
-app.post('/pdf', async (req, res) => {
-  const { html, filename } = req.body || {};
-
-  if (!html || typeof html !== 'string') {
-    return res.status(400).json({ error: 'ต้องส่ง "html" มาด้วย (string)' });
-  }
-
-  let page;
+app.post('/generate-pdf', async (req, res) => {
+  let browser = null;
   try {
-    let browser = await browserPromise;
-    
-    if (!browser.isConnected()) {
-      browserPromise = getBrowser();
-      browser = await browserPromise;
+    const { html } = req.body;
+
+    if (!html) {
+      return res.status(400).send('No HTML content provided');
     }
 
-    page = await browser.newPage();
+    // 1. ตั้งค่า launch arguments ให้รองรับระบบ Render (RAM 512MB)
+    browser = await puppeteer.launch({
+      headless: 'new',
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage', // ⚠️ สำคัญมากสำหรับ Render เพื่อไม่ให้ RAM เต็ม
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--disable-gpu'
+      ]
+    });
 
-    await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
+    const page = await browser.newPage();
 
+    // 2. ใช้ domcontentloaded แทน networkidle0 เพื่อลดโอกาส Timeout 500
+    await page.setContent(html, { 
+      waitUntil: 'domcontentloaded',
+      timeout: 30000 
+    });
+
+    // 3. แปลงเป็น PDF
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
-      margin: { top: '0.2in', right: '0.2in', bottom: '0.2in', left: '0.2in' },
+      margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' }
     });
 
-    const safeName = String(filename || 'report').replace(/[^\w\u0E00-\u0E7F\-]+/g, '_');
+    await browser.close();
 
-    res.set({
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="${safeName}.pdf"`,
-    });
+    // 4. ส่งไฟล์ PDF กลับไป
+    res.setHeader('Content-Type', 'application/pdf');
     res.send(pdfBuffer);
 
-  } catch (err) {
-    console.error('PDF generation error:', err);
-    res.status(500).json({ error: err.message || 'สร้าง PDF ไม่สำเร็จ' });
-  } finally {
-    if (page) await page.close().catch(() => {});
+  } catch (error) {
+    console.error('Puppeteer PDF Error:', error);
+    if (browser) await browser.close();
+    res.status(500).send('PDF Generation Failed: ' + error.message);
   }
 });
 
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`✅ PDF server พร้อมใช้งานที่ port ${PORT}`);
-});
-
-process.on('SIGTERM', async () => {
-  const browser = await browserPromise;
-  if (browser) await browser.close();
-  process.exit(0);
+  console.log(`PDF Server running on port ${PORT}`);
 });
