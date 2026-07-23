@@ -40,24 +40,27 @@ app.post(['/pdf', '/generate-pdf'], async (req, res) => {
       browser = await browserPromise;
     }
 
-  page = await browser.newPage();
+ page = await browser.newPage();
 
-    // 1. กำหนดความกว้างหน้าจอระดับ HD ให้รองรับการจัด Layout ตาราง/คอลัมน์ได้ครบ
+    // 1. กำหนดความกว้างหน้าจอระดับ HD
     await page.setViewport({ width: 1240, height: 1754, deviceScaleFactor: 2 });
 
-    // 2. สั่งให้ Puppeteer เรนเดอร์ด้วยโหมดการพิมพ์ (Print Media)
+    // 2. สั่งจำลองโหมดพิมพ์
     await page.emulateMediaType('print');
 
-    // 3. ใส่ HTML และตั้ง waitUntil เป็น networkidle0 เพื่อรอให้ CSS/Font ทั้งหมดโหลดเสร็จสมบูรณ์
+    // 3. ใส่ HTML โดยเปลี่ยนมารอแค่ DOM โหลดเสร็จพอ (ไม่ค้างรอ Network)
     await page.setContent(html, { 
-      waitUntil: ['domcontentloaded', 'networkidle0'], 
-      timeout: 30000 
+      waitUntil: 'domcontentloaded', 
+      timeout: 15000 
     });
 
-    // 4. สั่งสร้าง PDF
+    // 4. รออีก 1 วินาทีสั้นๆ ให้ CSS / Font เรนเดอร์ตัวอักษรไทยเรียบร้อย
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // 5. สั่งสร้าง PDF
     const pdfBuffer = await page.pdf({
       format: 'A4',
-      printBackground: true, // ดึงสีพื้นหลังและสีตารางมาครบ
+      printBackground: true,
       margin: { top: '8mm', right: '8mm', bottom: '8mm', left: '8mm' },
       preferCSSPageSize: true
     });
