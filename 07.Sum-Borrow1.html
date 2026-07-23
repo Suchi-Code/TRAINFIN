@@ -2074,17 +2074,30 @@ async function savePdf07(btn){
       e.style.border = 'none';
     });
 
+   // 1. ดึงไฟล์ CSS/Styles ทั้งหมดที่มีอยู่ในหน้าเว็บเดิมมาใช้งาน
+    const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+      .map(node => node.outerHTML)
+      .join('\n');
+
+    // 2. ประกอบ HTML ใหม่ที่ดึง CSS ทั้งหมดมาครบถ้วน + เพิ่มฟอนต์ Sarabun
     const fullHtml = `<!DOCTYPE html>
-<html lang="th"><head><meta charset="UTF-8">
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap');
-  @page { size: A4; margin: 10mm; }
-  * { font-family: 'Sarabun', sans-serif !important; }
-  html, body { margin:0; padding:0; background:#fff; color:#000; }
-  table { page-break-inside:auto; width: 100%; border-collapse: separate; border-spacing: 0; }
-  tr { page-break-inside:avoid; page-break-after:auto; }
-</style>
-</head><body>${clone.outerHTML}</body></html>`;
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  ${styles}
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap');
+    @page { size: A4; margin: 10mm; }
+    * { font-family: 'Sarabun', sans-serif !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    body { background: #fff !important; color: #000 !important; padding: 0 !important; margin: 0 !important; }
+    table { width: 100% !important; border-collapse: collapse !important; }
+    th, td { border: 1px solid #ccc !important; padding: 6px 8px !important; }
+  </style>
+</head>
+<body>
+  ${clone.outerHTML}
+</body>
+</html>`;
 
     const res = await fetch(PDF_SERVICE_URL, {
       method: 'POST',
