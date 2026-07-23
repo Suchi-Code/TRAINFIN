@@ -40,18 +40,27 @@ app.post(['/pdf', '/generate-pdf'], async (req, res) => {
       browser = await browserPromise;
     }
 
-    page = await browser.newPage();
+  page = await browser.newPage();
 
-    // ✨ เพิ่มบรรทัดนี้ใหม่เข้าไปครับ ✨
+    // 1. กำหนดความกว้างหน้าจอระดับ HD ให้รองรับการจัด Layout ตาราง/คอลัมน์ได้ครบ
+    await page.setViewport({ width: 1240, height: 1754, deviceScaleFactor: 2 });
+
+    // 2. สั่งให้ Puppeteer เรนเดอร์ด้วยโหมดการพิมพ์ (Print Media)
     await page.emulateMediaType('print');
-    await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
 
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: { top: '0.2in', right: '0.2in', bottom: '0.2in', left: '0.2in' },
+    // 3. ใส่ HTML และตั้ง waitUntil เป็น networkidle0 เพื่อรอให้ CSS/Font ทั้งหมดโหลดเสร็จสมบูรณ์
+    await page.setContent(html, { 
+      waitUntil: ['domcontentloaded', 'networkidle0'], 
+      timeout: 30000 
     });
 
+    // 4. สั่งสร้าง PDF
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true, // ดึงสีพื้นหลังและสีตารางมาครบ
+      margin: { top: '8mm', right: '8mm', bottom: '8mm', left: '8mm' },
+      preferCSSPageSize: true
+    });
     const safeName = String(filename || 'report').replace(/[^\w\u0E00-\u0E7F\-]+/g, '_');
 
     res.set({
