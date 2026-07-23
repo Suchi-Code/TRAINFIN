@@ -2074,28 +2074,47 @@ async function savePdf07(btn){
       e.style.border = 'none';
     });
 
-   // 1. ดึงไฟล์ CSS/Styles ทั้งหมดที่มีอยู่ในหน้าเว็บเดิมมาใช้งาน
-    const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
-      .map(node => node.outerHTML)
-      .join('\n');
+   // 1. ดึง <head> ทั้งหมดจากหน้าเว็บจริง (รวมไฟล์ CSS, Bootstrap, Tailwind ทั้งหมด)
+    const headHTML = document.head.innerHTML;
 
-    // 2. ประกอบ HTML ใหม่ที่ดึง CSS ทั้งหมดมาครบถ้วน + เพิ่มฟอนต์ Sarabun
+    // 2. ประกอบ HTML แบบสมบูรณ์ 100% พร้อม Base URL และ Print Optimization
     const fullHtml = `<!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  ${styles}
+  <base href="${window.location.origin}${window.location.pathname}">
+  ${headHTML}
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap');
-    @page { size: A4; margin: 10mm; }
-    * { font-family: 'Sarabun', sans-serif !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-    body { background: #fff !important; color: #000 !important; padding: 0 !important; margin: 0 !important; }
-    table { width: 100% !important; border-collapse: collapse !important; }
-    th, td { border: 1px solid #ccc !important; padding: 6px 8px !important; }
+    
+    @page { 
+      size: A4 portrait; 
+      margin: 8mm; 
+    }
+    
+    * { 
+      font-family: 'Sarabun', sans-serif !important; 
+      -webkit-print-color-adjust: exact !important; 
+      print-color-adjust: exact !important; 
+    }
+    
+    body { 
+      background: #ffffff !important; 
+      color: #000000 !important; 
+      margin: 0 !important; 
+      padding: 0 !important; 
+      width: 100% !important;
+    }
+    
+    /* ซ่อนองค์ประกอบที่ไม่ต้องการให้เห็นใน PDF เช่น ปุ่ม หรือ Alert */
+    .no-print, button, .btn { 
+      display: none !important; 
+    }
   </style>
 </head>
 <body>
-  ${clone.outerHTML}
+  <div style="width: 100%; max-width: 100%;">
+    ${clone.outerHTML}
+  </div>
 </body>
 </html>`;
 
