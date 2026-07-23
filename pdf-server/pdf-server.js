@@ -1,6 +1,5 @@
 const express   = require('express');
 const cors      = require('cors');
-const puppeteer = require('puppeteer');
 const puppeteer = require('puppeteer-core');
 const chromium  = require('@sparticuz/chromium');
 
@@ -10,21 +9,11 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json({ limit: '20mb' }));
 
-// ฟังก์ชันสำหรับเปิด Browser แบบติดตัวแปรสภาพแวดล้อมบน Linux/Render
+let browserPromise = null;
+
+// ฟังก์ชันสำหรับเปิด Browser
 async function getBrowser() {
   return await puppeteer.launch({
-    headless: true,
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-accelerated-2d-canvas',
-      '--disable-gpu',
-      '--no-first-run',
-      '--no-zygote',
-      '--single-process',
-    ],
     args: chromium.args,
     defaultViewport: chromium.defaultViewport,
     executablePath: await chromium.executablePath(),
@@ -32,12 +21,21 @@ async function getBrowser() {
   });
 }
 
-@@ -41,44 +33,43 @@
+// เริ่มเปิด Browser ตอนรันเซิร์ฟเวอร์
+browserPromise = getBrowser();
+
+app.post('/generate-pdf', async (req, res) => {
+  const { html, filename } = req.body;
+  if (!html) {
+    return res.status(400).json({ error: 'ไม่มีข้อมูล HTML' });
+  }
+
+  let page = null;
   try {
     let browser = await browserPromise;
 
-    // เช็คว่า Browser ค้าง/ดับไปหรือยัง ถ้าดับให้เปิดใหม่
-    if (!browser.isConnected()) {
+    // เช็กว่า Browser ค้าง/ดับไปหรือยัง ถ้าดับให้เปิดใหม่
+    if (!browser || !browser.isConnected()) {
       browserPromise = getBrowser();
       browser = await browserPromise;
     }
@@ -56,7 +54,7 @@ async function getBrowser() {
 
     res.set({
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="${safeName}.pdf"`,
+      'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(safeName)}.pdf`,
     });
     res.send(pdfBuffer);
 
@@ -73,7 +71,9 @@ app.listen(PORT, () => {
 });
 
 process.on('SIGTERM', async () => {
-  const browser = await browserPromise;
-  if (browser) await browser.close();
+  if (browserPromise) {
+    const browser = await browserPromise;
+    if (browser) await browser.close();
+  }
   process.exit(0);
 });
