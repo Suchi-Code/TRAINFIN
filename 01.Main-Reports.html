@@ -36,6 +36,27 @@
     <!-- Vanta.js (Three.js Dependencies) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.waves.min.js"></script>
+
+    <!-- ═══ ตรวจสอบสิทธิ์การเข้าใช้งาน (Supabase Auth Route Guard) ═══
+         เช็กก่อนแสดงผลหน้าเว็บ ถ้ายังไม่ได้ล็อกอินจะเด้งกลับไปหน้า index.html ทันที
+         (ประกาศ SUPABASE_URL/ANON_KEY/supabaseClient ไว้ที่นี่แบบ global เพื่อให้
+          โค้ดส่วนอื่นของหน้านี้เรียกใช้ supabaseClient ตัวเดียวกันซ้ำได้ ไม่ต้องประกาศซ้ำ) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL      = 'https://dcaydbxyjisegqzzildq.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjYXlkYnh5amlzZWdxenppbGRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2OTk5NDgsImV4cCI6MjEwMDI3NTk0OH0.cEk8k90NeTTnkZV0Sny7nuN8UbW15_eW8S_HTQSBwwA';
+        const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+        async function checkAuth() {
+            if (!supabaseClient) { console.warn('Supabase SDK โหลดไม่สำเร็จ — ข้ามการตรวจสิทธิ์'); return; }
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) {
+                alert("⚠️ กรุณาเข้าสู่ระบบก่อนใช้งาน");
+                window.location.href = 'index.html';
+            }
+        }
+        checkAuth();
+    </script>
 </head>
 <body class="font-sans bg-slate-950 text-slate-800 antialiased overflow-x-hidden">
 
@@ -190,7 +211,7 @@
             { num: '07', name: 'สรุปฯ (ใบปะหน้า)',            icon: '📝', color: 'from-fuchsia-500/40 to-pink-600/30 border-fuchsia-400/50 text-fuchsia-100', href: '07.Sum-Borrow1.html' },
             { num: '08', name: 'ใบหักล้างยืมเงิน (บง.27)',    icon: '🧾', color: 'from-rose-400/20 to-rose-600/10 border-rose-400/30 text-rose-300',      href: '08.Form-Pwa-27.html' },
             { num: '09', name: 'ค่าวัสดุเบ็ดเตล็ด (ว.119)',   icon: '⏱️', color: 'from-slate-400/20 to-slate-600/10 border-slate-400/30 text-slate-300',  href: '09.V199.html' },
-            { num: '01', name: 'ภาพรวมทั้งหมด',               icon: '🏠', color: 'from-indigo-500/40 to-cyan-500/30 border-cyan-300/50 text-cyan-100',    href: '01.Main-Reports.html' },
+            { num: '01', name: 'ภาพรวมทั้งหมด',               icon: '🏠', color: 'from-indigo-500/40 to-cyan-500/30 border-cyan-300/50 text-cyan-100',    href: '10.PDF-Overview.html' },
         ];
 
         function renderReportCards() {
