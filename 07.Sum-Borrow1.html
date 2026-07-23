@@ -174,8 +174,27 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:1px solid #000;verti
   background-clip: padding-box; 
 }
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- ═══ ตรวจสอบสิทธิ์การเข้าใช้งาน (Supabase Auth Route Guard) ═══
+     เช็กก่อนแสดงผลหน้าเว็บ ถ้ายังไม่ได้ล็อกอินจะเด้งกลับไปหน้า index.html ทันที
+     (ประกาศ SUPABASE_URL/ANON_KEY/supabaseClient ไว้ที่นี่แบบ global — โค้ดอัปโหลด PDF
+      ด้านล่างของไฟล์เรียกใช้ supabaseClient ตัวเดียวกันนี้ซ้ำ ไม่ได้ประกาศซ้ำอีก) -->
+<script>
+  const SUPABASE_URL      = 'https://dcaydbxyjisegqzzildq.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjYXlkYnh5amlzZWdxenppbGRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2OTk5NDgsImV4cCI6MjEwMDI3NTk0OH0.cEk8k90NeTTnkZV0Sny7nuN8UbW15_eW8S_HTQSBwwA';
+  const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+  async function checkAuth() {
+    if (!supabaseClient) { console.warn('Supabase SDK โหลดไม่สำเร็จ — ข้ามการตรวจสิทธิ์'); return; }
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) {
+      alert("⚠️ กรุณาเข้าสู่ระบบก่อนใช้งาน");
+      window.location.href = 'index.html';
+    }
+  }
+  checkAuth();
+</script>
 </head>
 <body>
 
@@ -1284,6 +1303,19 @@ function buildTable(){
     rows.push(r5(`&nbsp;&nbsp;${nums.lump}.1 รถตู้รับจ้างรวมน้ำมันเชื้อเพลิง`,'tl i2 nt bb2', fmt(secLump),'tr nt bb2', '','nt bb2', fmt(asecLump),'tr nt bb2', '','nt bb2'));
   }
 
+  // ── รวมเงินข้อ ก. (1.-X.) ก่อนหมวดเช่าสถานที่/อาหารฯ ──
+  // ผลรวมของ ค่าน้ำมันเชื้อเพลิงและหล่อลื่น + ค่าวัสดุสำนักงาน + ค่าวัสดุเบ็ดเตล็ด + ค่าจ้างเหมา
+  // ใช้รูปแบบเดียวกับแถว "รวมเงินข้อ ก." ที่มีอยู่แล้ว (ด้านล่าง) แต่ไม่ถมสีเทา (ไม่ใส่ class bgray)
+  // ล้อตามไฟล์ 05 ที่อัปเดตใหม่ให้แสดงบรรทัดนี้ก่อนหมวดเช่าสถานที่ หรือก่อนอาหารฯ (ถ้าไม่มีเช่าสถานที่)
+  const preVenueOrder = ['lump','misc','office','fuel'];
+  let preVenueLast = 0;
+  for(const k of preVenueOrder){ if(nums[k]){ preVenueLast = nums[k]; break; } }
+  if(preVenueLast > 0){
+    const preVenueTotal  = secFuel + sec1 + sec2 + secLump;
+    const aPreVenueTotal = asecFuel + asec1 + asec2 + asecLump;
+    rows.push(`<tr class="bb2">${td(`รวมเงินข้อ ก. (1. - ${preVenueLast}.) เป็นเงิน`,'tc tw bt2')+td('','bt2')+td(fmt(preVenueTotal),'tr tw bt2')+td('','bt2')+td(fmt(aPreVenueTotal),'tr tw bt2')+td(fmt(preVenueTotal-aPreVenueTotal),'tr tw bt2')}</tr>`);
+  }
+
   // ── ค่าเช่าสถานที่ ──
   let secVenue=0, asecVenue=0;
   if(hasVenue()){
@@ -1949,8 +1981,34 @@ function confirmBack07() {
     </div>`;
   document.body.appendChild(pop);
 }
-/* ── SAVE PDF ── */
-function savePdf07(btn){
+/* ============================================================
+   PDF EXPORT — ใช้ Puppeteer server (เดียวกับไฟล์ 06) แทน html2canvas + jsPDF เดิม
+   Server: trainfin (Render.com) — รับ POST { html, filename } คืนไฟล์ PDF กลับมา
+   จากนั้นอัปโหลดไฟล์ PDF ขึ้น Supabase Storage (bucket: pdfs) เพื่อได้ลิงก์สาธารณะไว้แชร์/เก็บอ้างอิง
+   (SUPABASE_URL / SUPABASE_ANON_KEY / supabaseClient ประกาศไว้แล้วที่ <head> สำหรับ checkAuth() —
+    ใช้ตัวแปร global เดียวกันตรงนี้ ไม่ต้องประกาศซ้ำ)
+============================================================ */
+const PDF_SERVICE_URL = 'https://trainfin.onrender.com/pdf';
+
+/* อัปโหลดไฟล์ PDF ขึ้น Supabase Storage แล้วคืน public URL (คืน null ถ้าอัปโหลดไม่สำเร็จ — ไม่ทำให้การดาวน์โหลดไฟล์ในเครื่องล้มเหลวไปด้วย) */
+async function uploadPdfToSupabase(pdfBlob, fname){
+  if(!supabaseClient){ console.warn('Supabase client ยังไม่พร้อม (โหลด SDK ไม่สำเร็จ)'); return null; }
+  try {
+    const fileName = `${fname}-${Date.now()}.pdf`;
+    const pdfFile  = new File([pdfBlob], fileName, { type: 'application/pdf' });
+    const { error: uploadError } = await supabaseClient
+      .storage.from('pdfs')
+      .upload(fileName, pdfFile, { cacheControl: '3600', upsert: true });
+    if(uploadError) throw uploadError;
+    const { data } = supabaseClient.storage.from('pdfs').getPublicUrl(fileName);
+    return data.publicUrl;
+  } catch(err){
+    console.error('uploadPdfToSupabase error:', err);
+    return null;
+  }
+}
+
+async function savePdf07(btn){
   const el = document.getElementById('report-container-07');
   if(!el || document.getElementById('report-view').style.display==='none'){
     alert('กรุณากดดูตัวอย่างรายงานก่อน'); return;
@@ -1959,91 +2017,111 @@ function savePdf07(btn){
   const slot = _currentSlot;
   const fname = safe('สรุปค่าใช้จ่าย_07_' + (slot&&slot.course||'') + '_รุ่น' + (slot&&slot.batch||'')) || 'sum_07';
   btn.disabled = true; btn.textContent = '⏳ กำลังสร้าง...';
-  const clone = el.cloneNode(true);
-  /* ลบ shadow/outline */
-  clone.querySelectorAll('*').forEach(e => {
-    e.style.boxShadow = 'none';
-    e.style.outline = 'none';
-    e.style.borderRadius = '0';
-    e.style.transition = 'none';
-  });
-  clone.style.background = '#fff';
-  clone.style.padding = '20px';
-  clone.style.boxShadow = 'none';
-  /* เส้นตาราง: อ่าน computed style จากต้นฉบับ แปลงเป็น separate border
-     ใช้ระบบ border-right + border-bottom เท่านั้น (ไม่ซ้อน) แล้วใส่กรอบนอกตาราง */
-  const origEl2 = document.getElementById('report-container-07');
-  const origCells2 = origEl2.querySelectorAll('table th, table td');
-  // เก็บว่าแต่ละเซลล์มีเส้นล่างจริงไหม (จาก computed)
-  const hasBorderBottom = [];
-  origCells2.forEach(cell => {
-    const cs = window.getComputedStyle(cell);
-    hasBorderBottom.push(parseFloat(cs.borderBottomWidth) > 0);
-  });
-  // ใช้ separate border model — ไม่มีการซ้อนเส้น
-  clone.querySelectorAll('table').forEach(tbl => {
-    tbl.style.borderCollapse = 'separate';
-    tbl.style.borderSpacing = '0';
-    tbl.style.border = 'none';
-    // กรอบนอก: เส้นบนและซ้ายของตาราง
-    tbl.style.borderTop  = '1px solid #000';
-    tbl.style.borderLeft = '1px solid #000';
-  });
-  const cloneCells2 = clone.querySelectorAll('table th, table td');
-  cloneCells2.forEach((cell, i) => {
-    // ทุกเซลล์มีเส้นขวาเสมอ
-    cell.style.borderTop    = 'none';
-    cell.style.borderLeft   = 'none';
-    cell.style.borderRight  = '1px solid #000';
-    // เส้นล่าง: ใส่เฉพาะเซลล์ที่ computed บอกว่ามี
-    cell.style.borderBottom = hasBorderBottom[i] ? '1px solid #000' : 'none';
-    if(!cell.classList.contains('bgray')) cell.style.background = '#fff';
-  });
-  clone.querySelectorAll('.bgray').forEach(cell => { cell.style.background = '#eaeaea'; });
-  /* แปลง input → span (inline) เพื่อให้ตัวเลขกับ "คน" อยู่บรรทัดเดียวกัน */
-  clone.querySelectorAll('input').forEach(inp => {
-    const cs = window.getComputedStyle(inp);
-    const isBlock = cs.display === 'block' || inp.style.width === '100%' || inp.classList.contains('rpt-edit') === false;
-    const span = document.createElement('span');
-    span.style.cssText = `font-family:Sarabun,sans-serif;font-size:${cs.fontSize};font-weight:${cs.fontWeight};color:#000;text-align:${cs.textAlign};display:inline;line-height:1.5;`;
-    span.textContent = inp.value;
-    inp.parentNode.replaceChild(span, inp);
-  });
-  /* ลบ border-bottom ของ hdr-edit (ช่องหัวเอกสาร) */
-  clone.querySelectorAll('.hdr-edit, .rpt-edit').forEach(e => {
-    e.style.borderBottom = 'none';
-    e.style.border = 'none';
-  });
-  const wrap = document.createElement('div');
-  wrap.style.cssText = 'position:fixed;left:-9999px;top:0;width:880px;background:#fff;';
-  wrap.appendChild(clone);
-  document.body.appendChild(wrap);
-  setTimeout(() => {
-    const ML=0.39, MT=1.0, MR=0.39, MB=1.7, SCALE=1.8;
-    const printW=8.27-ML-MR, printH=11.69-MT-MB;
-    html2canvas(clone, {scale:SCALE, useCORS:true, logging:false, backgroundColor:'#ffffff'}).then(canvas => {
-      const {jsPDF} = window.jspdf;
-      const pdf = new jsPDF({unit:'in', format:'a4', orientation:'portrait'});
-      const ratio = printW / (canvas.width / SCALE);
-      const totalH = (canvas.height / SCALE) * ratio;
-      let yOff=0, page=0;
-      while(yOff < totalH){
-        if(page > 0) pdf.addPage();
-        const srcY = Math.round((yOff/ratio)*SCALE);
-        const srcH = Math.round((printH/ratio)*SCALE);
-        const slice = document.createElement('canvas');
-        slice.width = canvas.width;
-        slice.height = Math.min(srcH, canvas.height - srcY);
-        slice.getContext('2d').drawImage(canvas, 0, srcY, canvas.width, slice.height, 0, 0, canvas.width, slice.height);
-        pdf.addImage(slice.toDataURL('image/png',1), 'PNG', ML, MT, printW, (slice.height/SCALE)*ratio);
-        yOff += printH; page++;
-      }
-      pdf.save(fname + '.pdf');
-    }).finally(() => {
-      document.body.removeChild(wrap);
-      btn.disabled = false; btn.textContent = '💾 บันทึก PDF';
+
+  try {
+    const clone = el.cloneNode(true);
+    /* ลบ shadow/outline */
+    clone.querySelectorAll('*').forEach(e => {
+      e.style.boxShadow = 'none';
+      e.style.outline = 'none';
+      e.style.borderRadius = '0';
+      e.style.transition = 'none';
     });
-  }, 300);
+    clone.style.background = '#fff';
+    clone.style.padding = '20px';
+    clone.style.boxShadow = 'none';
+    /* เส้นตาราง: อ่าน computed style จากต้นฉบับ แปลงเป็น separate border
+       ใช้ระบบ border-right + border-bottom เท่านั้น (ไม่ซ้อน) แล้วใส่กรอบนอกตาราง */
+    const origEl2 = document.getElementById('report-container-07');
+    const origCells2 = origEl2.querySelectorAll('table th, table td');
+    const hasBorderBottom = [];
+    origCells2.forEach(cell => {
+      const cs = window.getComputedStyle(cell);
+      hasBorderBottom.push(parseFloat(cs.borderBottomWidth) > 0);
+    });
+    clone.querySelectorAll('table').forEach(tbl => {
+      tbl.style.borderCollapse = 'separate';
+      tbl.style.borderSpacing = '0';
+      tbl.style.border = 'none';
+      tbl.style.borderTop  = '1px solid #000';
+      tbl.style.borderLeft = '1px solid #000';
+    });
+    const cloneCells2 = clone.querySelectorAll('table th, table td');
+    cloneCells2.forEach((cell, i) => {
+      cell.style.borderTop    = 'none';
+      cell.style.borderLeft   = 'none';
+      cell.style.borderRight  = '1px solid #000';
+      cell.style.borderBottom = hasBorderBottom[i] ? '1px solid #000' : 'none';
+      if(!cell.classList.contains('bgray')) cell.style.background = '#fff';
+    });
+    clone.querySelectorAll('.bgray').forEach(cell => { cell.style.background = '#eaeaea'; });
+    /* แปลง input → span (inline) เพื่อให้ตัวเลขกับ "คน" อยู่บรรทัดเดียวกัน */
+    clone.querySelectorAll('input').forEach(inp => {
+      const cs = window.getComputedStyle(inp);
+      const span = document.createElement('span');
+      span.style.cssText = `font-family:Sarabun,sans-serif;font-size:${cs.fontSize};font-weight:${cs.fontWeight};color:#000;text-align:${cs.textAlign};display:inline;line-height:1.5;`;
+      span.textContent = inp.value;
+      inp.parentNode.replaceChild(span, inp);
+    });
+    /* ลบ border-bottom ของ hdr-edit (ช่องหัวเอกสาร) */
+    clone.querySelectorAll('.hdr-edit, .rpt-edit').forEach(e => {
+      e.style.borderBottom = 'none';
+      e.style.border = 'none';
+    });
+
+    /* ห่อเป็นเอกสาร HTML สมบูรณ์ในตัวเอง ส่งให้ Puppeteer เปิด render แล้วสั่งพิมพ์ PDF
+       (แบ่งหน้าอัตโนมัติผ่าน @page เหมือนพิมพ์จริง ไม่ต้องหั่น canvas เอง) */
+    const fullHtml = `<!DOCTYPE html>
+<html lang="th"><head><meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  @page { size: A4; margin: 25.4mm 10mm 43mm 10mm; }
+  html,body{ margin:0; padding:0; background:#fff; }
+  body{ font-family:'Sarabun',sans-serif; color:#000; }
+  table{ page-break-inside:auto; }
+  tr{ page-break-inside:avoid; page-break-after:auto; }
+</style>
+</head><body>${clone.outerHTML}</body></html>`;
+
+    const res = await fetch(PDF_SERVICE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ html: fullHtml, filename: fname })
+    });
+    if(!res.ok) throw new Error('เซิร์ฟเวอร์สร้าง PDF ไม่สำเร็จ (HTTP ' + res.status + ')');
+
+    const blob = await res.blob();
+
+    // ดาวน์โหลดไฟล์ในเครื่องผู้ใช้ทันที (เหมือนเดิม ไม่ต้องรออัปโหลด)
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = fname + '.pdf';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    // อัปโหลดขึ้น Supabase Storage เพื่อได้ลิงก์สาธารณะไว้แชร์/เก็บอ้างอิง (ถ้าอัปโหลดไม่สำเร็จ ไม่กระทบไฟล์ที่ดาวน์โหลดไปแล้ว)
+    btn.textContent = '⏳ กำลังอัปโหลด...';
+    const publicUrl = await uploadPdfToSupabase(blob, fname);
+    if(publicUrl){
+      // บันทึกลิงก์กลับเข้าชีต courses (คอลัมน์ pdf07) เพื่อให้หน้า "ภาพรวมทั้งหมด" (10.PDF-Overview.html) ดึงไปแสดงได้
+      const courseNo = _currentSlot && _currentSlot.no;
+      if(courseNo && typeof gsApi === 'function'){
+        try {
+          await gsApi('updateCourseField', { no: courseNo, pdf07: publicUrl, pdf07SavedAt: new Date().toISOString() });
+        } catch(saveErr){
+          console.warn('บันทึกลิงก์ PDF กลับชีต courses ไม่สำเร็จ:', saveErr);
+        }
+      }
+      alert('✅ บันทึก PDF และอัปโหลดเรียบร้อยแล้ว\n' + publicUrl);
+    } else {
+      alert('✅ ดาวน์โหลด PDF สำเร็จ (แต่อัปโหลดขึ้น Supabase ไม่สำเร็จ — ดูรายละเอียดใน console)');
+    }
+  } catch(err){
+    console.error('savePdf07 error:', err);
+    alert('❌ สร้าง PDF ไม่สำเร็จ: ' + err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '💾 บันทึก PDF';
+  }
 }
 </script>
 </body>
