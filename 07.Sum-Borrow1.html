@@ -2071,15 +2071,14 @@ async function savePdf07(btn){
 
     /* ห่อเป็นเอกสาร HTML สมบูรณ์ในตัวเอง ส่งให้ Puppeteer เปิด render แล้วสั่งพิมพ์ PDF
        (แบ่งหน้าอัตโนมัติผ่าน @page เหมือนพิมพ์จริง ไม่ต้องหั่น canvas เอง) */
+    /* โค้ดฉบับแก้ไข (ตัดลิงก์ฟอนต์ภายนอกออก ป้องกัน Render Server เกิด HTTP 500) */
     const fullHtml = `<!DOCTYPE html>
 <html lang="th"><head><meta charset="UTF-8">
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  @page { size: A4; margin: 25.4mm 10mm 43mm 10mm; }
-  html,body{ margin:0; padding:0; background:#fff; }
-  body{ font-family:'Sarabun',sans-serif; color:#000; }
-  table{ page-break-inside:auto; }
-  tr{ page-break-inside:avoid; page-break-after:auto; }
+  @page { size: A4; margin: 15mm 10mm 15mm 10mm; }
+  html, body { margin:0; padding:0; background:#fff; font-family: 'Sarabun', Tahoma, sans-serif; color:#000; }
+  table { page-break-inside:auto; width: 100%; border-collapse: separate; border-spacing: 0; }
+  tr { page-break-inside:avoid; page-break-after:auto; }
 </style>
 </head><body>${clone.outerHTML}</body></html>`;
 
