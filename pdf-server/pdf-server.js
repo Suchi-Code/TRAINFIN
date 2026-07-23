@@ -1,71 +1,79 @@
-const express = require('express');
+const express   = require('express');
+const cors      = require('cors');
 const puppeteer = require('puppeteer');
-const cors = require('cors');
+const puppeteer = require('puppeteer-core');
+const chromium  = require('@sparticuz/chromium');
 
-const app = express();
+const app  = express();
+const PORT = process.env.PORT || 3000;
+
 app.use(cors());
-app.use(express.json({ limit: '50mb' })); // ป้องกัน HTML ขนาดใหญ่เกินไป
+app.use(express.json({ limit: '20mb' }));
 
-app.post('/generate-pdf', async (req, res) => {
-  let browser = null;
+// ฟังก์ชันสำหรับเปิด Browser แบบติดตัวแปรสภาพแวดล้อมบน Linux/Render
+async function getBrowser() {
+  return await puppeteer.launch({
+    headless: true,
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--disable-gpu',
+      '--no-first-run',
+      '--no-zygote',
+      '--single-process',
+    ],
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath: await chromium.executablePath(),
+    headless: chromium.headless,
+  });
+}
+
+@@ -41,44 +33,43 @@
   try {
-    // 💡 รับค่า filename เพิ่มเติมจาก req.body (ถ้านึกไม่ออกจะส่งอะไร จะใช้ 'document' เป็นค่าเริ่มต้น)
-    const { html, filename } = req.body;
+    let browser = await browserPromise;
 
-    if (!html) {
-      return res.status(400).send('No HTML content provided');
+    // เช็คว่า Browser ค้าง/ดับไปหรือยัง ถ้าดับให้เปิดใหม่
+    if (!browser.isConnected()) {
+      browserPromise = getBrowser();
+      browser = await browserPromise;
     }
 
-    // 1. ตั้งค่า launch arguments ให้รองรับระบบ Render (RAM 512MB)
-    browser = await puppeteer.launch({
-      headless: 'new',
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage', // ⚠️ สำคัญมากสำหรับ Render เพื่อไม่ให้ RAM เต็ม
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
-        '--disable-gpu'
-      ]
-    });
+    page = await browser.newPage();
 
-    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
 
-    // 2. ใช้ domcontentloaded แทน networkidle0 เพื่อลดโอกาส Timeout 500
-    await page.setContent(html, { 
-      waitUntil: 'domcontentloaded',
-      timeout: 30000 
-    });
-
-    // 3. แปลงเป็น PDF
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
-      margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' }
+      margin: { top: '0.2in', right: '0.2in', bottom: '0.2in', left: '0.2in' },
     });
 
-    await browser.close();
+    const safeName = String(filename || 'report').replace(/[^\w\u0E00-\u0E7F\-]+/g, '_');
 
-    // ----------------------------------------------------
-    // 4. แปลงชื่อไฟล์เป็น UTF-8 Safe Format และตั้งค่า Header ป้องกัน ERR_INVALID_CHAR
-    // ----------------------------------------------------
-    const safeFilename = encodeURIComponent(filename || 'document');
-
-    res.setHeader('Content-Type', 'application/pdf');
-    // ใช้รูปแบบ RFC 5987 (filename*=UTF-8'') เพื่อให้รองรับภาษาไทยใน Header ได้ 100%
-    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${safeFilename}.pdf`);
-    
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${safeName}.pdf"`,
+    });
     res.send(pdfBuffer);
 
-  } catch (error) {
-    console.error('Puppeteer PDF Error:', error);
-    if (browser) await browser.close();
-    res.status(500).send('PDF Generation Failed: ' + error.message);
+  } catch (err) {
+    console.error('PDF generation error:', err);
+    res.status(500).json({ error: err.message || 'สร้าง PDF ไม่สำเร็จ' });
+  } finally {
+    if (page) await page.close().catch(() => {});
   }
 });
 
-const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`PDF Server running on port ${PORT}`);
+  console.log(`✅ PDF server พร้อมใช้งานที่ port ${PORT}`);
+});
+
+process.on('SIGTERM', async () => {
+  const browser = await browserPromise;
+  if (browser) await browser.close();
+  process.exit(0);
 });
