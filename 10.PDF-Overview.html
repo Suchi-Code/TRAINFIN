@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="winter" style="background:#020617;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ภาพรวมรายงาน PDF - กองฝึกอบรมภูมิภาค 1</title>
+
+    <!-- Google Fonts: Prompt -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS & DaisyUI -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Prompt', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="font-sans bg-slate-950 text-slate-800 antialiased min-h-screen">
+
+    <!-- ═══════════════════════════════════════════════════════
+         แถบด้านบน (topbar) — สไตล์เดียวกับไฟล์ 01_Main-Reports.html
+    ═══════════════════════════════════════════════════════ -->
+    <header class="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-md border-b border-white/10 shadow-lg">
+      <div class="container mx-auto max-w-6xl flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-base shadow-lg shadow-blue-500/30">🗂️</div>
+          <div>
+            <div class="text-[13px] font-semibold text-white leading-tight">ภาพรวมรายงาน PDF</div>
+            <div class="text-[11px] text-slate-400 leading-tight">กองฝึกอบรมภูมิภาค 1 · กปภ.</div>
+          </div>
+        </div>
+        <button onclick="history.back()" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-transparent text-white/80 border border-white/20 rounded-lg text-xs font-medium hover:bg-white/10 hover:text-white transition-all">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          ย้อนกลับ
+        </button>
+      </div>
+    </header>
+
+    <!-- ═══════════════════════════════════════════════════════
+         พื้นหลังไล่เฉดนิ่ง (ไม่ใช้ Vanta — หน้านี้เน้นดูลิงก์เร็วๆ ไม่ต้องมีคลื่นพื้นหลัง)
+    ═══════════════════════════════════════════════════════ -->
+    <div class="relative w-full min-h-[calc(100vh-58px)] flex flex-col">
+        <div class="absolute inset-0 bg-gradient-to-b from-blue-900/25 via-slate-950 to-slate-950 pointer-events-none"></div>
+
+        <div class="relative z-10 container mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 pt-12 pb-16 flex-1">
+
+            <!-- ── หัวเรื่อง: ชื่อหลักสูตร / รุ่น / เลขที่หลักสูตร ── -->
+            <div class="text-center lg:text-left space-y-2 mb-10">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 backdrop-blur-sm">
+                    <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                    <span class="text-xs font-medium text-cyan-200 tracking-wide">ภาพรวมรายงาน PDF ที่บันทึกไว้</span>
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-bold text-white leading-snug">
+                    <span id="f_course_name">กำลังโหลดข้อมูล...</span>
+                </h1>
+                <div id="f_meta_line1" class="text-sm sm:text-base font-medium text-sky-300"></div>
+            </div>
+
+            <!-- ── สถานะการเชื่อมต่อ ── -->
+            <div id="pdf-status" class="text-xs text-slate-400 mb-4 text-center lg:text-left">กำลังโหลด...</div>
+
+            <!-- ── การ์ดรายงาน PDF ── -->
+            <div id="pdf-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- การ์ดถูกสร้างด้วย JS จาก PDF_REPORTS ด้านล่าง -->
+            </div>
+
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════
+             แถบด้านล่าง (footer bar)
+        ═══════════════════════════════════════════════════════ -->
+        <footer class="bg-slate-900 border-t border-white/10">
+          <div class="container mx-auto max-w-6xl flex items-center justify-center px-4 sm:px-6 lg:px-8 py-4">
+            <div class="text-[11px] text-slate-400">© 2569 กองฝึกอบรมภูมิภาค 1 · การประปาส่วนภูมิภาค (กปภ.)</div>
+          </div>
+        </footer>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         รายการรายงาน PDF ที่ต้องแสดง — สีและไอคอนล้อตาม REPORTS array ในไฟล์ 01
+         "key" คือชื่อคอลัมน์ที่เก็บลิงก์ PDF ไว้ในชีต courses (บันทึกตอนกด "บันทึก PDF"
+         ในไฟล์รายงานแต่ละไฟล์ ผ่าน gsApi('updateCourseField', {no, [key]: publicUrl}))
+    ═══════════════════════════════════════════════════════ -->
+    <script>
+        const PDF_REPORTS = [
+            { key: 'pdf05', name: 'ประมาณการค่าใช้จ่าย',      icon: '⭐', color: 'from-amber-400/20 to-amber-600/10 border-amber-400/30 text-amber-300' },
+            { key: 'pdf06', name: 'สรุปค่าใช้จ่ายจริง',        icon: '📋', color: 'from-teal-400/20 to-teal-600/10 border-teal-400/30 text-teal-300' },
+            { key: 'pdf07', name: 'สรุปฯ (ใบปะหน้า)',          icon: '📝', color: 'from-fuchsia-500/40 to-pink-600/30 border-fuchsia-400/50 text-fuchsia-100' },
+            { key: 'pdf08', name: 'ใบหักล้างยืมเงิน (บง.27)',  icon: '🧾', color: 'from-rose-400/20 to-rose-600/10 border-rose-400/30 text-rose-300' },
+            { key: 'pdf09', name: 'ค่าวัสดุเบ็ดเตล็ด (ว.119)', icon: '⏱️', color: 'from-slate-400/20 to-slate-600/10 border-slate-400/30 text-slate-300' },
+        ];
+
+        function renderPdfCards(course) {
+            const grid = document.getElementById('pdf-grid');
+            grid.innerHTML = PDF_REPORTS.map(r => {
+                const url = course && course[r.key] ? String(course[r.key]).trim() : '';
+                const savedKey = r.key + 'SavedAt';
+                const savedAt  = course && course[savedKey] ? course[savedKey] : '';
+
+                if (url) {
+                    return `
+                    <a href="${url}" target="_blank" rel="noopener"
+                       class="group flex flex-col gap-2 bg-gradient-to-br ${r.color} border rounded-2xl p-4
+                              transition-all duration-300 ease-out
+                              hover:-translate-y-1.5 hover:scale-[1.03] hover:border-white/60
+                              hover:shadow-2xl hover:shadow-cyan-500/20 hover:brightness-125">
+                        <div class="flex items-start justify-between">
+                            <span class="text-xl transition-transform duration-300 group-hover:scale-110">${r.icon}</span>
+                            <span class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">มีไฟล์</span>
+                        </div>
+                        <span class="text-[15px] font-semibold text-white leading-snug">${r.name}</span>
+                        <span class="text-[11px] text-white/60">${savedAt ? 'บันทึกเมื่อ ' + fmtSavedAt(savedAt) : 'เปิดไฟล์ PDF ↗'}</span>
+                    </a>`;
+                }
+
+                return `
+                    <div class="flex flex-col gap-2 bg-white/[0.03] border border-white/10 rounded-2xl p-4 opacity-60">
+                        <div class="flex items-start justify-between">
+                            <span class="text-xl grayscale">${r.icon}</span>
+                            <span class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/10 text-slate-400 border border-white/10">ยังไม่มีไฟล์</span>
+                        </div>
+                        <span class="text-[15px] font-semibold text-slate-300 leading-snug">${r.name}</span>
+                        <span class="text-[11px] text-slate-500">ยังไม่เคยกดบันทึก PDF จากรายงานนี้</span>
+                    </div>`;
+            }).join('');
+        }
+
+        function fmtSavedAt(iso) {
+            try {
+                const d = new Date(iso);
+                if (isNaN(d)) return '';
+                return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) +
+                       ' ' + d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+            } catch (e) { return ''; }
+        }
+
+        // แสดงโครงการ์ดแบบ "ยังไม่มีข้อมูล" ไว้ก่อนระหว่างรอโหลดจริง
+        renderPdfCards(null);
+    </script>
+
+    <!-- ═══════════════════════════════════════════════════════
+         ดึงข้อมูลหลักสูตรจาก Google Sheet (GAS Web API เดียวกับไฟล์ 01)
+    ═══════════════════════════════════════════════════════ -->
+    <script>
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbySJROnBMkxFBNyPvET3DC5ihdCz03OPzvi2xXm6cMQpoPFsi2pAiTQAQIVSDUwQNVZ5w/exec';
+
+        async function gsApi(action, data, no) {
+            const params = new URLSearchParams({ action });
+            if (data) params.set('data', JSON.stringify(data));
+            if (no)   params.set('no', no);
+            const res = await fetch(GAS_URL + '?' + params.toString());
+            const json = await res.json();
+            if (!json.ok) throw new Error(json.error || 'GAS error');
+            return json.data;
+        }
+
+        function setCourseFields(cr) {
+            document.getElementById('f_course_name').textContent = cr.course || 'ยังไม่พบข้อมูลหลักสูตร';
+            const parts = [];
+            if (cr.batch) parts.push(`รุ่นที่ ${cr.batch}`);
+            if (cr.no)    parts.push(`เลขที่หลักสูตร ${cr.no}`);
+            document.getElementById('f_meta_line1').textContent = parts.join(' · ');
+        }
+
+        function loadPdfOverview(no, attempt) {
+            attempt = attempt || 1;
+            const statusEl = document.getElementById('pdf-status');
+            statusEl.textContent = attempt === 1 ? 'กำลังโหลด...' : `กำลังลองใหม่ (${attempt}/3)...`;
+
+            gsApi('getByNo', null, no).then(gsRow => {
+                const cr = (gsRow && gsRow.course) || {};
+                if (cr && cr.course) {
+                    setCourseFields({ ...cr, no });
+                    try { sessionStorage.setItem('courseData', JSON.stringify({ ...cr, no })); } catch (e) {}
+                }
+                renderPdfCards(cr);
+                statusEl.textContent = 'เชื่อมต่อสำเร็จ';
+            }).catch(() => {
+                if (attempt < 3) {
+                    setTimeout(() => loadPdfOverview(no, attempt + 1), 1200);
+                } else {
+                    statusEl.innerHTML = '⚠️ เชื่อมต่อไม่สำเร็จ <button onclick="loadPdfOverview(\'' + no + '\')" class="underline ml-1">ลองใหม่</button>';
+                }
+            });
+        }
+
+        (function initPdfOverview() {
+            let courseData = null;
+            try {
+                const raw = sessionStorage.getItem('courseData');
+                if (raw) courseData = JSON.parse(raw);
+            } catch (e) { courseData = null; }
+
+            let no = (courseData && courseData.no) ? String(courseData.no).trim() : '';
+            if (!no) {
+                const params = new URLSearchParams(window.location.search);
+                no = params.get('no') || params.get('run') || '';
+            }
+
+            if (no) {
+                setCourseFields(courseData && courseData.no === no ? courseData : { no });
+                loadPdfOverview(no);
+            } else {
+                document.getElementById('f_course_name').textContent = 'ไม่พบเลขที่หลักสูตร';
+                document.getElementById('f_meta_line1').textContent = 'กรุณาเข้าหน้านี้ผ่านปุ่ม "ภาพรวมทั้งหมด" จากหน้ารายละเอียดหลักสูตร';
+                document.getElementById('pdf-status').textContent = '';
+            }
+        })();
+    </script>
+</body>
+</html>
