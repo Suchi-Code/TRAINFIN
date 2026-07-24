@@ -1260,8 +1260,16 @@ async function autoLoadFromSheet(){
       if(course.course)   { const el=document.getElementById('sh_title');    if(el) el.value=course.course; }
       if(course.batch)    { const el=document.getElementById('sh_run');      if(el) el.value=course.batch; }
       if(course.location) { const el=document.getElementById('sh_location'); if(el) el.value=course.location; }
-      const ds = String(course.dateStart||'').trim();
-      const de = String(course.dateEnd||'').trim();
+
+      // รองรับทั้ง dateStart/dateEnd แยก และ date รวมแบบ "YYYY-MM-DD_YYYY-MM-DD"
+      // (เดิมเช็คแค่ course.dateStart/course.dateEnd ตรงๆ ถ้า sheet เก็บมาเป็น date รวม จะไม่ขึ้นเลย)
+      const rawDate = String(course.date||'').trim();
+      const ds = String(course.dateStart||'').trim() ||
+                 (rawDate && !rawDate.includes('_') ? rawDate :
+                 (rawDate ? rawDate.split('_')[0] : ''));
+      const de = String(course.dateEnd||'').trim() ||
+                 (rawDate && rawDate.includes('_') ? rawDate.split('_')[1] : ds);
+
       if(ds && /^\d{4}-\d{2}-\d{2}$/.test(ds)){ const el=document.getElementById('sh_date');     if(el) el.value=ds; }
       if(de && /^\d{4}-\d{2}-\d{2}$/.test(de)){ const el=document.getElementById('sh_date_end'); if(el) el.value=de; }
       shSyncDateRange();
