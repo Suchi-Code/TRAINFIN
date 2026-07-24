@@ -1464,6 +1464,7 @@ function sumBuildDoc(){
       vat  : parseFloat(ps.querySelector(`#${id}_vat`)?.value)||0,
       wht  : parseFloat(ps.querySelector(`#${id}_wht`)?.value)||0,
       total: parseFloat(ps.querySelector(`#${id}_total`)?.value)||0,
+      w119 : ps.querySelector(`#${id}_w119`)?.checked || false,
     });
   });
 
@@ -1532,10 +1533,15 @@ function sumBuildDoc(){
     const seqSpan = {};
     pageRows.forEach(r => { seqSpan[r.seq] = (seqSpan[r.seq]||0) + 1; });
     const seqRendered = {};
-    pageRows.forEach(r => {
+    pageRows.forEach((r, ridx) => {
       // 1. ตรวจสอบการเปลี่ยนหมวดหมู่ (เพื่อใส่หัวข้อหมวดใหญ่ เช่น 2. ค่าวัสดุเบ็ดเตล็ด)
       if (r.secV !== lastSec) {
-        pg += `<tr class="sm-grp"><td class="sm-ind1 sm-tl" colspan="7">${r.secL}</td></tr>`;
+        // ถ้ารายการใดในกลุ่มหมวดนี้ (แถวติดกันที่หมวดเดียวกัน) ติ๊ก "ค่าใช้จ่ายตาม ว.119" ไว้ → ใส่ (ว.119) ต่อท้ายหัวข้อหมวด
+        let hasW119 = false;
+        for (let j = ridx; j < pageRows.length && pageRows[j].secV === r.secV; j++) {
+          if (pageRows[j].w119) { hasW119 = true; break; }
+        }
+        pg += `<tr class="sm-grp"><td class="sm-ind1 sm-tl" colspan="7">${r.secL}${hasW119 ? ' (ว.119)' : ''}</td></tr>`;
         lastSec = r.secV;
       }
 
@@ -1553,7 +1559,13 @@ function sumBuildDoc(){
       const showSeq = !seqRendered[r.seq];
       const span = seqSpan[r.seq] || 1;
       if (showSeq) seqRendered[r.seq] = true;
-      
+
+      // กรณีที่อยู่เป็นกรุงเทพฯ: ตำบล→แขวง, อำเภอ→เขต, ไม่ต้องมี "จ." นำหน้าจังหวัด
+      const isBkk = /กทม|กรุงเทพ/.test(r.province || '');
+      const subDistLabel = isBkk ? 'แขวง' : 'ต.';
+      const distLabel     = isBkk ? 'เขต'  : 'อ.';
+      const provPart       = r.province ? (isBkk ? r.province : 'จ.' + r.province) : '';
+
       pg += `<tr>
         ${showSeq ? `<td class="sm-tc" rowspan="${span}">${r.seq}</td>` : ''}
         <td class="sm-tl sm-lines">
@@ -1562,11 +1574,11 @@ function sumBuildDoc(){
           ${r.taxid ? `<div>เลขประจำตัวผู้เสียภาษี ${r.taxid}</div>` : ''}
           
           ${(r.addr1 || r.tambon) ? 
-            `<div>ที่อยู่ ${r.addr1 || ''} ${r.tambon ? 'ต.' + r.tambon : ''}</div>` 
+            `<div>${r.addr1 || ''} ${r.tambon ? subDistLabel + r.tambon : ''}</div>` 
             : ''}
           
           ${(r.amphoe || r.province || r.zip) ? 
-            `<div>${[r.amphoe ? 'อ.' + r.amphoe : '', r.province ? 'จ.' + r.province : '', r.zip].filter(Boolean).join(' ')}</div>` 
+            `<div>${[r.amphoe ? distLabel + r.amphoe : '', provPart, r.zip].filter(Boolean).join(' ')}</div>` 
             : ''}
             
           <div>ลงวันที่ ${sumFmtDate(r.date)}</div>
