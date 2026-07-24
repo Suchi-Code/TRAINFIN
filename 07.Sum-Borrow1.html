@@ -146,16 +146,14 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:1px solid #000;verti
   .note-row-1:has(input:placeholder-shown){display:none!important;}
   .note-row-2:has(input:placeholder-shown){display:none!important;}
   .note-row-3:has(input:placeholder-shown){display:none!important;}
-
-  }
-  @page{margin:10mm;}
   table.rpt{font-size:13px;}
   table.rpt thead th{padding:4px 2px!important;}
   table.rpt tbody td{padding:var(--row-pad-v,5px) 8px!important;}
   .header-area{margin-bottom:18px;text-align:center;}
   .header-area h1{font-size:18px;line-height:1.6!important;margin:0 0 2px 0!important;}
   .header-area p{font-size:14px;line-height:1.5!important;margin:0 0 4px 0!important;}
-}
+  }
+  @page{margin:10mm;}
 
 /* ── ie-wrap inline edit ── */
 .ie-wrap { position:relative; display:inline-flex; align-items:center; }
@@ -1991,20 +1989,15 @@ function confirmBack07() {
 const PDF_SERVICE_URL = 'https://trainfin.onrender.com/pdf';
 
 /* อัปโหลดไฟล์ PDF ขึ้น Supabase Storage แล้วคืน public URL (คืน null ถ้าอัปโหลดไม่สำเร็จ — ไม่ทำให้การดาวน์โหลดไฟล์ในเครื่องล้มเหลวไปด้วย) */
-/* อัปโหลดไฟล์ PDF ขึ้น Supabase Storage โดยใช้ชื่อไฟล์ภาษาอังกฤษ + Timestamp */
 async function uploadPdfToSupabase(pdfBlob, fname){
   if(!supabaseClient){ console.warn('Supabase client ยังไม่พร้อม (โหลด SDK ไม่สำเร็จ)'); return null; }
   try {
-    // ใช้ชื่อไฟล์ภาษาอังกฤษล้วน + Timestamp เพื่อไม่ให้ชื่อซ้ำกัน
-    const fileName = `borrow_summary_${Date.now()}.pdf`;
-    
-    const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
+    const fileName = `${fname}-${Date.now()}.pdf`;
+    const pdfFile  = new File([pdfBlob], fileName, { type: 'application/pdf' });
     const { error: uploadError } = await supabaseClient
       .storage.from('pdfs')
       .upload(fileName, pdfFile, { cacheControl: '3600', upsert: true });
-      
     if(uploadError) throw uploadError;
-    
     const { data } = supabaseClient.storage.from('pdfs').getPublicUrl(fileName);
     return data.publicUrl;
   } catch(err){
@@ -2074,49 +2067,29 @@ async function savePdf07(btn){
       e.style.border = 'none';
     });
 
-   // 1. ดึง <head> ทั้งหมดจากหน้าเว็บจริง (รวมไฟล์ CSS, Bootstrap, Tailwind ทั้งหมด)
-    const headHTML = document.head.innerHTML;
+    /* ✅ ดึง CSS หลักของหน้าเว็บทั้งดวง (ที่นิยาม .report-container, table.rpt, .header-area ฯลฯ)
+       เพื่อแนบไปกับ HTML ที่ส่งให้ Puppeteer — เดิมไม่ได้แนบไปเลย ทำให้ฝั่ง Server
+       ไม่รู้จัก class เหล่านี้ และ render ด้วยสไตล์เปล่าๆ ต่างจากหน้าพรีวิวโดยสิ้นเชิง */
+    const originalStyles = Array.from(document.querySelectorAll('style'))
+      .map(s => s.innerHTML).join('\n');
 
-    // 2. ประกอบ HTML แบบสมบูรณ์ 100% พร้อม Base URL และ Print Optimization
+    /* ห่อเป็นเอกสาร HTML สมบูรณ์ในตัวเอง ส่งให้ Puppeteer เปิด render แล้วสั่งพิมพ์ PDF
+       (แบ่งหน้าอัตโนมัติผ่าน @page เหมือนพิมพ์จริง ไม่ต้องหั่น canvas เอง) */
     const fullHtml = `<!DOCTYPE html>
-<html lang="th">
-<head>
-  <base href="${window.location.origin}${window.location.pathname}">
-  ${headHTML}
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap');
-    
-    @page { 
-      size: A4 portrait; 
-      margin: 8mm; 
-    }
-    
-    * { 
-      font-family: 'Sarabun', sans-serif !important; 
-      -webkit-print-color-adjust: exact !important; 
-      print-color-adjust: exact !important; 
-    }
-    
-    body { 
-      background: #ffffff !important; 
-      color: #000000 !important; 
-      margin: 0 !important; 
-      padding: 0 !important; 
-      width: 100% !important;
-    }
-    
-    /* ซ่อนองค์ประกอบที่ไม่ต้องการให้เห็นใน PDF เช่น ปุ่ม หรือ Alert */
-    .no-print, button, .btn { 
-      display: none !important; 
-    }
-  </style>
-</head>
-<body>
-  <div style="width: 100%; max-width: 100%;">
-    ${clone.outerHTML}
-  </div>
-</body>
-</html>`;
+<html lang="th"><head><meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+${originalStyles}
+</style>
+<style>
+  /* Override เฉพาะสำหรับไฟล์ PDF ที่ export ออกมา (มาทีหลังจึงมีลำดับความสำคัญสูงกว่า) */
+  @page { size: A4; margin: 25.4mm 10mm 43mm 10mm; }
+  html,body{ margin:0; padding:0; background:#fff; }
+  body{ font-family:'Sarabun',sans-serif; color:#000; }
+  table{ page-break-inside:auto; }
+  tr{ page-break-inside:avoid; page-break-after:auto; }
+</style>
+</head><body>${clone.outerHTML}</body></html>`;
 
     const res = await fetch(PDF_SERVICE_URL, {
       method: 'POST',
