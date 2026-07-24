@@ -23,7 +23,7 @@ async function getBrowser() {
 browserPromise = getBrowser();
 
 app.post(['/pdf', '/generate-pdf'], async (req, res) => {
-  const { html, filename } = req.body;
+  const { html, filename, scale } = req.body;
   if (!html) {
     return res.status(400).json({ error: 'ไม่มีข้อมูล HTML' });
   }
@@ -66,10 +66,17 @@ app.post(['/pdf', '/generate-pdf'], async (req, res) => {
     // ✅ preferCSSPageSize: true ทำให้ Puppeteer อ่านค่า @page ที่ฝังมาใน HTML
     // (เช่น margin: 25.4mm 10mm 43mm 10mm) แทนที่จะใช้ค่า margin ที่ฮาร์ดโค้ดไว้ตรงนี้
     // ถ้า HTML ที่ส่งมาไม่มี @page กำหนดไว้ จะ fallback ไปใช้ margin ด้านล่างแทน
+    // ✅ scale เทียบเท่ากับช่อง "% ขนาด" ในหน้าต่างพิมพ์ของเบราว์เซอร์
+    // ค่า default 0.8 (80%) เพราะตารางตัวเลขในเทมเพลตนี้กว้างเกิน A4 เล็กน้อย
+    // ทางที่ดีที่สุดในระยะยาวคือลดความกว้างคอลัมน์/font-size ใน CSS ให้พอดี 100%
+    // แต่ระหว่างนี้ scale ช่วยแก้ปัญหาล้นกรอบได้ทันที โดยไม่ทำให้ font เพี้ยนเหมือนลด font-size ตรงๆ
+    const pdfScale = Math.min(Math.max(Number(scale) || 0.8, 0.1), 2);
+
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
       preferCSSPageSize: true,
+      scale: pdfScale,
       margin: { top: '0.2in', right: '0.2in', bottom: '0.2in', left: '0.2in' },
     });
 
