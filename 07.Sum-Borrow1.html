@@ -1992,7 +1992,14 @@ const PDF_SERVICE_URL = 'https://trainfin.onrender.com/pdf';
 async function uploadPdfToSupabase(pdfBlob, fname){
   if(!supabaseClient){ console.warn('Supabase client ยังไม่พร้อม (โหลด SDK ไม่สำเร็จ)'); return null; }
   try {
-    const fileName = `${fname}-${Date.now()}.pdf`;
+    // ✅ Supabase Storage รับเฉพาะ key แบบ ASCII-safe (a-z, A-Z, 0-9, -, _, ., !, *, ' , ( ) ฯลฯ)
+    // ภาษาไทยไม่ผ่าน จะได้ error "Invalid key" — จึงแปลงอักขระที่ไม่ใช่ \w/-/. เป็น "_" ก่อน
+    // (ชื่อไฟล์ที่ผู้ใช้ดาวน์โหลดในเครื่อง ยังเป็นภาษาไทยตามปกติ เพราะมาจาก a.download คนละจุดกัน)
+    const asciiSafe = fname
+      .replace(/[^\w.\-]+/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_|_$/g, '') || 'report';
+    const fileName = `${asciiSafe}-${Date.now()}.pdf`;
     const pdfFile  = new File([pdfBlob], fileName, { type: 'application/pdf' });
     const { error: uploadError } = await supabaseClient
       .storage.from('pdfs')
