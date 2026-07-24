@@ -178,6 +178,19 @@ function fmtDate(d, short){
 function fmtDateRange(s, e){
   if(!s && !e) return '';
   if(!e || s===e) return fmtDate(s);
+  const ps = s.split('-'), pe = e.split('-');
+  if(ps.length===3 && pe.length===3){
+    const dS=parseInt(ps[2]), mS=parseInt(ps[1]), yS=parseInt(ps[0])+543;
+    const dE=parseInt(pe[2]), mE=parseInt(pe[1]), yE=parseInt(pe[0])+543;
+    if(yS===yE && mS===mE){
+      // เดือน/ปีเดียวกัน → "20 - 21 กรกฎาคม 2569"
+      return `${dS} - ${dE} ${TH_MON_LONG[mS]} ${yS}`;
+    } else if(yS===yE){
+      // ปีเดียวกัน คนละเดือน → "28 มิถุนายน - 2 กรกฎาคม 2569"
+      return `${dS} ${TH_MON_LONG[mS]} - ${dE} ${TH_MON_LONG[mE]} ${yS}`;
+    }
+  }
+  // คนละปี → แสดงเต็มทั้งสองฝั่ง
   return fmtDate(s) + ' – ' + fmtDate(e);
 }
 function fmtMoney(n){
@@ -389,7 +402,7 @@ async function loadFromGSheet09(no){
     if(document.getElementById('f_date_end')) document.getElementById('f_date_end').value  = dateE;
     if(document.getElementById('f_location')) document.getElementById('f_location').value  = location;
 
-    // ── กรองเฉพาะรายการ sec=2 (ค่าวัสดุเบ็ดเตล็ด) จาก actual06.rowsJson ──
+    // ── กรองเฉพาะรายการที่ติ๊ก "ค่าใช้จ่ายตาม ว.119" (w119) จาก actual06.rowsJson ──
     // หมายเหตุ: ไฟล์ 06 บันทึกคอลัมน์ "rowsJson" เป็น JSON string (ไม่ใช่ "rows")
     // ต้อง parse ก่อนใช้งาน และรองรับกรณี backend คืนมาเป็น array อยู่แล้ว
     let allRows = [];
@@ -400,7 +413,7 @@ async function loadFromGSheet09(no){
       allRows = rawRows;
     }
 
-    editRows = allRows.filter(r=>String(r.sec)==='2').map(r=>{
+    editRows = allRows.filter(r=>r.w119===true || r.w119==='true').map(r=>{
       // กันเหนียว: ใช้ staff เฉพาะตอนเป็นหมวด 4 (เจ้าหน้าที่) เท่านั้น
       // ป้องกัน bug เดิมจากไฟล์ 06 ที่ select เจ้าหน้าที่ติดค่า default มาทุกแถว
       const nameVal = r.name || (String(r.sec)==='4' ? (r.staff||'') : '');
@@ -421,7 +434,7 @@ async function loadFromGSheet09(no){
 
     _hideLoader09();
     if(editRows.length===0){
-      _showStatus09(`⚠️ ไม่พบรายการหมวด ${MISC_NUM} (ค่าวัสดุเบ็ดเตล็ด) สำหรับเลขที่นี้`, 'warn');
+      _showStatus09('⚠️ ไม่พบรายการที่ติ๊ก "ค่าใช้จ่ายตาม ว.119" สำหรับเลขที่นี้', 'warn');
     } else {
       _showStatus09('✅ โหลดข้อมูลสำเร็จ', 'ok');
     }
