@@ -562,6 +562,13 @@ const DOC_OPTS = [
 ];
 let smCnt = 0;
 const TH_MON = ['','มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+// ดึงเฉพาะส่วน YYYY-MM-DD จากสตริงวันที่ใดๆ (รองรับ ISO datetime ที่มีเวลา/timezone ติดมาด้วย
+// เช่น "2026-07-20T00:00:00.000Z" ซึ่ง Google Apps Script มักคืนค่า Date column มาเป็นรูปแบบนี้
+// — ล้อวิธีเดียวกับไฟล์ 07 isoTh()/isoThRange() ที่ดึงวันที่ได้ถูกต้อง)
+function normDateStr(s){
+  const m = String(s||'').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? `${m[1]}-${m[2]}-${m[3]}` : '';
+}
 function sumFmtDate(d){
   if(!d) return '';
   const parts = d.split('-');
@@ -1264,14 +1271,19 @@ async function autoLoadFromSheet(){
       // รองรับทั้ง dateStart/dateEnd แยก และ date รวมแบบ "YYYY-MM-DD_YYYY-MM-DD"
       // (เดิมเช็คแค่ course.dateStart/course.dateEnd ตรงๆ ถ้า sheet เก็บมาเป็น date รวม จะไม่ขึ้นเลย)
       const rawDate = String(course.date||'').trim();
-      const ds = String(course.dateStart||'').trim() ||
+      const dsRaw = String(course.dateStart||'').trim() ||
                  (rawDate && !rawDate.includes('_') ? rawDate :
                  (rawDate ? rawDate.split('_')[0] : ''));
-      const de = String(course.dateEnd||'').trim() ||
-                 (rawDate && rawDate.includes('_') ? rawDate.split('_')[1] : ds);
+      const deRaw = String(course.dateEnd||'').trim() ||
+                 (rawDate && rawDate.includes('_') ? rawDate.split('_')[1] : dsRaw);
 
-      if(ds && /^\d{4}-\d{2}-\d{2}$/.test(ds)){ const el=document.getElementById('sh_date');     if(el) el.value=ds; }
-      if(de && /^\d{4}-\d{2}-\d{2}$/.test(de)){ const el=document.getElementById('sh_date_end'); if(el) el.value=de; }
+      // ⚠️ FIX: GAS มักคืนค่า Date column มาเป็น ISO datetime เต็ม เช่น "2026-07-20T00:00:00.000Z"
+      // เดิมใช้ regex ที่ต้อง match ทั้งสตริงพอดี (^...$) ทำให้ไม่ผ่านและวันที่ไม่ถูกเติมเลย
+      // ใช้ normDateStr() ดึงเฉพาะส่วน YYYY-MM-DD ออกมาแทน (ล้อวิธีของไฟล์ 07 ที่ดึงถูก)
+      const ds = normDateStr(dsRaw);
+      const de = normDateStr(deRaw);
+      if(ds){ const el=document.getElementById('sh_date');     if(el) el.value=ds; }
+      if(de){ const el=document.getElementById('sh_date_end'); if(el) el.value=de; }
       shSyncDateRange();
     }
 
@@ -1735,16 +1747,18 @@ document.addEventListener('DOMContentLoaded', function loadFromMain(){
     if (location) { const el = document.getElementById('sh_location'); if(el) el.value = location; }
 
     // วันที่ — รองรับ dateStart/dateEnd และ date แบบ "YYYY-MM-DD_YYYY-MM-DD"
-    const dateVal    = d.dateStart ||
+    const dateValRaw    = d.dateStart ||
                        (d.date && !d.date.includes('_') ? d.date :
                        (d.date ? d.date.split('_')[0] : ''));
-    const dateEndVal = d.dateEnd ||
-                       (d.date && d.date.includes('_') ? d.date.split('_')[1] : dateVal);
+    const dateEndValRaw = d.dateEnd ||
+                       (d.date && d.date.includes('_') ? d.date.split('_')[1] : dateValRaw);
 
-    if (dateVal    && /^\d{4}-\d{2}-\d{2}$/.test(dateVal))
-      { const el = document.getElementById('sh_date');     if(el) el.value = dateVal; }
-    if (dateEndVal && /^\d{4}-\d{2}-\d{2}$/.test(dateEndVal))
-      { const el = document.getElementById('sh_date_end'); if(el) el.value = dateEndVal; }
+    // ⚠️ FIX: รองรับกรณีวันที่มาเป็น ISO datetime เต็ม เช่น "2026-07-20T00:00:00.000Z" (ที่ GAS มักส่งมา)
+    const dateVal    = normDateStr(dateValRaw);
+    const dateEndVal = normDateStr(dateEndValRaw);
+
+    if (dateVal)    { const el = document.getElementById('sh_date');     if(el) el.value = dateVal; }
+    if (dateEndVal) { const el = document.getElementById('sh_date_end'); if(el) el.value = dateEndVal; }
 
     window._dateStart = dateVal    || '';
     window._dateEnd   = dateEndVal || '';
