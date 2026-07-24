@@ -322,23 +322,60 @@ function _showStatus09(msg, type) {
   el._t = setTimeout(() => { el.style.display = 'none'; }, 4000);
 }
 
-// เลขข้อของหมวด "ค่าวัสดุเบ็ดเตล็ด" แบบ dynamic ตามไฟล์ 05 (ค่าเริ่มต้น = 2 เหมือนเดิม หากยังไม่มีข้อมูลงบ)
-let MISC_NUM = 2;
+/* ============================================================
+   หมวดรายการ — ต้องตรงกับ SEC_OPTS / DYNAMIC_SEC_ORDER ในไฟล์ 06
+   ใช้สำหรับ (1) ตั้งชื่อหัวข้อกลุ่มตามหมวดที่ติ๊ก ว.119 จริง
+             (2) คำนวณเลขข้อ "1., 2., 3. ..." ให้ตรงกับรายงานสรุป (ไฟล์ 06)
+   ============================================================ */
+const SEC_OPTS = [
+  {v:'fuel',  l:'ค่าน้ำมันเชื้อเพลิงและหล่อลื่น'},
+  {v:'1',     l:'ค่าวัสดุสำนักงาน'},
+  {v:'2',     l:'ค่าวัสดุเบ็ดเตล็ด'},
+  {v:'lump',  l:'ค่าจ้างเหมา (รถตู้/พาหนะรับจ้าง)'},
+  {v:'venue', l:'ค่าเช่าสถานที่'},
+  {v:'3',     l:'ค่าอาหารและเครื่องดื่ม'},
+  {v:'4',     l:'ค่าเดินทางเจ้าหน้าที่ดำเนินการและประสานงาน (กฝภ.1)'},
+  {v:'ext',   l:'ค่าสมนาคุณวิทยากรภายนอก'},
+  {v:'int',   l:'ค่าสมนาคุณวิทยากรภายใน (จ่ายผ่าน payroll)'},
+];
+const DYNAMIC_SEC_ORDER = ['fuel','1','2','lump','venue','3','4','ext','int'];
 
-// คำนวณเลขข้อหมวดวัสดุเบ็ดเตล็ด จาก toggle ของไฟล์ 05 (spkJson) — เรียงตามลำดับ fuel → office → misc
-// (ต้องตรงลำดับกับ calcSectionNumbers() ในไฟล์ 05 / calcSectionNumbers07() ในไฟล์ 07)
-function computeMiscNumber(budget){
-  if(!budget) return 2;
-  let sp = {};
-  try { sp = typeof budget.spkJson === 'string' ? JSON.parse(budget.spkJson || '{}') : (budget.spkJson || {}); }
-  catch(e) { sp = {}; }
-  const t = sp.toggles || {};
-  let n = 0;
-  if (sp.fuel && sp.fuel.on) n++;      // ก. ค่าน้ำมันเชื้อเพลิงและหล่อลื่น (ถ้าติ๊ก)
-  if (t.office !== false) n++;         // ก. ค่าวัสดุสำนักงาน (ถ้าติ๊ก — ค่าเริ่มต้นติ๊กไว้)
-  n++;                                 // ก. ค่าวัสดุเบ็ดเตล็ด (หมวดนี้เอง)
-  return n;
+// toggle หมวดจากไฟล์ 05 (budget.spkJson) — ใช้ตัดสินว่าหมวดไหน "ตั้งงบประมาณไว้" เพื่อคำนวณเลขข้อให้ตรงกับรายงานสรุป
+let BUDGET05_TOGGLES = null;
+
+/* หมวดที่ "ตั้งงบประมาณไว้" ตามไฟล์ 05 — ถ้ายังไม่มีข้อมูลงบ fallback ไปใช้หมวดที่มีรายการจริงในชุดข้อมูลที่ส่งเข้ามา */
+function getActiveSections(rows){
+  const t = BUDGET05_TOGGLES;
+  if (t) {
+    const set = new Set();
+    if (t.fuel && t.fuel.on) set.add('fuel');
+    if (!t.toggles || t.toggles.office !== false) set.add('1');
+    if (!t.toggles || t.toggles.misc   !== false) set.add('2');
+    if (t.lump  && t.lump.on)  set.add('lump');
+    if (t.venue && t.venue.on) set.add('venue');
+    if (!t.toggles || t.toggles.food        !== false) set.add('3');
+    if (!t.toggles || t.toggles.stafftravel !== false) set.add('4');
+    if (t.hasExternal !== false && Array.isArray(t.EXT) && t.EXT.length > 0) set.add('ext');
+    const intHasSpeakers = Array.isArray(t.INT) && t.INT.length > 0;
+    if (t.hasInternal || intHasSpeakers || (rows||[]).some(r=>r.sec==='int')) set.add('int');
+    return set;
+  }
+  return new Set((rows||[]).map(r=>r.sec));
 }
+
+// คำนวณเลขข้อ "1., 2., 3..." แบบ dynamic ตามลำดับ DYNAMIC_SEC_ORDER — ต้องให้ผลลัพธ์ตรงกับไฟล์ 06
+function computeMajorNumbers(rows){
+  const present = getActiveSections(rows);
+  const nums = {};
+  let n = 0;
+  DYNAMIC_SEC_ORDER.forEach(sec=>{
+    if(present.has(sec)){ n++; nums[sec] = String(n); }
+  });
+  return nums;
+}
+
+// เลขข้อของแต่ละหมวด คำนวณครั้งเดียวตอนโหลดข้อมูล (key = sec, value = "1"/"2"/...)
+let SECTION_NUMS = {};
 
 async function gsApi(action, data, no) {
   try {
@@ -382,8 +419,12 @@ async function loadFromGSheet09(no){
     const g6 = gsRow.actual06 || {};
     const bd = gsRow.budget   || null;
 
-    // คำนวณเลขข้อหมวดวัสดุเบ็ดเตล็ดแบบ dynamic ตามไฟล์ 05 (ถ้าไม่มีข้อมูลงบ ใช้ค่าเริ่มต้น 2 เหมือนเดิม)
-    MISC_NUM = computeMiscNumber(bd);
+    // ── parse toggle หมวดจากไฟล์ 05 (ถ้ามี) ไว้คำนวณเลขข้อให้ตรงกับรายงานสรุป ──
+    BUDGET05_TOGGLES = null;
+    if (bd && bd.spkJson) {
+      try { BUDGET05_TOGGLES = typeof bd.spkJson === 'string' ? JSON.parse(bd.spkJson) : bd.spkJson; }
+      catch(e) { BUDGET05_TOGGLES = null; }
+    }
 
     // ── เติมข้อมูลหลักสูตรลง input-panel (read-only display) ──
     // วันที่: รองรับหลายตำแหน่งที่อาจมาจาก backend (cr.dateStart/dateEnd เป็นหลัก
@@ -413,11 +454,18 @@ async function loadFromGSheet09(no){
       allRows = rawRows;
     }
 
+    // เลขข้อ "1., 2., 3..." คำนวณจากหมวดที่ตั้งงบไว้ทั้งหมด (ไม่ใช่แค่ที่ติ๊ก ว.119) เพื่อให้ตรงกับรายงานสรุป (ไฟล์ 06)
+    SECTION_NUMS = computeMajorNumbers(allRows);
+
     editRows = allRows.filter(r=>r.w119===true || r.w119==='true').map(r=>{
       // กันเหนียว: ใช้ staff เฉพาะตอนเป็นหมวด 4 (เจ้าหน้าที่) เท่านั้น
       // ป้องกัน bug เดิมจากไฟล์ 06 ที่ select เจ้าหน้าที่ติดค่า default มาทุกแถว
       const nameVal = r.name || (String(r.sec)==='4' ? (r.staff||'') : '');
+      const secLabel = (SEC_OPTS.find(s=>s.v===r.sec)?.l) || '';
       return {
+        sec   : r.sec    || '',
+        secNum: SECTION_NUMS[r.sec] || '',
+        secLabel,
         doc   : r.doc    || '',
         name  : nameVal,
         branch: r.branch || '',
@@ -472,9 +520,16 @@ function buildDocHtml(){
   const dateStr  = fmtDateRange(gv('f_date'), gv('f_date_end'));
   const location = gv('f_location');
 
-  // รวบรวมแถวจากข้อมูลที่โหลดมา (editRows เป็น data array แล้ว)
-  const rows = editRows.map((r,i)=>({
+  // จัดเรียงแถวตามลำดับหมวดของ DYNAMIC_SEC_ORDER ก่อน (ให้กลุ่มหมวดเรียงตรงกับรายงานสรุป)
+  // แล้วค่อยเลขลำดับที่ต่อเนื่องกันทั้งชุด
+  const secOrderIdx = sec => { const i = DYNAMIC_SEC_ORDER.indexOf(sec); return i===-1 ? 999 : i; };
+  const sortedRows = [...editRows].sort((a,b)=> secOrderIdx(a.sec)-secOrderIdx(b.sec));
+
+  const rows = sortedRows.map((r,i)=>({
     seq   : i+1,
+    sec   : r.sec||'',
+    secNum: r.secNum||'',
+    secLabel: r.secLabel||'',
     doc   : r.doc||'',
     name  : r.name||'',
     branch: r.branch||'',
@@ -491,12 +546,23 @@ function buildDocHtml(){
   let gVal=0,gVat=0,gWht=0,gTotal=0;
   rows.forEach(r=>{gVal+=r.val;gVat+=r.vat;gWht+=r.wht;gTotal+=r.total;});
 
-  /* ---- แถวข้อมูล ---- */
+  // ซ่อนคอลัมน์ "ภาษีหัก ณ ที่จ่าย" ทั้งคอลัมน์ ถ้าไม่มีรายการใดมีค่าเลย (0 หรือไม่ระบุ)
+  const hasWht = rows.some(r => (parseFloat(r.wht)||0) > 0);
+  const colCount = hasWht ? 7 : 6;
+  const itemColWidth = hasWht ? 44 : 54;
+
+  /* ---- แถวข้อมูล (แทรกหัวข้อหมวดตามที่ติ๊ก ว.119 จริง) ---- */
   let bodyHtml='';
   if(rows.length===0){
-    bodyHtml=`<tr><td colspan="7" style="text-align:center;padding:16px;color:#888;font-style:italic;">ไม่มีรายการ</td></tr>`;
+    bodyHtml=`<tr><td colspan="${colCount}" style="text-align:center;padding:16px;color:#888;font-style:italic;">ไม่มีรายการ</td></tr>`;
   } else {
+    let lastSec = null;
     rows.forEach(r=>{
+      if(r.sec !== lastSec){
+        const num = r.secNum ? r.secNum + '. ' : '';
+        bodyHtml += `<tr class="row-sub"><td colspan="${colCount}">${num}${r.secLabel} (ว.119)</td></tr>`;
+        lastSec = r.sec;
+      }
       const detailLines=[];
       if(r.doc)    detailLines.push(r.doc);
       if(r.name)   detailLines.push(r.name);
@@ -510,7 +576,7 @@ function buildDocHtml(){
         <td class="tc">${r.acct}</td>
         <td class="tr">${fmtMoney(r.val)}</td>
         <td class="tr">${fmtMoney2(r.vat)}</td>
-        <td class="tr">${fmtMoney2(r.wht)}</td>
+        ${hasWht ? `<td class="tr">${fmtMoney2(r.wht)}</td>` : ''}
         <td class="tr">${fmtMoney(r.total)}</td>
       </tr>`;
     });
@@ -533,30 +599,24 @@ function buildDocHtml(){
   <thead>
     <tr>
       <th style="width:6%">ลำดับที่</th>
-      <th style="width:44%" class="tl">รายการ</th>
+      <th style="width:${itemColWidth}%" class="tl">รายการ</th>
       <th style="width:10%">รหัสบัญชี</th>
       <th style="width:10%">มูลค่าสินค้า</th>
       <th style="width:10%">ภาษีมูลค่าเพิ่ม</th>
-      <th style="width:10%">ภาษีหัก ณ ที่จ่าย</th>
+      ${hasWht ? '<th style="width:10%">ภาษีหัก ณ ที่จ่าย</th>' : ''}
       <th style="width:10%">จำนวนเงิน</th>
     </tr>
   </thead>
   <tbody>
     <tr class="row-cat">
-      <td colspan="7">ก. ค่าดำเนินการฝึกอบรม</td>
-    </tr>
-    <tr class="row-sub">
-      <td colspan="7">${MISC_NUM}. ค่าวัสดุเบ็ดเตล็ด</td>
-    </tr>
-    <tr class="row-sub2">
-      <td colspan="7">${MISC_NUM}.1 ค่าใช้จ่ายอื่นๆ (ว.119)</td>
+      <td colspan="${colCount}">ก. ค่าดำเนินการฝึกอบรม</td>
     </tr>
     ${bodyHtml}
     <tr class="row-grand">
-      <td colspan="3" class="tc">รวมค่าวัสดุเบ็ดเตล็ดทั้งสิ้น</td>
+      <td colspan="3" class="tc">รวมค่าใช้จ่ายตาม ว.119 ทั้งสิ้น</td>
       <td class="tr">${fmtMoney(gVal)}</td>
       <td class="tr">${fmtMoney2(gVat)}</td>
-      <td class="tr">${fmtMoney2(gWht)}</td>
+      ${hasWht ? `<td class="tr">${fmtMoney2(gWht)}</td>` : ''}
       <td class="tr">${fmtMoney(gTotal)}</td>
     </tr>
   </tbody>
