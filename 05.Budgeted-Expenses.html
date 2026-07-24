@@ -236,8 +236,7 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
 @media print{ .print-toolbar{display:none!important;} }
 
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- html2canvas/jsPDF ถูกลบออก — เปลี่ยนไปสร้าง PDF ผ่าน Puppeteer server ฝั่ง backend แทน (ดู savePdf05()) -->
 </head>
 <body>
 
@@ -1060,6 +1059,16 @@ function buildTable(){
     rows.push(row(td(`${nums.lump}. ค่าจ้างเหมา`,'tl tw i1 nb nt')+td('','nb nt')+td(fmt(secLump),'tr tw nb nt')));
     const txtLump = (lRate||lVeh||lDays) ? `${fmt(lRate)} บาท/คัน/วัน x ${lVeh} คัน x ${lDays} วัน` : '';
     rows.push(row(td(`${nums.lump}.1 รถตู้รับจ้างรวมน้ำมันเชื้อเพลิง (${txtLump})`,'tl i2 nt bb2')+td(fmt(secLump),'tr nt bb2')+td('','nt bb2')));
+  }
+
+  // รวมเงินข้อ ก. (1. - x.) เฉพาะ ค่าน้ำมันฯ/วัสดุสำนักงาน/วัสดุเบ็ดเตล็ด/จ้างเหมา — แสดงก่อนค่าเช่าสถานที่ (หรือก่อนอาหารฯ ถ้าไม่มีค่าเช่าสถานที่)
+  {
+    let preVenueLast = 0;
+    for(const k of ['lump','misc','office','fuel']){ if(nums[k]){ preVenueLast = nums[k]; break; } }
+    if(preVenueLast > 0){
+      const subtotalPreVenue = secFuel + sec1 + sec2 + secLump;
+      rows.push(`<tr class="bb2">${td(`รวมเงินข้อ ก. (1. - ${preVenueLast}.) เป็นเงิน`,'tc tw bt2')+td('','bt2')+td(fmt(subtotalPreVenue),'tr tw bt2')}</tr>`);
+    }
   }
 
   if(venueOn){
@@ -2109,7 +2118,10 @@ function saveBudgetSlot() {
   document.body.appendChild(pop);
 }
 
-function savePdf05(btn){
+// ⚠️ ตั้งค่า URL ของ Puppeteer PDF server ที่ deploy ไว้ตรงนี้ (ดูไฟล์ pdf-server.js ที่แนบมาด้วย)
+const PDF_SERVER_URL = 'https://YOUR-PDF-SERVER.example.com/pdf';
+
+async function savePdf05(btn){
   const el = document.getElementById('report-container-05');
   if(!el){ alert('ไม่พบข้อมูลรายงาน กรุณาสร้างรายงานก่อน'); return; }
 
@@ -2120,100 +2132,88 @@ function savePdf05(btn){
 
   btn.disabled = true; btn.textContent = '⏳ กำลังสร้าง...';
 
-  const clone = el.cloneNode(true);
+  try {
+    const clone = el.cloneNode(true);
 
-  clone.querySelectorAll('input.hdr-edit').forEach(inp => {
-    const d = document.createElement('div');
-    d.style.cssText = 'font-family:Sarabun,sans-serif;font-size:14px;font-weight:700;color:#000;text-align:center;line-height:1.6;width:100%;';
-    d.textContent = inp.value;
-    inp.parentNode.replaceChild(d, inp);
-  });
-
-  clone.querySelectorAll('input.rpt-edit').forEach(inp => {
-    const d = document.createElement('div');
-    const inHeader = inp.closest('.header-area');
-    const fw = inHeader ? '700' : '400';
-    d.style.cssText = `font-family:Sarabun,sans-serif;font-size:14px;font-weight:${fw};color:#000;line-height:1.5;width:100%;display:block;`;
-    d.textContent = inp.value || '';
-    inp.parentNode.replaceChild(d, inp);
-  });
-
-  const pdfStyle = document.createElement('style');
-  pdfStyle.textContent = `
-    table.rpt { border-collapse: collapse !important; font-size: 13px !important; }
-    table.rpt th, table.rpt td {
-      border-top: none !important;
-      border-left: none !important;
-      border-right: 0.5px solid #000 !important;
-      border-bottom: 0.5px solid #000 !important;
-      padding: 4px 8px !important;
-      vertical-align: middle !important;
-    }
-    table.rpt thead tr:first-child th,
-    table.rpt thead tr:first-child td { border-top: 0.5px solid #000 !important; }
-    table.rpt th:first-child, table.rpt td:first-child { border-left: 0.5px solid #000 !important; }
-    table.rpt .nb { border-bottom: none !important; }
-    table.rpt .nt { border-top: none !important; }
-    table.rpt .bb2 { border-bottom: 0.5px solid #000 !important; }
-    table.rpt .bt2 { border-top: 0.5px solid #000 !important; }
-    table.rpt .bb3 { border-bottom: 0.5px solid #000 !important; }
-    table.rpt tr.bb2 td, table.rpt tr.bb3 td { border-bottom: 0.5px solid #000 !important; }
-    table.rpt tr.bb3 td { border-bottom: 0.5px solid #000 !important; }
-  `;
-  clone.prepend(pdfStyle);
-
-  const wrap = document.createElement('div');
-  wrap.style.cssText = 'position:fixed;left:-9999px;top:0;width:874px;background:#fff;font-family:Sarabun,sans-serif;padding:20px 30px;';
-  wrap.appendChild(clone);
-  document.body.appendChild(wrap);
-
-  setTimeout(()=>{
-    const A4_W_IN = 8.27, A4_H_IN = 11.69;
-    const MARGIN_T = 0.4, MARGIN_R = 0.4, MARGIN_B = 0.2, MARGIN_L = 0.4;
-    const SCALE = 2;
-
-    html2canvas(clone, { scale:SCALE, useCORS:true, logging:false, backgroundColor:'#ffffff' }).then(canvas => {
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({ unit:'in', format:'a4', orientation:'portrait' });
-
-      const pageW  = A4_W_IN;
-      const pageH  = A4_H_IN;
-      const printW = pageW - MARGIN_L - MARGIN_R;
-      const printH = pageH - MARGIN_T - MARGIN_B;
-
-      const imgW   = canvas.width;
-      const imgH   = canvas.height;
-      const ratio  = printW / (imgW / SCALE);
-      const totalH = (imgH / SCALE) * ratio;
-
-      let yOffset = 0;
-      let page    = 0;
-
-      while(yOffset < totalH){
-        if(page > 0) pdf.addPage();
-
-        const srcY  = Math.round((yOffset / ratio) * SCALE);
-        const srcH  = Math.round((printH / ratio) * SCALE);
-        const slice = document.createElement('canvas');
-        slice.width  = imgW;
-        slice.height = Math.min(srcH, imgH - srcY);
-        const ctx = slice.getContext('2d');
-        ctx.drawImage(canvas, 0, srcY, imgW, slice.height, 0, 0, imgW, slice.height);
-
-        const sliceDataUrl = slice.toDataURL('image/png', 1);
-        const sliceH = (slice.height / SCALE) * ratio;
-        pdf.addImage(sliceDataUrl, 'PNG', MARGIN_L, MARGIN_T, printW, sliceH);
-
-        yOffset += printH;
-        page++;
-      }
-
-      pdf.save(fname + '.pdf');
-    }).finally(()=>{
-      document.body.removeChild(wrap);
-      btn.disabled = false; btn.textContent = '💾 บันทึก PDF';
+    // แปลง input ที่แก้ไขได้ (หัวกระดาษ/ช่องหมายเหตุ) ให้เป็นข้อความนิ่งๆ ก่อนส่งไป render
+    clone.querySelectorAll('input.hdr-edit').forEach(inp => {
+      const d = document.createElement('div');
+      d.style.cssText = 'font-family:Sarabun,sans-serif;font-size:14px;font-weight:700;color:#000;text-align:center;line-height:1.6;width:100%;';
+      d.textContent = inp.value;
+      inp.parentNode.replaceChild(d, inp);
     });
-  }, 300);
+
+    clone.querySelectorAll('input.rpt-edit').forEach(inp => {
+      const d = document.createElement('div');
+      const inHeader = inp.closest('.header-area');
+      const fw = inHeader ? '700' : '400';
+      d.style.cssText = `font-family:Sarabun,sans-serif;font-size:14px;font-weight:${fw};color:#000;line-height:1.5;width:100%;display:block;`;
+      d.textContent = inp.value || '';
+      inp.parentNode.replaceChild(d, inp);
+    });
+
+    // สไตล์ตารางสำหรับพิมพ์ (เส้นขอบบาง 0.5px ให้คมชัดตอน print เป็น PDF)
+    const pdfTableStyle = `
+      table.rpt { border-collapse: collapse !important; font-size: 13px !important; }
+      table.rpt th, table.rpt td {
+        border-top: none !important;
+        border-left: none !important;
+        border-right: 0.5px solid #000 !important;
+        border-bottom: 0.5px solid #000 !important;
+        padding: 4px 8px !important;
+        vertical-align: middle !important;
+      }
+      table.rpt thead tr:first-child th,
+      table.rpt thead tr:first-child td { border-top: 0.5px solid #000 !important; }
+      table.rpt th:first-child, table.rpt td:first-child { border-left: 0.5px solid #000 !important; }
+      table.rpt .nb { border-bottom: none !important; }
+      table.rpt .nt { border-top: none !important; }
+      table.rpt .bb2 { border-bottom: 0.5px solid #000 !important; }
+      table.rpt .bt2 { border-top: 0.5px solid #000 !important; }
+      table.rpt .bb3 { border-bottom: 0.5px solid #000 !important; }
+      table.rpt tr.bb2 td, table.rpt tr.bb3 td { border-bottom: 0.5px solid #000 !important; }
+      table.rpt tr.bb3 td { border-bottom: 0.5px solid #000 !important; }
+    `;
+
+    // ประกอบเป็นเอกสาร HTML ฉบับสมบูรณ์ ส่งให้ฝั่งเซิร์ฟเวอร์ (Puppeteer) เปิดแล้ว render เป็น PDF จริง
+    // (Puppeteer ใช้ page.pdf() ของ Chromium ตัดหน้าอัตโนมัติเอง ไม่ต้องหั่นภาพเป็น canvas แบบเดิม)
+    const fullHtml = `<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; padding:20px 30px; background:#fff; font-family:'Sarabun',sans-serif; color:#000; }
+  ${pdfTableStyle}
+</style>
+</head>
+<body>${clone.outerHTML}</body>
+</html>`;
+
+    const res = await fetch(PDF_SERVER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ html: fullHtml, filename: fname })
+    });
+    if(!res.ok){
+      const errText = await res.text().catch(()=>res.statusText);
+      throw new Error(`เซิร์ฟเวอร์สร้าง PDF ผิดพลาด (${res.status}): ${errText}`);
+    }
+
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = fname + '.pdf';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+
+  } catch(err){
+    console.error('savePdf05 error:', err);
+    alert('สร้าง PDF ไม่สำเร็จ: ' + err.message + '\n\nตรวจสอบว่าตั้งค่า PDF_SERVER_URL ถูกต้อง และเซิร์ฟเวอร์ Puppeteer เปิดใช้งานอยู่');
+  } finally {
+    btn.disabled = false; btn.textContent = '💾 บันทึก PDF';
+  }
 }
 
 function confirmBack05() {
