@@ -11,7 +11,6 @@ app.use(express.json({ limit: '20mb' }));
 
 let browserPromise = null;
 
-// ฟังก์ชันสำหรับเปิด Browser
 async function getBrowser() {
   return await puppeteer.launch({
     args: chromium.args,
@@ -21,7 +20,6 @@ async function getBrowser() {
   });
 }
 
-// เริ่มเปิด Browser ตอนรันเซิร์ฟเวอร์
 browserPromise = getBrowser();
 
 app.post(['/pdf', '/generate-pdf'], async (req, res) => {
@@ -34,36 +32,47 @@ app.post(['/pdf', '/generate-pdf'], async (req, res) => {
   try {
     let browser = await browserPromise;
 
-    // เช็กว่า Browser ค้าง/ดับไปหรือยัง ถ้าดับให้เปิดใหม่
     if (!browser || !browser.isConnected()) {
       browserPromise = getBrowser();
       browser = await browserPromise;
     }
 
- page = await browser.newPage();
+    page = await browser.newPage();
 
-    // 1. กำหนดความกว้างหน้าจอระดับ HD
-    await page.setViewport({ width: 1240, height: 1754, deviceScaleFactor: 2 });
-
-    // 2. สั่งจำลองโหมดพิมพ์
-    await page.emulateMediaType('print');
-
-    // 3. ใส่ HTML โดยเปลี่ยนมารอแค่ DOM โหลดเสร็จพอ (ไม่ค้างรอ Network)
-    await page.setContent(html, { 
-      waitUntil: 'domcontentloaded', 
-      timeout: 15000 
+    // ✅ ตั้ง viewport ให้เท่ากับขนาด A4 ที่ 96 DPI ก่อน (กัน layout เพี้ยนจาก responsive CSS)
+    // A4 = 8.27in x 11.69in => 96dpi ≈ 794 x 1123 px
+    await page.setViewport({
+      width: 794,
+      height: 1123,
+      deviceScaleFactor: 2, // เพิ่มความคมชัดของภาพ/ตัวอักษรใน PDF
     });
 
-    // 4. รออีก 1 วินาทีสั้นๆ ให้ CSS / Font เรนเดอร์ตัวอักษรไทยเรียบร้อย
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // ✅ เอกสารนี้ถูกออกแบบมาเป็น "เอกสารพิมพ์" โดยเฉพาะ (มี @media print / @page
+    // กำหนด margin ไว้ตั้งใจ) จึงควรใช้ media 'print' ให้ตรงกับเจตนาการออกแบบ
+    await page.emulateMediaType('print');
 
-    // 5. สั่งสร้าง PDF
+    await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
+
+    // ✅ รอฟอนต์ (Sarabun) โหลด/render เสร็จจริง ก่อนพ่น PDF
+    await page.evaluate(async () => {
+      if (document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+      }
+    });
+
+    // ✅ กันเคสฟอนต์/รูปภาพโหลดช้ากว่านั้นอีกนิด
+    await new Promise((r) => setTimeout(r, 150));
+
+    // ✅ preferCSSPageSize: true ทำให้ Puppeteer อ่านค่า @page ที่ฝังมาใน HTML
+    // (เช่น margin: 25.4mm 10mm 43mm 10mm) แทนที่จะใช้ค่า margin ที่ฮาร์ดโค้ดไว้ตรงนี้
+    // ถ้า HTML ที่ส่งมาไม่มี @page กำหนดไว้ จะ fallback ไปใช้ margin ด้านล่างแทน
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
-      margin: { top: '8mm', right: '8mm', bottom: '8mm', left: '8mm' },
-      preferCSSPageSize: true
+      preferCSSPageSize: true,
+      margin: { top: '0.2in', right: '0.2in', bottom: '0.2in', left: '0.2in' },
     });
+
     const safeName = String(filename || 'report').replace(/[^\w\u0E00-\u0E7F\-]+/g, '_');
 
     res.set({
