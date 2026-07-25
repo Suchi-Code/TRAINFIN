@@ -358,6 +358,12 @@ let dc = {};
 .sum-pick-btn{background:#fff;border:1.5px solid var(--blue);color:var(--blue);border-radius:6px;padding:4px 10px;font-family:'Sarabun',sans-serif;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;}
 .sum-pick-btn:hover{background:var(--info-bg);}
 .vendor-pick-item:hover{background:var(--info-bg);border-color:var(--blue)!important;}
+.vendor-cat-tabs{display:flex;gap:6px;flex-wrap:wrap;}
+.vendor-cat-tab{background:#fff;border:1.5px solid var(--border);color:var(--text-soft);border-radius:20px;padding:6px 14px;font-family:'Sarabun',sans-serif;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s;}
+.vendor-cat-tab:hover{border-color:var(--blue);color:var(--blue);}
+.vendor-cat-tab.active{background:var(--blue);border-color:var(--blue);color:#fff;}
+.vendor-pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;align-content:start;}
+.vendor-pick-item{padding:10px 12px;border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:background .15s;}
 .sum-del-btn{margin-left:auto;padding:3px 10px;background:var(--red-bg);color:var(--red);border:1px solid var(--red);border-radius:4px;font-family:'Sarabun',sans-serif;font-size:11.5px;cursor:pointer}
 .sum-row-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .sum-row-4col{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
@@ -654,9 +660,22 @@ function sumAddRow(){
         <input type="checkbox" id="${id}_addressonly">
         <span>เฉพาะที่อยู่ (ไม่รวมชื่อ) — เหมาะกับวิทยากรภายในที่ที่อยู่ซ้ำแต่ชื่อคนต่างกัน</span>
       </label>
-      <div class="sum-inp" style="max-width:340px;">
-        <label>ชื่อเรียกสั้นๆ ในรายการที่บันทึกไว้</label>
-        <input type="text" id="${id}_vlabel" placeholder="เช่น สนง.ใหญ่ กปภ.1 / ร้านถ่ายเอกสาร ABC">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <div class="sum-inp" style="max-width:210px;">
+          <label>หมวดหมู่</label>
+          <select id="${id}_vcat">
+            <option value="office">🏢 สำนักงาน กปภ.</option>
+            <option value="shop">🏪 ร้านค้า</option>
+            <option value="hotel">🏨 โรงแรม</option>
+            <option value="fuel">⛽ ปั๊มน้ำมัน</option>
+            <option value="restaurant">🍽️ ร้านอาหาร</option>
+            <option value="other">📦 อื่นๆ</option>
+          </select>
+        </div>
+        <div class="sum-inp" style="max-width:320px;flex:1;">
+          <label>ชื่อเรียกสั้นๆ ในรายการที่บันทึกไว้</label>
+          <input type="text" id="${id}_vlabel" placeholder="เช่น สนง.ใหญ่ กปภ.1 / ร้านถ่ายเอกสาร ABC">
+        </div>
       </div>
     </div>
     <div class="sum-row-grid">
@@ -881,41 +900,66 @@ function sumToggleRemember(id){
 /* ── เลือกร้านค้า/ที่อยู่ที่เคยบันทึกไว้ (ดึงจาก Google Sheet ผ่าน gsApi) ── */
 let VENDOR_LIST = null;
 let _vendorPickerTargetId = null;
+let _vendorPickerCategory = 'all';
+
+const VENDOR_CATEGORIES = [
+  {v:'office',     l:'สำนักงาน กปภ.', icon:'🏢'},
+  {v:'shop',       l:'ร้านค้า',        icon:'🏪'},
+  {v:'hotel',      l:'โรงแรม',        icon:'🏨'},
+  {v:'fuel',       l:'ปั๊มน้ำมัน',      icon:'⛽'},
+  {v:'restaurant', l:'ร้านอาหาร',      icon:'🍽️'},
+  {v:'other',      l:'อื่นๆ',          icon:'📦'},
+];
+function vendorCatLabel(v){ const c = VENDOR_CATEGORIES.find(c=>c.v===v); return c ? `${c.icon} ${c.l}` : '📦 อื่นๆ'; }
 
 async function ensureVendorList(force){
   if(VENDOR_LIST && !force) return VENDOR_LIST;
   const list = await gsApi('getVendors');
   VENDOR_LIST = Array.isArray(list) ? list : [];
+  // ใส่ id ไม่ซ้ำต่อรายการ (ใช้ index ตอนโหลด เพื่ออ้างอิงตอนเลือก แม้ list จะถูกกรอง/เรียงใหม่)
+  VENDOR_LIST.forEach((v,i)=>{ v._pickId = i; });
   return VENDOR_LIST;
 }
 
 async function openVendorPicker(rowId){
   _vendorPickerTargetId = rowId;
+  _vendorPickerCategory = 'all';
   let overlay = document.getElementById('vendor-picker-overlay');
   if(!overlay){
+    const tabsHTML = ['<button type="button" class="vendor-cat-tab active" data-cat="all" onclick="selectVendorCategory(\'all\')">ทั้งหมด</button>']
+      .concat(VENDOR_CATEGORIES.map(c=>`<button type="button" class="vendor-cat-tab" data-cat="${c.v}" onclick="selectVendorCategory('${c.v}')">${c.icon} ${c.l}</button>`))
+      .join('');
     overlay = document.createElement('div');
     overlay.id = 'vendor-picker-overlay';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
     overlay.innerHTML = `
-      <div style="background:#fff;border-radius:14px;padding:22px 24px;max-width:480px;width:92%;max-height:80vh;
+      <div style="background:#fff;border-radius:14px;padding:22px 26px;max-width:900px;width:100%;max-height:88vh;
         display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.25);font-family:'Sarabun',sans-serif;">
-        <div style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:10px;">📋 เลือกร้านค้า/ที่อยู่ที่เคยบันทึกไว้</div>
+        <div style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:12px;">📋 เลือกร้านค้า/ที่อยู่ที่เคยบันทึกไว้</div>
         <input type="text" id="vendor-picker-search" placeholder="พิมพ์เพื่อค้นหา..."
-          style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Sarabun',sans-serif;font-size:14px;margin-bottom:10px;"
+          style="padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:'Sarabun',sans-serif;font-size:14px;margin-bottom:10px;"
           oninput="renderVendorPickerList()">
-        <div id="vendor-picker-list" style="overflow-y:auto;flex:1;min-height:120px;"></div>
+        <div class="vendor-cat-tabs" id="vendor-cat-tabs">${tabsHTML}</div>
+        <div id="vendor-picker-list" class="vendor-pick-grid" style="overflow-y:auto;flex:1;min-height:200px;margin-top:10px;"></div>
         <button onclick="document.getElementById('vendor-picker-overlay').style.display='none'"
-          style="margin-top:14px;padding:9px;background:#f3f4f6;color:#374151;border:1.5px solid #d1d5db;
+          style="margin-top:14px;padding:10px;background:#f3f4f6;color:#374151;border:1.5px solid #d1d5db;
           border-radius:8px;font-family:'Sarabun',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">ปิด</button>
       </div>`;
     document.body.appendChild(overlay);
   }
   overlay.style.display = 'flex';
   const listBox = document.getElementById('vendor-picker-list');
-  if(listBox) listBox.innerHTML = '<div style="text-align:center;color:var(--text-soft);padding:20px;">⏳ กำลังโหลด...</div>';
+  if(listBox) listBox.innerHTML = '<div style="text-align:center;color:var(--text-soft);padding:20px;grid-column:1/-1;">⏳ กำลังโหลด...</div>';
   const searchEl = document.getElementById('vendor-picker-search');
   if(searchEl) searchEl.value = '';
+  document.querySelectorAll('.vendor-cat-tab').forEach(t=>t.classList.toggle('active', t.dataset.cat==='all'));
   await ensureVendorList();
+  renderVendorPickerList();
+}
+
+function selectVendorCategory(cat){
+  _vendorPickerCategory = cat;
+  document.querySelectorAll('.vendor-cat-tab').forEach(t=>t.classList.toggle('active', t.dataset.cat===cat));
   renderVendorPickerList();
 }
 
@@ -924,6 +968,9 @@ function renderVendorPickerList(){
   if(!box) return;
   const q = (document.getElementById('vendor-picker-search')?.value||'').trim().toLowerCase();
   let list = VENDOR_LIST||[];
+  if(_vendorPickerCategory !== 'all'){
+    list = list.filter(v => (v.category||'other') === _vendorPickerCategory);
+  }
   if(q){
     list = list.filter(v =>
       (v.label||'').toLowerCase().includes(q) ||
@@ -932,22 +979,22 @@ function renderVendorPickerList(){
   }
   list = [...list].sort((a,b)=>(b.useCount||0)-(a.useCount||0));
   if(!list.length){
-    box.innerHTML = '<div style="text-align:center;color:var(--text-soft);padding:20px;">— ไม่พบรายการที่เคยบันทึกไว้ —</div>';
+    box.innerHTML = '<div style="text-align:center;color:var(--text-soft);padding:30px;grid-column:1/-1;">— ไม่พบรายการที่เคยบันทึกไว้ —</div>';
     return;
   }
-  box.innerHTML = list.map((v,i)=>{
+  box.innerHTML = list.map(v=>{
     const addrPreview = [v.addr1, v.tambon?('ต.'+v.tambon):'', v.amphoe?('อ.'+v.amphoe):'', v.province].filter(Boolean).join(' ');
     const tag = v.name ? '' : '<span style="font-size:10px;background:var(--info-bg);color:var(--info);padding:1px 6px;border-radius:4px;margin-left:6px;">เฉพาะที่อยู่</span>';
-    return `<div class="vendor-pick-item" onclick="pickVendor(${i})"
-      style="padding:10px 12px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;cursor:pointer;transition:background .15s;">
+    return `<div class="vendor-pick-item" onclick="pickVendor(${v._pickId})">
+      <div style="font-size:10.5px;color:var(--text-soft);margin-bottom:2px;">${vendorCatLabel(v.category)}</div>
       <div style="font-weight:700;font-size:13.5px;color:var(--navy);">${v.label||v.name||'(ไม่ระบุ)'}${tag}</div>
       <div style="font-size:12px;color:var(--text-soft);margin-top:2px;">${addrPreview||'—'}</div>
     </div>`;
   }).join('');
 }
 
-function pickVendor(idx){
-  const v = (VENDOR_LIST||[])[idx];
+function pickVendor(pickId){
+  const v = (VENDOR_LIST||[]).find(x=>x._pickId===pickId);
   const rowId = _vendorPickerTargetId;
   if(!v || !rowId) return;
   const set = (field, val) => { const el = document.getElementById(`${rowId}_${field}`); if(el && val) el.value = val; };
@@ -1102,6 +1149,7 @@ function sumCollectState(){
     row.remember    = ps.querySelector(`#${id}_remember`)?.checked || false;
     row.addressOnly = ps.querySelector(`#${id}_addressonly`)?.checked || false;
     row.vlabel       = ps.querySelector(`#${id}_vlabel`)?.value?.trim() || '';
+    row.vcat         = ps.querySelector(`#${id}_vcat`)?.value || 'other';
     // เก็บข้อมูล combined 3.1+3.2 ถ้ามี
     if(row.sub === '3_12'){
       row.v31   = parseFloat(ps.querySelector(`#${id}_v31`)?.value)||0;
@@ -1178,6 +1226,7 @@ async function sumSave(){
     if(rememberRows.length){
       await Promise.allSettled(rememberRows.map(r => gsApi('saveVendor', {
         label:    r.vlabel || r.name || '(ไม่ระบุชื่อ)',
+        category: r.vcat || 'other',
         name:     r.addressOnly ? '' : (r.name||''),
         branch:   r.addressOnly ? '' : (r.branch||''),
         taxid:    r.addressOnly ? '' : (r.taxid||''),
@@ -1624,7 +1673,7 @@ function sumBuildDoc(){
       : baseLabel; // '1.'/'2.' ฝังเลขไว้ใน label อยู่แล้ว
   });
 
-  const PER_PAGE = 5;
+  const PER_PAGE = 6;
   const totalPages = Math.max(1, Math.ceil(rows.length / PER_PAGE));
   let gVal=0,gVat=0,gWht=0,gTotal=0;
   rows.forEach(r=>{gVal+=r.val;gVat+=r.vat;gWht+=r.wht;gTotal+=r.total;});
