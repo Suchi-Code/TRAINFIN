@@ -351,6 +351,13 @@ let dc = {};
 .sum-merge-label input{margin:0;cursor:pointer}
 .sum-w119-label{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--info);background:var(--info-bg);border:1px solid var(--blue);border-radius:4px;padding:2px 8px;cursor:pointer}
 .sum-w119-label input{margin:0;cursor:pointer}
+.sum-remember-label{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--green);background:var(--green-bg);border:1px solid var(--green);border-radius:4px;padding:2px 8px;cursor:pointer}
+.sum-remember-label input{margin:0;cursor:pointer}
+.sum-remember-opts{background:var(--green-bg);border:1px dashed var(--green);border-radius:8px;padding:10px 14px;margin-top:8px;display:flex;flex-direction:column;gap:8px;}
+.sum-remember-opt-check{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--green);cursor:pointer;}
+.sum-pick-btn{background:#fff;border:1.5px solid var(--blue);color:var(--blue);border-radius:6px;padding:4px 10px;font-family:'Sarabun',sans-serif;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.sum-pick-btn:hover{background:var(--info-bg);}
+.vendor-pick-item:hover{background:var(--info-bg);border-color:var(--blue)!important;}
 .sum-del-btn{margin-left:auto;padding:3px 10px;background:var(--red-bg);color:var(--red);border:1px solid var(--red);border-radius:4px;font-family:'Sarabun',sans-serif;font-size:11.5px;cursor:pointer}
 .sum-row-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .sum-row-4col{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
@@ -636,7 +643,21 @@ function sumAddRow(){
         <input type="checkbox" id="${id}_w119">
         <span>ค่าใช้จ่ายตาม ว.119</span>
       </label>
+      <label class="sum-remember-label" id="${id}_rememberlabel">
+        <input type="checkbox" id="${id}_remember" onchange="sumToggleRemember('${id}')">
+        <span>💾 จำรายการนี้ไว้</span>
+      </label>
       <button class="sum-del-btn" onclick="sumDelRow('${id}')">ลบ</button>
+    </div>
+    <div id="${id}_remember_opts" class="sum-remember-opts" style="display:none">
+      <label class="sum-remember-opt-check">
+        <input type="checkbox" id="${id}_addressonly">
+        <span>เฉพาะที่อยู่ (ไม่รวมชื่อ) — เหมาะกับวิทยากรภายในที่ที่อยู่ซ้ำแต่ชื่อคนต่างกัน</span>
+      </label>
+      <div class="sum-inp" style="max-width:340px;">
+        <label>ชื่อเรียกสั้นๆ ในรายการที่บันทึกไว้</label>
+        <input type="text" id="${id}_vlabel" placeholder="เช่น สนง.ใหญ่ กปภ.1 / ร้านถ่ายเอกสาร ABC">
+      </div>
     </div>
     <div class="sum-row-grid">
       <div class="sum-inp"><label>หมวดรายการ</label>
@@ -645,7 +666,11 @@ function sumAddRow(){
         <select id="${id}_sub" style="border:1.5px solid #f59e0b;background:#fffbeb;" onchange="sumSubChange('${id}')">${subOpts}</select></div>
       <div class="sum-inp"><label>ประเภทเอกสาร</label>
         <select id="${id}_doc">${docOpts}</select></div>
-      <div class="sum-inp sum-wide" id="${id}_name_wrap"><label>ชื่อผู้ขาย / บุคคล</label>
+      <div class="sum-inp sum-wide" id="${id}_name_wrap">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <label style="margin-bottom:0;">ชื่อผู้ขาย / บุคคล</label>
+          <button type="button" class="sum-pick-btn" onclick="openVendorPicker('${id}')">📋 เลือกจากที่เคยบันทึก</button>
+        </div>
         <input type="text" id="${id}_name" placeholder="เช่น บริษัท ซีพี แอ็กซ์ตร้า จำกัด (มหาชน)"></div>
       <div class="sum-inp sum-wide" id="${id}_staff_wrap" style="display:none"><label>เจ้าหน้าที่ กฝภ.1</label>
         <select id="${id}_staff">${staffOpts}</select></div>
@@ -838,6 +863,107 @@ function sumDelRow(id){
   sumCalc();
 }
 
+/* ── จำร้านค้า/ที่อยู่ไว้ใช้ครั้งหน้า ── */
+function sumToggleRemember(id){
+  const cb = document.getElementById(`${id}_remember`);
+  const opts = document.getElementById(`${id}_remember_opts`);
+  if(!cb || !opts) return;
+  opts.style.display = cb.checked ? '' : 'none';
+  if(cb.checked){
+    const labelInput = document.getElementById(`${id}_vlabel`);
+    const nameInput = document.getElementById(`${id}_name`);
+    if(labelInput && !labelInput.value && nameInput && nameInput.value){
+      labelInput.value = nameInput.value;
+    }
+  }
+}
+
+/* ── เลือกร้านค้า/ที่อยู่ที่เคยบันทึกไว้ (ดึงจาก Google Sheet ผ่าน gsApi) ── */
+let VENDOR_LIST = null;
+let _vendorPickerTargetId = null;
+
+async function ensureVendorList(force){
+  if(VENDOR_LIST && !force) return VENDOR_LIST;
+  const list = await gsApi('getVendors');
+  VENDOR_LIST = Array.isArray(list) ? list : [];
+  return VENDOR_LIST;
+}
+
+async function openVendorPicker(rowId){
+  _vendorPickerTargetId = rowId;
+  let overlay = document.getElementById('vendor-picker-overlay');
+  if(!overlay){
+    overlay = document.createElement('div');
+    overlay.id = 'vendor-picker-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:14px;padding:22px 24px;max-width:480px;width:92%;max-height:80vh;
+        display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.25);font-family:'Sarabun',sans-serif;">
+        <div style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:10px;">📋 เลือกร้านค้า/ที่อยู่ที่เคยบันทึกไว้</div>
+        <input type="text" id="vendor-picker-search" placeholder="พิมพ์เพื่อค้นหา..."
+          style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Sarabun',sans-serif;font-size:14px;margin-bottom:10px;"
+          oninput="renderVendorPickerList()">
+        <div id="vendor-picker-list" style="overflow-y:auto;flex:1;min-height:120px;"></div>
+        <button onclick="document.getElementById('vendor-picker-overlay').style.display='none'"
+          style="margin-top:14px;padding:9px;background:#f3f4f6;color:#374151;border:1.5px solid #d1d5db;
+          border-radius:8px;font-family:'Sarabun',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">ปิด</button>
+      </div>`;
+    document.body.appendChild(overlay);
+  }
+  overlay.style.display = 'flex';
+  const listBox = document.getElementById('vendor-picker-list');
+  if(listBox) listBox.innerHTML = '<div style="text-align:center;color:var(--text-soft);padding:20px;">⏳ กำลังโหลด...</div>';
+  const searchEl = document.getElementById('vendor-picker-search');
+  if(searchEl) searchEl.value = '';
+  await ensureVendorList();
+  renderVendorPickerList();
+}
+
+function renderVendorPickerList(){
+  const box = document.getElementById('vendor-picker-list');
+  if(!box) return;
+  const q = (document.getElementById('vendor-picker-search')?.value||'').trim().toLowerCase();
+  let list = VENDOR_LIST||[];
+  if(q){
+    list = list.filter(v =>
+      (v.label||'').toLowerCase().includes(q) ||
+      (v.name||'').toLowerCase().includes(q) ||
+      (v.addr1||'').toLowerCase().includes(q));
+  }
+  list = [...list].sort((a,b)=>(b.useCount||0)-(a.useCount||0));
+  if(!list.length){
+    box.innerHTML = '<div style="text-align:center;color:var(--text-soft);padding:20px;">— ไม่พบรายการที่เคยบันทึกไว้ —</div>';
+    return;
+  }
+  box.innerHTML = list.map((v,i)=>{
+    const addrPreview = [v.addr1, v.tambon?('ต.'+v.tambon):'', v.amphoe?('อ.'+v.amphoe):'', v.province].filter(Boolean).join(' ');
+    const tag = v.name ? '' : '<span style="font-size:10px;background:var(--info-bg);color:var(--info);padding:1px 6px;border-radius:4px;margin-left:6px;">เฉพาะที่อยู่</span>';
+    return `<div class="vendor-pick-item" onclick="pickVendor(${i})"
+      style="padding:10px 12px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;cursor:pointer;transition:background .15s;">
+      <div style="font-weight:700;font-size:13.5px;color:var(--navy);">${v.label||v.name||'(ไม่ระบุ)'}${tag}</div>
+      <div style="font-size:12px;color:var(--text-soft);margin-top:2px;">${addrPreview||'—'}</div>
+    </div>`;
+  }).join('');
+}
+
+function pickVendor(idx){
+  const v = (VENDOR_LIST||[])[idx];
+  const rowId = _vendorPickerTargetId;
+  if(!v || !rowId) return;
+  const set = (field, val) => { const el = document.getElementById(`${rowId}_${field}`); if(el && val) el.value = val; };
+  // มีชื่อ → เติมทุกช่อง (ร้านค้า/บริษัท) / ไม่มีชื่อ → เติมเฉพาะที่อยู่ (เช่น วิทยากรภายในคนละคนแต่ที่อยู่เดียวกัน)
+  if(v.name) set('name', v.name);
+  set('branch', v.branch);
+  set('taxid', v.taxid);
+  set('addr1', v.addr1);
+  set('tambon', v.tambon);
+  set('amphoe', v.amphoe);
+  set('province', v.province);
+  set('zip', v.zip);
+  const overlay = document.getElementById('vendor-picker-overlay');
+  if(overlay) overlay.style.display = 'none';
+}
+
 function sumRenumber(){
   const ps = smPS();
   const cards = Array.from(ps.querySelectorAll('#sm_rows .sum-row-card'));
@@ -973,6 +1099,9 @@ function sumCollectState(){
     if(row.sec === '4' && row.sub === '4_3') row.staff = '';  // 4_3: ใช้ name ไม่ใช้ staff
     row.merge = ps.querySelector(`#${id}_merge`)?.checked || false;
     row.w119  = ps.querySelector(`#${id}_w119`)?.checked || false;
+    row.remember    = ps.querySelector(`#${id}_remember`)?.checked || false;
+    row.addressOnly = ps.querySelector(`#${id}_addressonly`)?.checked || false;
+    row.vlabel       = ps.querySelector(`#${id}_vlabel`)?.value?.trim() || '';
     // เก็บข้อมูล combined 3.1+3.2 ถ้ามี
     if(row.sub === '3_12'){
       row.v31   = parseFloat(ps.querySelector(`#${id}_v31`)?.value)||0;
@@ -1042,6 +1171,24 @@ async function sumSave(){
     await gsApi('updateCourseField', coursePayload);
     // 2. บันทึก actual06 (รายการใบเสร็จ)
     await gsApi('saveActual06', buildGs06Payload(state));
+
+    // 3. บันทึกร้านค้า/ที่อยู่ที่ผู้ใช้ติ๊ก "จำรายการนี้ไว้" เข้ารายการที่ใช้ร่วมกันได้ทุกเครื่อง
+    // (ไม่บล็อกการบันทึกหลักถ้าจุดนี้พลาด — ใช้ allSettled)
+    const rememberRows = state.rows.filter(r => r.remember);
+    if(rememberRows.length){
+      await Promise.allSettled(rememberRows.map(r => gsApi('saveVendor', {
+        label:    r.vlabel || r.name || '(ไม่ระบุชื่อ)',
+        name:     r.addressOnly ? '' : (r.name||''),
+        branch:   r.addressOnly ? '' : (r.branch||''),
+        taxid:    r.addressOnly ? '' : (r.taxid||''),
+        addr1:    r.addr1||'',
+        tambon:   r.tambon||'',
+        amphoe:   r.amphoe||'',
+        province: r.province||'',
+        zip:      r.zip||''
+      })));
+      VENDOR_LIST = null; // เคลียร์ cache ให้โหลดรายการล่าสุดรอบหน้า
+    }
 
     syncActualTo01(state, title);
     hideGsLoader();
