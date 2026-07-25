@@ -149,7 +149,7 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
   .note-row-2:has(input:placeholder-shown) {
     display: none !important;
   }
-  @page { margin: 10mm; } 
+  @page { margin: 12mm 5mm; } 
   table.rpt { font-size: 13px; } 
   table.rpt thead th { padding: 4px 2px !important; } 
   
@@ -2178,7 +2178,11 @@ async function savePdf05(btn){
     clone.querySelectorAll('input.rpt-edit').forEach(inp => {
       const d = document.createElement('div');
       const inHeader = inp.closest('.header-area');
-      const fw = inHeader ? '700' : '400';
+      // ใช้ font-weight ที่ input ตัวนั้นตั้งไว้เอง (inline style) ก่อนเป็นอันดับแรก
+      // เพราะบางแถว (เช่น "ค่าสมนาคุณวิทยากรภายใน...", "ค่าเดินทางประธานในพิธี...")
+      // ตั้งใจให้ตัวหนาเฉพาะแถวนั้นผ่าน style="font-weight:700" ตรงๆ ไม่ใช่ตาม header/body
+      const inlineFw = inp.style.fontWeight;
+      const fw = inlineFw || (inHeader ? '700' : '400');
       d.style.cssText = `font-family:Sarabun,sans-serif;font-size:14px;font-weight:${fw};color:#000;line-height:1.5;width:100%;display:block;`;
       d.textContent = inp.value || '';
       inp.parentNode.replaceChild(d, inp);
@@ -2258,7 +2262,7 @@ ${originalStyles}
           // clone ที่ส่งออก จึงตั้ง scale เทียบเท่ากันไว้ที่นี่แทน — ถ้ายังล้น/เหลือพื้นที่
           // เยอะไป ลองปรับตัวเลขนี้ขึ้น/ลงได้เลย (0.1 - 2)
           scale: 0.9,
-          margin: { top: '12mm', right: '10mm', bottom: '12mm', left: '10mm' },
+          margin: { top: '12mm', right: '5mm', bottom: '12mm', left: '5mm' },
           preferCSSPageSize: true,
         },
       })
