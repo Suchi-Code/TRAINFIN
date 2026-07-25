@@ -237,6 +237,7 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
 
 </style>
 <!-- html2canvas/jsPDF ถูกลบออก — เปลี่ยนไปสร้าง PDF ผ่าน Puppeteer server ฝั่ง backend แทน (ดู savePdf05()) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -2118,8 +2119,39 @@ function saveBudgetSlot() {
   document.body.appendChild(pop);
 }
 
-// ⚠️ ตั้งค่า URL ของ Puppeteer PDF server ที่ deploy ไว้ตรงนี้ (ดูไฟล์ pdf-server.js ที่แนบมาด้วย)
-const PDF_SERVER_URL = 'https://YOUR-PDF-SERVER.example.com/pdf';
+// URL ของ Puppeteer PDF server ที่ deploy ไว้บน Render
+const PDF_SERVER_URL = 'https://trainfin.onrender.com/generate-pdf';
+
+// ===== Supabase (สำหรับอัปโหลด PDF ที่สร้างเสร็จแล้วขึ้นเก็บถาวร) =====
+const SUPABASE_URL = 'https://dcaydbxyjisegqzzildq.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjYXlkYnh5amlzZWdxenppbGRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2OTk5NDgsImV4cCI6MjEwMDI3NTk0OH0.cEk8k90NeTTnkZV0Sny7nuN8UbW15_eW8S_HTQSBwwA';
+const supabaseClient = (typeof window.supabase !== 'undefined')
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
+
+// อัปโหลด PDF ขึ้น Supabase Storage (bucket: pdfs) — คืนค่า public URL หรือ null ถ้าไม่สำเร็จ
+async function uploadPdfToSupabase05(pdfBlob, fname){
+  if(!supabaseClient){ console.warn('Supabase client ยังไม่พร้อม (โหลด SDK ไม่สำเร็จ)'); return null; }
+  try {
+    // Supabase Storage รับเฉพาะ key แบบ ASCII-safe เท่านั้น ภาษาไทยทำให้เกิด error "Invalid key"
+    // (ชื่อไฟล์ที่ผู้ใช้ดาวน์โหลดในเครื่อง ยังเป็นภาษาไทยตามปกติ เพราะคนละจุดกับตรงนี้)
+    const asciiSafe = fname
+      .replace(/[^\w.\-]+/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_|_$/g, '') || 'report';
+    const fileName = `${asciiSafe}-${Date.now()}.pdf`;
+    const pdfFile  = new File([pdfBlob], fileName, { type: 'application/pdf' });
+    const { error: uploadError } = await supabaseClient
+      .storage.from('pdfs')
+      .upload(fileName, pdfFile, { cacheControl: '3600', upsert: true });
+    if(uploadError) throw uploadError;
+    const { data } = supabaseClient.storage.from('pdfs').getPublicUrl(fileName);
+    return data.publicUrl;
+  } catch(err){
+    console.error('uploadPdfToSupabase05 error:', err);
+    return null;
+  }
+}
 
 async function savePdf05(btn){
   const el = document.getElementById('report-container-05');
@@ -2242,6 +2274,13 @@ ${originalStyles}
     a.href = url; a.download = fname + '.pdf';
     document.body.appendChild(a); a.click(); a.remove();
     URL.revokeObjectURL(url);
+
+    // อัปโหลดขึ้น Supabase เก็บถาวรด้วย (ไม่บล็อกการดาวน์โหลดในเครื่อง ถ้าอัปโหลดไม่สำเร็จ
+    // ผู้ใช้ก็ยังได้ไฟล์ในเครื่องตามปกติ แค่ไม่มีลิงก์ถาวรเก็บไว้)
+    const publicUrl = await uploadPdfToSupabase05(blob, fname);
+    if (publicUrl) {
+      console.log('อัปโหลด PDF ขึ้น Supabase สำเร็จ:', publicUrl);
+    }
 
   } catch(err){
     console.error('savePdf05 error:', err);
