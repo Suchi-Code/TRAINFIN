@@ -22,10 +22,43 @@ async function getBrowser() {
 
 browserPromise = getBrowser();
 
+/**
+ * ✅ SERVER กลาง ใช้ร่วมกันได้ทุกไฟล์ (05-09 หรือไฟล์ในอนาคต)
+ * -----------------------------------------------------------------
+ * แต่ละไฟล์ layout ไม่เหมือนกัน (บางไฟล์แนวตั้ง/แนวนอน, margin ไม่เท่ากัน,
+ * บางไฟล์ต้อง scale ลงเพราะตารางกว้าง) ดังนั้น "ค่าที่เกี่ยวกับหน้ากระดาษ"
+ * ทั้งหมดจึงไม่ hardcode ไว้ที่นี่ แต่รับมาเป็น JSON จากฝั่ง client แทน
+ * (ดู client-pdf-export.js ที่ห่อ logic นี้ไว้ให้แต่ละไฟล์เรียกใช้)
+ *
+ * รูปแบบ request body:
+ * {
+ *   html: "<!DOCTYPE html>...",   // เอกสารที่ประกอบ CSS ครบแล้ว (จำเป็น)
+ *   filename: "report_xxx",       // ชื่อไฟล์ (ไม่ต้องมี .pdf) (ไม่จำเป็น)
+ *   pdfOptions: {                 // ทั้งหมดเป็น optional มี default ทุกตัว
+ *     format: "A4",               // "A4" | "Letter" | ... หรือเว้นว่างถ้าใช้ width/height
+ *     width, height,              // เผื่อบางไฟล์ใช้ขนาดกระดาษกำหนดเอง เช่น "216mm"
+ *     landscape: false,           // true = แนวนอน
+ *     scale: 1,                   // 0.1 - 2 เทียบเท่า % ในหน้าต่างพิมพ์เบราว์เซอร์
+ *     margin: { top, right, bottom, left },  // string เช่น "10mm" หรือ "0.2in"
+ *     preferCSSPageSize: true,    // true = ให้ @page ใน HTML คุมขนาด/margin แทน
+ *     mediaType: "print"          // "print" | "screen"
+ *   }
+ * }
+ */
 app.post(['/pdf', '/generate-pdf'], async (req, res) => {
-  const { html, filename, scale } = req.body;
+  const { html, filename } = req.body;
   if (!html) {
     return res.status(400).json({ error: 'ไม่มีข้อมูล HTML' });
+  }
+
+  // ✅ Backward-compatible: รองรับทั้ง request รูปแบบเก่า (ไฟล์ 07 ส่ง { scale } ตรงๆ)
+  // และรูปแบบใหม่ (ไฟล์ 05 เป็นต้นไป ส่ง { pdfOptions: {...} }) — ไม่ต้องแก้ไฟล์ 07 ก็ยังทำงานได้
+  const pdfOptions = { ...(req.body.pdfOptions || {}) };
+  if (pdfOptions.scale === undefined && req.body.scale !== undefined) {
+    pdfOptions.scale = req.body.scale;
+  }
+  if (pdfOptions.margin === undefined && req.body.margin !== undefined) {
+    pdfOptions.margin = req.body.margin;
   }
 
   let page = null;
@@ -39,46 +72,51 @@ app.post(['/pdf', '/generate-pdf'], async (req, res) => {
 
     page = await browser.newPage();
 
-    // ✅ ตั้ง viewport ให้เท่ากับขนาด A4 ที่ 96 DPI ก่อน (กัน layout เพี้ยนจาก responsive CSS)
-    // A4 = 8.27in x 11.69in => 96dpi ≈ 794 x 1123 px
+    // ขนาด viewport อ้างอิงจากขนาดกระดาษจริงที่จะพิมพ์ (กัน responsive CSS เพี้ยน)
+    // ถ้าเป็นแนวนอน (landscape) หรือใช้ width/height เอง ให้คำนวณ viewport ตามนั้น
+    const isLandscape = !!pdfOptions.landscape;
+    const baseW = 794;  // A4 width  @ 96dpi
+    const baseH = 1123; // A4 height @ 96dpi
     await page.setViewport({
-      width: 794,
-      height: 1123,
-      deviceScaleFactor: 2, // เพิ่มความคมชัดของภาพ/ตัวอักษรใน PDF
+      width: isLandscape ? baseH : baseW,
+      height: isLandscape ? baseW : baseH,
+      deviceScaleFactor: 2,
     });
 
-    // ✅ เอกสารนี้ถูกออกแบบมาเป็น "เอกสารพิมพ์" โดยเฉพาะ (มี @media print / @page
-    // กำหนด margin ไว้ตั้งใจ) จึงควรใช้ media 'print' ให้ตรงกับเจตนาการออกแบบ
-    await page.emulateMediaType('print');
+    await page.emulateMediaType(pdfOptions.mediaType === 'screen' ? 'screen' : 'print');
 
     await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
 
-    // ✅ รอฟอนต์ (Sarabun) โหลด/render เสร็จจริง ก่อนพ่น PDF
+    // รอฟอนต์ (เช่น Sarabun) โหลด/render เสร็จจริงก่อนพ่น PDF
     await page.evaluate(async () => {
       if (document.fonts && document.fonts.ready) {
         await document.fonts.ready;
       }
     });
-
-    // ✅ กันเคสฟอนต์/รูปภาพโหลดช้ากว่านั้นอีกนิด
     await new Promise((r) => setTimeout(r, 150));
 
-    // ✅ preferCSSPageSize: true ทำให้ Puppeteer อ่านค่า @page ที่ฝังมาใน HTML
-    // (เช่น margin: 25.4mm 10mm 43mm 10mm) แทนที่จะใช้ค่า margin ที่ฮาร์ดโค้ดไว้ตรงนี้
-    // ถ้า HTML ที่ส่งมาไม่มี @page กำหนดไว้ จะ fallback ไปใช้ margin ด้านล่างแทน
-    // ✅ scale เทียบเท่ากับช่อง "% ขนาด" ในหน้าต่างพิมพ์ของเบราว์เซอร์
-    // ค่า default 0.8 (80%) เพราะตารางตัวเลขในเทมเพลตนี้กว้างเกิน A4 เล็กน้อย
-    // ทางที่ดีที่สุดในระยะยาวคือลดความกว้างคอลัมน์/font-size ใน CSS ให้พอดี 100%
-    // แต่ระหว่างนี้ scale ช่วยแก้ปัญหาล้นกรอบได้ทันที โดยไม่ทำให้ font เพี้ยนเหมือนลด font-size ตรงๆ
-    const pdfScale = Math.min(Math.max(Number(scale) || 0.8, 0.1), 2);
+    const scale = Math.min(Math.max(Number(pdfOptions.scale) || 0.8, 0.1), 2);
+    const margin = pdfOptions.margin || {
+      top: '0.2in', right: '0.2in', bottom: '0.2in', left: '0.2in',
+    };
 
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
+    const pdfPayload = {
       printBackground: true,
-      preferCSSPageSize: true,
-      scale: pdfScale,
-      margin: { top: '0.2in', right: '0.2in', bottom: '0.2in', left: '0.2in' },
-    });
+      preferCSSPageSize: pdfOptions.preferCSSPageSize !== false, // default true
+      landscape: isLandscape,
+      scale,
+      margin,
+    };
+
+    // ถ้าระบุ width/height มาเอง ใช้แทน format (เช่นกระดาษขนาดพิเศษ)
+    if (pdfOptions.width && pdfOptions.height) {
+      pdfPayload.width  = pdfOptions.width;
+      pdfPayload.height = pdfOptions.height;
+    } else {
+      pdfPayload.format = pdfOptions.format || 'A4';
+    }
+
+    const pdfBuffer = await page.pdf(pdfPayload);
 
     const safeName = String(filename || 'report').replace(/[^\w\u0E00-\u0E7F\-]+/g, '_');
 
