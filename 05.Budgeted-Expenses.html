@@ -250,7 +250,7 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
         <p>การประปาส่วนภูมิภาค (กปภ.) · กฝภ.1</p>
       </div>
     </div>
-    <button onclick="confirmBack05()" style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;background:transparent;color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.3);border-radius:6px;font-family:'Sarabun',sans-serif;font-size:12px;cursor:pointer;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,.1)'; this.style.color='#fff';" onmouseout="this.style.background='transparent'; this.style.color='rgba(255,255,255,.8)管控';">
+    <button onclick="confirmBack05()" style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;background:transparent;color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.3);border-radius:6px;font-family:'Sarabun',sans-serif;font-size:12px;cursor:pointer;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,.1)'; this.style.color='#fff';" onmouseout="this.style.background='transparent'; this.style.color='rgba(255,255,255,.8)';">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>ย้อนกลับ
     </button>
   </div>
@@ -2152,6 +2152,15 @@ async function savePdf05(btn){
       inp.parentNode.replaceChild(d, inp);
     });
 
+    // ช่อง "เอกสารแนบที่" (#r_attach_no) ไม่มี class rpt-edit/hdr-edit จึงแปลงแยกไว้ที่นี่
+    const attachInp = clone.querySelector('#r_attach_no');
+    if (attachInp) {
+      const span = document.createElement('span');
+      span.style.cssText = attachInp.getAttribute('style') || '';
+      span.textContent = attachInp.value || '';
+      attachInp.parentNode.replaceChild(span, attachInp);
+    }
+
     // สไตล์ตารางสำหรับพิมพ์ (เส้นขอบบาง 0.5px ให้คมชัดตอน print เป็น PDF)
     const pdfTableStyle = `
       table.rpt { border-collapse: collapse !important; font-size: 13px !important; }
@@ -2175,6 +2184,12 @@ async function savePdf05(btn){
       table.rpt tr.bb3 td { border-bottom: 0.5px solid #000 !important; }
     `;
 
+    // ✅ ดึง CSS หลักของหน้าเว็บทั้งดวง (นิยาม .report-container, .header-area, table.rpt ฯลฯ)
+    // ไปแนบด้วย — เดิมไม่ได้แนบไปเลย ทำให้ฝั่ง Server ไม่รู้จัก class เหล่านี้ ตัวเลข/ตาราง
+    // จึงไม่ถูกจำกัดความกว้างตามที่ตั้งใจ (ล้นกรอบ) เพราะ render ด้วยสไตล์เปล่าๆ
+    const originalStyles = Array.from(document.querySelectorAll('style'))
+      .map(s => s.innerHTML).join('\n');
+
     // ประกอบเป็นเอกสาร HTML ฉบับสมบูรณ์ ส่งให้ฝั่งเซิร์ฟเวอร์ (Puppeteer) เปิดแล้ว render เป็น PDF จริง
     // (Puppeteer ใช้ page.pdf() ของ Chromium ตัดหน้าอัตโนมัติเอง ไม่ต้องหั่นภาพเป็น canvas แบบเดิม)
     const fullHtml = `<!DOCTYPE html>
@@ -2183,8 +2198,13 @@ async function savePdf05(btn){
 <meta charset="UTF-8">
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
+${originalStyles}
+</style>
+<style>
+  /* Override เฉพาะสำหรับไฟล์ PDF (มาทีหลัง จึงมีลำดับความสำคัญสูงกว่า CSS หลักด้านบน) */
   * { box-sizing: border-box; }
-  body { margin:0; padding:20px 30px; background:#fff; font-family:'Sarabun',sans-serif; color:#000; }
+  html,body { margin:0; padding:0; background:#fff; font-family:'Sarabun',sans-serif; color:#000; }
+  .report-container { padding:20px 30px; box-shadow:none; }
   ${pdfTableStyle}
 </style>
 </head>
@@ -2194,7 +2214,22 @@ async function savePdf05(btn){
     const res = await fetch(PDF_SERVER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ html: fullHtml, filename: fname })
+      body: JSON.stringify({
+        html: fullHtml,
+        filename: fname,
+        // ✅ pdfOptions เฉพาะของไฟล์ 05 — ไฟล์อื่น (06/08/09) กำหนดค่าของตัวเองแยกกันได้
+        // โดยไม่ต้องแก้ pdf-server.js เลย เพราะ server อ่านค่าจาก JSON นี้ตรงๆ
+        pdfOptions: {
+          format: 'A4',
+          landscape: false,
+          // #report-view ในไฟล์นี้ใช้ zoom:0.9 บนจอเพื่อให้พอดี แต่ค่า zoom ไม่ติดไปกับ
+          // clone ที่ส่งออก จึงตั้ง scale เทียบเท่ากันไว้ที่นี่แทน — ถ้ายังล้น/เหลือพื้นที่
+          // เยอะไป ลองปรับตัวเลขนี้ขึ้น/ลงได้เลย (0.1 - 2)
+          scale: 0.9,
+          margin: { top: '12mm', right: '10mm', bottom: '12mm', left: '10mm' },
+          preferCSSPageSize: true,
+        },
+      })
     });
     if(!res.ok){
       const errText = await res.text().catch(()=>res.statusText);
