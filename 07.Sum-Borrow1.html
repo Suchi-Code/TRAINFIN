@@ -1190,6 +1190,14 @@ function ie(ph,cls='rpt-edit-md'){
   // CSS @media print จะซ่อน input ที่ value ว่างและแสดง span แทน
   return `<span class="ie-wrap"><input class="rpt-edit ${cls} ie-input" type="text" placeholder="${ph}" oninput="this.parentNode.querySelector('.ie-ph').style.display=this.value?'none':'inline'"><span class="ie-ph" style="color:#aaa;font-style:italic;pointer-events:none;">${ph}</span></span>`;
 }
+// ✅ ช่องที่มีค่าเริ่มต้นอยู่แล้ว แต่ยังแก้ไขได้ (มีจุดใต้ข้อความแบบ .rpt-edit ปกติ)
+// ต่างจาก ie() ตรงที่ ie() ใช้กับช่องว่างเปล่าที่โชว์ placeholder จางๆ
+function ieVal(val, customWidth, bold){
+  const len = String(val).length;
+  const widthStyle = customWidth ? customWidth : `${len+1}ch`;
+  const boldStyle = bold ? 'font-weight:700;' : '';
+  return `<input class="rpt-edit" type="text" value="${val}" style="width:${widthStyle};${boldStyle}">`;
+}
 const NB='nb', NT='nt', BB2='bb2', BT2='bt2', BB3='bb3';
 
 function row(cells){ return `<tr>${cells}</tr>`; }
@@ -1290,7 +1298,7 @@ function buildTable(){
   if(hasMisc()){
     sec2=v('f_2_1'); asec2=v('a_2_1');
     rows.push(r5(`${nums.misc}. ค่าวัสดุเบ็ดเตล็ด`,'tl tw i1 nb nt', '','nb nt', fmt(sec2),'tr tw nb nt', '','nb nt', fmt(asec2),'tr tw nb nt', fmt(sec2-asec2),'tr tw nb nt'));
-    rows.push(r5(`&nbsp;&nbsp;${nums.misc}.1 ค่าใช้จ่ายอื่นๆ (กระเป๋าผ้า, ถ่านกล้องถ่ายรูป, หน้ากากอนามัย, ฯลฯ)`,'tl i2 nt bb2', fmt(sec2),'tr nt bb2', '','nt bb2', fmt(asec2),'tr nt bb2', '','nt bb2'));
+    rows.push(r5(`&nbsp;&nbsp;${nums.misc}.1 ค่าใช้จ่ายอื่นๆ ${ieVal('(กระเป๋าผ้า, ถ่านกล้องถ่ายรูป, หน้ากากอนามัย, ฯลฯ)', '260px')}`,'tl i2 nt bb2', fmt(sec2),'tr nt bb2', '','nt bb2', fmt(asec2),'tr nt bb2', '','nt bb2'));
   }
 
   // ── ค่าจ้างเหมา ──
@@ -1588,9 +1596,9 @@ function buildTable(){
       <tbody><tr>
         <td class="tc tw" style="width:20%;border:1px solid #333;padding:5px 5px;">ผู้เข้ารับการอบรม</td>
         <td class="tc tw" style="width:20%;border:1px solid #333;padding:5px 5px;">ตามอนุมัติ</td>
-        <td class="tc" style="width:20%;border:1px solid #333;padding:5px 5px;"><input class="rpt-edit" type="number" value="${tApproved}" style="width:45px;text-align:center;"> คน</td>
+        <td class="tc" style="width:20%;border:1px solid #333;padding:5px 5px;"><input class="rpt-edit" type="text" value="${tApproved}" style="width:45px;text-align:center;"> คน</td>
         <td class="tc tw" style="width:20%;border:1px solid #333;padding:5px 5px;">อบรมจริง</td>
-        <td class="tc" style="width:20%;border:1px solid #333;padding:5px 5px;"><input class="rpt-edit" type="number" value="${tActual}" style="width:45px;text-align:center;"> คน</td>
+        <td class="tc" style="width:20%;border:1px solid #333;padding:5px 5px;"><input class="rpt-edit" type="text" value="${tActual}" style="width:45px;text-align:center;"> คน</td>
       </tr></tbody>
     </table>` : '';
 
@@ -2090,7 +2098,7 @@ ${originalStyles}
 </style>
 <style>
   /* Override เฉพาะสำหรับไฟล์ PDF ที่ export ออกมา (มาทีหลังจึงมีลำดับความสำคัญสูงกว่า) */
-  @page { size: A4; margin: 25.4mm 10mm 43mm 10mm; }
+  @page { size: A4; margin: 10mm; }
   html,body{ margin:0; padding:0; background:#fff; }
   body{ font-family:'Sarabun',sans-serif; color:#000; }
   table{ page-break-inside:auto; }
@@ -2101,7 +2109,12 @@ ${originalStyles}
     const res = await fetch(PDF_SERVICE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ html: fullHtml, filename: fname })
+      body: JSON.stringify({
+        html: fullHtml,
+        filename: fname,
+        // ตัวเลขในตารางกว้างเกิน A4 เล็กน้อย ลดสัดส่วนทั้งหน้าเหลือ 75% กันล้น
+        pdfOptions: { scale: 0.75 },
+      })
     });
     if(!res.ok) throw new Error('เซิร์ฟเวอร์สร้าง PDF ไม่สำเร็จ (HTTP ' + res.status + ')');
 
