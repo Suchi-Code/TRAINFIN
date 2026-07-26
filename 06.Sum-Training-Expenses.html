@@ -601,25 +601,30 @@ const shGet = id => {
   const realId = alias[id] || id;
   return document.getElementById(realId)?.value?.trim() || '';
 };
+function sumFmtDateRange(s, e){
+  if(!s && !e) return '';
+  if(!e || s === e) return sumFmtDate(s || e);
+  const ps = s.split('-'), pe = e.split('-');
+  if(ps.length===3 && pe.length===3){
+    const y1=parseInt(ps[0])+543, m1=parseInt(ps[1]), d1=parseInt(ps[2]);
+    const y2=parseInt(pe[0])+543, m2=parseInt(pe[1]), d2=parseInt(pe[2]);
+    if(y1===y2 && m1===m2) return `${d1} - ${d2} ${TH_MON[m1]} ${y1}`;
+    if(y1===y2) return `${d1} ${TH_MON[m1]} – ${d2} ${TH_MON[m2]} ${y1}`;
+    return `${d1} ${TH_MON[m1]} ${y1} – ${d2} ${TH_MON[m2]} ${y2}`;
+  }
+  return sumFmtDate(s) + ' – ' + sumFmtDate(e);
+}
 function shSyncDateRange(){
   const s = document.getElementById('sh_date')?.value || '';
   const e = document.getElementById('sh_date_end')?.value || '';
   const display = document.getElementById('sh_date_display');
   if (!display) return;
-  if (s || e) {
-    const st = s ? sumFmtDate(s) : '—';
-    const et = e ? sumFmtDate(e) : '';
-    display.textContent = s === e || !e ? '📅 ' + st : '📅 ' + st + ' – ' + et;
-  } else {
-    display.textContent = '';
-  }
+  display.textContent = (s || e) ? '📅 ' + sumFmtDateRange(s, e) : '';
 }
 function shGetDateStr(){
   const s = document.getElementById('sh_date')?.value || '';
   const e = document.getElementById('sh_date_end')?.value || '';
-  if (!s && !e) return '';
-  if (!e || s === e) return sumFmtDate(s);
-  return sumFmtDate(s) + ' – ' + sumFmtDate(e);
+  return sumFmtDateRange(s, e);
 }
 
 function sumAddRow(){
@@ -1426,7 +1431,12 @@ function syncActualTo01(state, draftName) {
    ============================================================ */
 let _lastAutoLoadNo = '';
 
-async function autoLoadFromSheet(){
+async function autoLoadFromSheet(opts){
+  // preserveMeta=true: ใช้ตอน loadFromMain() บังคับ reload พื้นหลังหลังโหลดค่าจาก sessionStorage
+  // (courseData จากไฟล์ 01) ไปแล้ว — ป้องกันไม่ให้ชื่อ/รุ่น/สถานที่/วันที่ที่ถูกต้อง (ข้อมูลสดกว่า)
+  // ถูกเขียนทับด้วยค่าที่อาจไม่ตรงกันจาก sheet "courses" (เช่นยังไม่ sync ล่าสุด) แบบเงียบๆ
+  // ยังคงดึงข้อมูล budget/actual06/actual07/วิทยากร ตามปกติ
+  const preserveMeta = !!(opts && opts.preserveMeta);
   const no = document.getElementById('sh_runno')?.value?.trim() || '';
   if(!no || no === _lastAutoLoadNo) return;
   _lastAutoLoadNo = no;
@@ -1458,8 +1468,8 @@ async function autoLoadFromSheet(){
 
     showGsLoader('📥 พบข้อมูลแล้ว กำลังนำเข้าฟอร์ม...');
 
-    // เติม meta จาก courses sheet
-    if(course){
+    // เติม meta จาก courses sheet (ข้ามถ้า preserveMeta — เชื่อค่าจาก courseData/sessionStorage แทน)
+    if(course && !preserveMeta){
       if(course.course)   { const el=document.getElementById('sh_title');    if(el) el.value=course.course; }
       if(course.batch)    { const el=document.getElementById('sh_run');      if(el) el.value=course.batch; }
       if(course.location) { const el=document.getElementById('sh_location'); if(el) el.value=course.location; }
@@ -1726,6 +1736,7 @@ function sumBuildDoc(){
       <td class="sm-tr">${smF2(carryWht)}</td><td class="sm-tr">${smFmt(carryTotal)}</td></tr>`;
 
     let lastSec = '';
+    let lastSecHasW119 = false;
     const seqSpan = {};
     pageRows.forEach(r => { seqSpan[r.seq] = (seqSpan[r.seq]||0) + 1; });
     const seqRendered = {};
@@ -1739,13 +1750,14 @@ function sumBuildDoc(){
         }
         pg += `<tr class="sm-grp"><td class="sm-ind1 sm-tl" colspan="7">${r.secL}${hasW119 ? ' (ว.119)' : ''}</td></tr>`;
         lastSec = r.secV;
+        lastSecHasW119 = hasW119;
       }
 
       // 2. [จุดนี้!] แทรกบรรทัด x.1 หลังจากที่บรรทัดหัวข้อหมวด 2 (ค่าวัสดุเบ็ดเตล็ด) ถูกใส่ลงไปแล้ว
       if (r.secV === '2' && !window.hasAddedOthers) {
         pg += `<tr>
                  <td class="sm-tl" colspan="7" style="padding-left: 20px; font-weight: bold; font-style: normal;">
-                  &nbsp;&nbsp;&nbsp;${majorNums['2'] || ''}.1 ค่าใช้จ่ายอื่นๆ (ว.119)
+                  &nbsp;&nbsp;&nbsp;${majorNums['2'] || ''}.1 ค่าใช้จ่ายอื่นๆ${lastSecHasW119 ? ' (ว.119)' : ''}
                  </td>
                </tr>`;
         window.hasAddedOthers = true; 
@@ -1972,10 +1984,12 @@ document.addEventListener('DOMContentLoaded', function loadFromMain(){
     window._dateEnd   = dateEndVal || '';
     shSyncDateRange();
 
-    // ถ้ามี no → reset แล้วดึงข้อมูลจาก Google Sheet อัตโนมัติ
+    // ถ้ามี no → reset แล้วดึงข้อมูล budget/actual06/actual07 จาก Google Sheet อัตโนมัติ
+    // (preserveMeta:true — ไม่เขียนทับชื่อ/รุ่น/สถานที่/วันที่ ที่เพิ่งตั้งจาก courseData ด้านบน
+    //  ซึ่งเป็นข้อมูลสดกว่า sheet "courses" เสมอ — แก้บัควันที่เปลี่ยนเองหลังโหลดหน้า)
     if (no) {
       _lastAutoLoadNo = '';   // force reload แม้ no เดิม
-      setTimeout(autoLoadFromSheet, 400);
+      setTimeout(() => autoLoadFromSheet({ preserveMeta: true }), 400);
     }
 
   } catch(e) { console.warn('loadFromMain error:', e); }
