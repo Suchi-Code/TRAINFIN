@@ -1298,7 +1298,7 @@ function buildTable(){
   if(hasMisc()){
     sec2=v('f_2_1'); asec2=v('a_2_1');
     rows.push(r5(`${nums.misc}. ค่าวัสดุเบ็ดเตล็ด`,'tl tw i1 nb nt', '','nb nt', fmt(sec2),'tr tw nb nt', '','nb nt', fmt(asec2),'tr tw nb nt', fmt(sec2-asec2),'tr tw nb nt'));
-    rows.push(r5(`&nbsp;&nbsp;${nums.misc}.1 ค่าใช้จ่ายอื่นๆ ${ieVal('(กระเป๋าผ้า, ถ่านกล้องถ่ายรูป, หน้ากากอนามัย, ฯลฯ)', '260px')}`,'tl i2 nt bb2', fmt(sec2),'tr nt bb2', '','nt bb2', fmt(asec2),'tr nt bb2', '','nt bb2'));
+    rows.push(r5(`<div style="display:flex;align-items:center;gap:4px;flex-wrap:nowrap;"><span style="white-space:nowrap;">&nbsp;&nbsp;${nums.misc}.1 ค่าใช้จ่ายอื่นๆ</span><div style="flex:1;min-width:0;">${ieVal('(กระเป๋าผ้า, ถ่านกล้องถ่ายรูป, หน้ากากอนามัย, ฯลฯ)', '100%')}</div></div>`,'tl i2 nt bb2', fmt(sec2),'tr nt bb2', '','nt bb2', fmt(asec2),'tr nt bb2', '','nt bb2'));
   }
 
   // ── ค่าจ้างเหมา ──
@@ -1307,19 +1307,6 @@ function buildTable(){
     secLump=v('f_lump'); asecLump=v('a_lump');
     rows.push(r5(`${nums.lump}. ค่าจ้างเหมา`,'tl tw i1 nb nt', '','nb nt', fmt(secLump),'tr tw nb nt', '','nb nt', fmt(asecLump),'tr tw nb nt', fmt(secLump-asecLump),'tr tw nb nt'));
     rows.push(r5(`&nbsp;&nbsp;${nums.lump}.1 รถตู้รับจ้างรวมน้ำมันเชื้อเพลิง`,'tl i2 nt bb2', fmt(secLump),'tr nt bb2', '','nt bb2', fmt(asecLump),'tr nt bb2', '','nt bb2'));
-  }
-
-  // ── รวมเงินข้อ ก. (1.-X.) ก่อนหมวดเช่าสถานที่/อาหารฯ ──
-  // ผลรวมของ ค่าน้ำมันเชื้อเพลิงและหล่อลื่น + ค่าวัสดุสำนักงาน + ค่าวัสดุเบ็ดเตล็ด + ค่าจ้างเหมา
-  // ใช้รูปแบบเดียวกับแถว "รวมเงินข้อ ก." ที่มีอยู่แล้ว (ด้านล่าง) แต่ไม่ถมสีเทา (ไม่ใส่ class bgray)
-  // ล้อตามไฟล์ 05 ที่อัปเดตใหม่ให้แสดงบรรทัดนี้ก่อนหมวดเช่าสถานที่ หรือก่อนอาหารฯ (ถ้าไม่มีเช่าสถานที่)
-  const preVenueOrder = ['lump','misc','office','fuel'];
-  let preVenueLast = 0;
-  for(const k of preVenueOrder){ if(nums[k]){ preVenueLast = nums[k]; break; } }
-  if(preVenueLast > 0){
-    const preVenueTotal  = secFuel + sec1 + sec2 + secLump;
-    const aPreVenueTotal = asecFuel + asec1 + asec2 + asecLump;
-    rows.push(`<tr class="bb2">${td(`รวมเงินข้อ ก. (1. - ${preVenueLast}.) เป็นเงิน`,'tc tw bt2')+td('','bt2')+td(fmt(preVenueTotal),'tr tw bt2')+td('','bt2')+td(fmt(aPreVenueTotal),'tr tw bt2')+td(fmt(preVenueTotal-aPreVenueTotal),'tr tw bt2')}</tr>`);
   }
 
   // ── ค่าเช่าสถานที่ ──
@@ -2043,31 +2030,10 @@ async function savePdf07(btn){
     clone.style.background = '#fff';
     clone.style.padding = '20px';
     clone.style.boxShadow = 'none';
-    /* เส้นตาราง: อ่าน computed style จากต้นฉบับ แปลงเป็น separate border
-       ใช้ระบบ border-right + border-bottom เท่านั้น (ไม่ซ้อน) แล้วใส่กรอบนอกตาราง */
-    const origEl2 = document.getElementById('report-container-07');
-    const origCells2 = origEl2.querySelectorAll('table th, table td');
-    const hasBorderBottom = [];
-    origCells2.forEach(cell => {
-      const cs = window.getComputedStyle(cell);
-      hasBorderBottom.push(parseFloat(cs.borderBottomWidth) > 0);
-    });
-    clone.querySelectorAll('table').forEach(tbl => {
-      tbl.style.borderCollapse = 'separate';
-      tbl.style.borderSpacing = '0';
-      tbl.style.border = 'none';
-      tbl.style.borderTop  = '1px solid #000';
-      tbl.style.borderLeft = '1px solid #000';
-    });
-    const cloneCells2 = clone.querySelectorAll('table th, table td');
-    cloneCells2.forEach((cell, i) => {
-      cell.style.borderTop    = 'none';
-      cell.style.borderLeft   = 'none';
-      cell.style.borderRight  = '1px solid #000';
-      cell.style.borderBottom = hasBorderBottom[i] ? '1px solid #000' : 'none';
-      if(!cell.classList.contains('bgray')) cell.style.background = '#fff';
-    });
-    clone.querySelectorAll('.bgray').forEach(cell => { cell.style.background = '#eaeaea'; });
+    /* หมายเหตุ: ไม่ต้องสร้างเส้นขอบตารางเองแล้ว (ของเดิมทำไว้สำหรับ html2canvas ที่ render
+       เป็นภาพ ไม่รองรับ border-collapse) ตอนนี้ส่ง CSS จริงไปให้ Puppeteer ทั้งชุดแล้ว
+       (ดู originalStyles ด้านล่าง) เส้นบางๆ 0.5px ตามคลาส nb/nt/bb2/bt2/bb3 เดิมจะได้ผลลัพธ์
+       เหมือนตอนพรีวิว/พิมพ์เป๊ะ ไม่ต้องบังคับเป็น 1px ทึบทับเองอีก (ซึ่งเคยทำให้เส้นหนาไม่เท่ากัน) */
     /* แปลง input → span (inline) เพื่อให้ตัวเลขกับ "คน" อยู่บรรทัดเดียวกัน */
     clone.querySelectorAll('input').forEach(inp => {
       const cs = window.getComputedStyle(inp);
