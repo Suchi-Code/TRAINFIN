@@ -144,7 +144,7 @@ table.rpt tbody tr:last-child td{border-bottom:none}
 /* ============================================================
    PRINT
    ============================================================ */
-@page{size:A4 portrait;margin:10mm 12mm 15mm 12mm}
+@page{size:A4 portrait;margin:10mm 5mm 15mm 5mm}
 @media print{
   /* ซ่อน UI ทั่วไป */
   .site-header,.report-nav,footer,.shared-meta-box,
@@ -1774,6 +1774,33 @@ function sumBuildDoc(){
       const distLabel     = isBkk ? 'เขต'  : 'อ.';
       const provPart       = r.province ? (isBkk ? r.province : 'จ.' + r.province) : '';
 
+      // จัดบรรทัดที่อยู่แบบยืดหยุ่น (ไม่ตัดขึ้นบรรทัดใหม่เสมอ เพื่อไม่ให้ที่อยู่สั้นๆ ดูโหว่)
+      // ปกติ: ที่อยู่ + ตำบล/แขวง อยู่บรรทัดเดียวกัน, อำเภอ/เขต + จังหวัด + รหัสไปรษณีย์ อีกบรรทัด
+      // ถ้า (ที่อยู่+ตำบล/แขวง) ยาวเกิน 30 ตัวอักษร → แยกที่อยู่ออกบรรทัดแรก, ตำบล/แขวง ไปรวมกับอำเภอ/เขตแทน
+      // ถ้า (ตำบล/แขวง+อำเภอ/เขต) ยังยาวเกิน 30 ตัวอักษรอีก → แยกจังหวัด/รหัสไปรษณีย์ออกไปอีกบรรทัด
+      const addr1Text = r.addr1 || '';
+      const tambonText = r.tambon ? subDistLabel + r.tambon : '';
+      const amphoeText = r.amphoe ? distLabel + r.amphoe : '';
+      const provZipText = [provPart, r.zip].filter(Boolean).join(' ');
+      const addr1TambonCombined = [addr1Text, tambonText].filter(Boolean).join(' ');
+      const tambonAmphoeCombined = [tambonText, amphoeText].filter(Boolean).join(' ');
+
+      let addrLines = [];
+      if (addr1TambonCombined.length <= 30) {
+        if (addr1TambonCombined) addrLines.push(addr1TambonCombined);
+        const line2 = [amphoeText, provZipText].filter(Boolean).join(' ');
+        if (line2) addrLines.push(line2);
+      } else {
+        if (addr1Text) addrLines.push(addr1Text);
+        if (tambonAmphoeCombined.length <= 30) {
+          const line2 = [tambonAmphoeCombined, provZipText].filter(Boolean).join(' ');
+          if (line2) addrLines.push(line2);
+        } else {
+          if (tambonAmphoeCombined) addrLines.push(tambonAmphoeCombined);
+          if (provZipText) addrLines.push(provZipText);
+        }
+      }
+
       pg += `<tr>
         ${showSeq ? `<td class="sm-tc" rowspan="${span}">${r.seq}</td>` : ''}
         <td class="sm-tl sm-lines">
@@ -1781,13 +1808,7 @@ function sumBuildDoc(){
           ${r.branch ? `<div>${r.branch}</div>` : ''}
           ${r.taxid ? `<div>เลขประจำตัวผู้เสียภาษี ${r.taxid}</div>` : ''}
           
-          ${(r.addr1 || r.tambon) ? 
-            `<div>${r.addr1 || ''} ${r.tambon ? subDistLabel + r.tambon : ''}</div>` 
-            : ''}
-          
-          ${(r.amphoe || r.province || r.zip) ? 
-            `<div>${[r.amphoe ? distLabel + r.amphoe : '', provPart, r.zip].filter(Boolean).join(' ')}</div>` 
-            : ''}
+          ${addrLines.map(l => `<div>${l}</div>`).join('')}
             
           <div>ลงวันที่ ${sumFmtDate(r.date)}</div>
         </td>
@@ -1902,8 +1923,11 @@ function savePdf06(btn){
   wrap.appendChild(clone);
   document.body.appendChild(wrap);
   setTimeout(()=>{
-    const ML=0.39,MT=1.0,MR=0.39,MB=1.7,SCALE=2;
-    const printW=8.27-ML-MR, printH=11.69-MT-MB;
+    const ML=0.39,MT=0.5,MR=0.39,MB=1.7,SCALE=2;
+    const CONTENT_SCALE=0.85; // ลดขนาดเนื้อหาลงเหลือ 85% ตามที่ขอ (เดิมเต็มความกว้างหน้ากระดาษ ใหญ่เกินไป)
+    const fullW=8.27-ML-MR, printH=11.69-MT-MB;
+    const printW=fullW*CONTENT_SCALE;
+    const drawX=ML+(fullW-printW)/2; // จัดกึ่งกลางแนวนอนแทนการชิดซ้าย เพื่อไม่ให้เหลือที่ว่างด้านขวาเยอะ
     html2canvas(clone,{scale:SCALE,useCORS:true,logging:false,backgroundColor:'#ffffff'}).then(canvas=>{
       const {jsPDF}=window.jspdf;
       const pdf=new jsPDF({unit:'in',format:'a4',orientation:'portrait'});
@@ -1918,7 +1942,7 @@ function savePdf06(btn){
         slice.width=canvas.width;
         slice.height=Math.min(srcH,canvas.height-srcY);
         slice.getContext('2d').drawImage(canvas,0,srcY,canvas.width,slice.height,0,0,canvas.width,slice.height);
-        pdf.addImage(slice.toDataURL('image/png',1),'PNG',ML,MT,printW,(slice.height/SCALE)*ratio);
+        pdf.addImage(slice.toDataURL('image/png',1),'PNG',drawX,MT,printW,(slice.height/SCALE)*ratio);
         yOff+=printH; page++;
       }
       pdf.save(fname+'.pdf');
