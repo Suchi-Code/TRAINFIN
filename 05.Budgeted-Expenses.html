@@ -579,6 +579,11 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
 ============================================================ */
 const spk={EXT:[]};
 const venueData={ meeting:[], vip:[], staff:[] };
+// ✅ แคชวันที่ล่าสุดที่ดึงมาจาก Google Sheet เทียบกับเลขที่หลักสูตร (no) ที่โหลดจริง
+// ป้องกันบั๊ก: ถ้าไม่มีตัวนี้ ตอนกด "บันทึกงบประมาณ" จะไปดึง dateStart/dateEnd จาก
+// sessionStorage('courseData'/'budgetSlotData') ซึ่งอาจเป็นข้อมูลค้างจากหลักสูตรอื่น
+// ที่เคยเปิดดูก่อนหน้าในเซสชันเดียวกัน แล้วเขียนทับวันที่ที่ถูกต้องใน Sheet โดยไม่ตั้งใจ
+let _courseDatesCache = { no: '', dateStart: '', dateEnd: '' };
 
 /* ============================================================
    BASIC TOGGLES
@@ -1527,6 +1532,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
 });
 
+const _MONTHS_TH_05 = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+                'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+function isoTh05(iso) {
+  if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso || '';
+  const p = iso.split('-');
+  return `${parseInt(p[2])} ${_MONTHS_TH_05[parseInt(p[1])-1]} ${parseInt(p[0])+543}`;
+}
+function isoThRange05(ds, de) {
+  if (!ds) return '';
+  if (!de || de === ds) return isoTh05(ds);
+  const ps = ds.split('-'), pe = de.split('-');
+  if (ps[0]===pe[0] && ps[1]===pe[1])
+    return `${parseInt(ps[2])} – ${parseInt(pe[2])} ${_MONTHS_TH_05[parseInt(ps[1])-1]} ${parseInt(ps[0])+543}`;
+  if (ps[0]===pe[0])
+    return `${parseInt(ps[2])} ${_MONTHS_TH_05[parseInt(ps[1])-1]} – ${parseInt(pe[2])} ${_MONTHS_TH_05[parseInt(pe[1])-1]} ${parseInt(ps[0])+543}`;
+  return isoTh05(ds) + ' – ' + isoTh05(de);
+}
 function _prefillMeta05(cd) {
   const sf = (id, val) => { const e = document.getElementById(id); if (e && val) e.value = val; };
   sf('f_courseName', cd.course);
@@ -1534,23 +1556,9 @@ function _prefillMeta05(cd) {
   sf('f_courseNo',   cd.no || cd.courseNo || '');
   sf('f_location',   cd.location);
 
-  const months = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
-                  'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
-  function isoTh(iso) {
-    if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso || '';
-    const p = iso.split('-');
-    return `${parseInt(p[2])} ${months[parseInt(p[1])-1]} ${parseInt(p[0])+543}`;
-  }
-  function isoThRange(ds, de) {
-    if (!ds) return '';
-    if (!de || de === ds) return isoTh(ds);
-    const ps = ds.split('-'), pe = de.split('-');
-    if (ps[0]===pe[0] && ps[1]===pe[1])
-      return `${parseInt(ps[2])} – ${parseInt(pe[2])} ${months[parseInt(ps[1])-1]} ${parseInt(ps[0])+543}`;
-    if (ps[0]===pe[0])
-      return `${parseInt(ps[2])} ${months[parseInt(ps[1])-1]} – ${parseInt(pe[2])} ${months[parseInt(pe[1])-1]} ${parseInt(ps[0])+543}`;
-    return isoTh(ds) + ' – ' + isoTh(de);
-  }
+  const months = _MONTHS_TH_05;
+  function isoTh(iso) { return isoTh05(iso); }
+  function isoThRange(ds, de) { return isoThRange05(ds, de); }
   const dateStr = cd.date || '';
   const ds = cd.dateStart || (dateStr.includes('_') ? dateStr.split('_')[0] : (/^\d{4}-\d{2}-\d{2}$/.test(dateStr) ? dateStr : ''));
   const de = cd.dateEnd   || (dateStr.includes('_') ? dateStr.split('_')[1] : '');
@@ -1577,6 +1585,19 @@ async function _autoLoadGs05(no, cd) {
       sf('f_courseName', course.course   || cd.course);
       sf('f_batch',      course.batch    || cd.batch);
       sf('f_location',   course.location || cd.location);
+
+      // ✅ รีเฟรชวันที่จัดอบรมด้วยค่าที่ดึงมาจริงจาก Sheet ของเลขที่ 'no' นี้เท่านั้น
+      // (เดิมไม่มีบรรทัดนี้ ทำให้ f_date ค้างค่าจาก sessionStorage เก่าซึ่งอาจเป็นของ
+      // หลักสูตรอื่นที่เคยเปิดดูก่อนหน้า) พร้อมแคชไว้ผูกกับเลขที่ no สำหรับ saveBudgetSlot()
+      if (course.dateStart) {
+        const dispDate = isoThRange05(course.dateStart, course.dateEnd || '');
+        const fDateEl = document.getElementById('f_date');
+        if (fDateEl && dispDate) fDateEl.value = dispDate;
+        _courseDatesCache = { no, dateStart: course.dateStart || '', dateEnd: course.dateEnd || '' };
+      } else {
+        // ไม่มีวันที่จาก Sheet สำหรับเลขที่นี้ — เคลียร์แคชกันเอาของหลักสูตรอื่นมาใช้ผิด
+        _courseDatesCache = { no, dateStart: '', dateEnd: '' };
+      }
     }
 
     if (budget) {
@@ -2021,15 +2042,26 @@ function saveBudgetSlot() {
   const id     = Date.now();
 
   let dateStart = '', dateEnd = '';
-  try {
-    const cd = JSON.parse(sessionStorage.getItem('courseData')||'{}');
-    dateStart = cd.dateStart || '';
-    dateEnd   = cd.dateEnd   || '';
-  } catch{}
-  try {
-    const sd = JSON.parse(sessionStorage.getItem('budgetSlotData')||'{}');
-    if (!dateStart) { dateStart = sd.dateStart || ''; dateEnd = sd.dateEnd || ''; }
-  } catch{}
+  if (_courseDatesCache.no && _courseDatesCache.no === no) {
+    // ✅ ใช้เฉพาะวันที่ที่เพิ่งดึงมาสดๆ จาก Sheet สำหรับเลขที่หลักสูตรนี้เท่านั้น (ตรงกับ no ปัจจุบัน)
+    dateStart = _courseDatesCache.dateStart || '';
+    dateEnd   = _courseDatesCache.dateEnd   || '';
+  } else {
+    // ไม่มีแคชที่ตรงกับเลขที่นี้ — ลองอ่านจาก sessionStorage แบบเดิม แต่ต้องเช็คว่า
+    // .no ที่เก็บไว้ตรงกับหลักสูตรที่กำลังบันทึกอยู่จริงก่อนเชื่อค่า (บั๊กเดิม: อ่านมาเฉยๆ
+    // โดยไม่เช็ค no เลย ทำให้หยิบวันที่ของหลักสูตรอื่นที่เคยเปิดค้างไว้ในเซสชันเดียวกันมาใช้ผิด
+    // แล้วเขียนทับวันที่ถูกต้องใน Sheet โดยไม่ตั้งใจ — นี่คือสาเหตุของบั๊กวันที่ที่พบ)
+    try {
+      const cd = JSON.parse(sessionStorage.getItem('courseData')||'{}');
+      if (!no || cd.no === no) { dateStart = cd.dateStart || ''; dateEnd = cd.dateEnd || ''; }
+    } catch{}
+    if (!dateStart) {
+      try {
+        const sd = JSON.parse(sessionStorage.getItem('budgetSlotData')||'{}');
+        if (!no || sd.no === no) { dateStart = sd.dateStart || ''; dateEnd = sd.dateEnd || ''; }
+      } catch{}
+    }
+  }
 
   const courseData = { course, batch, no, date, dateStart, dateEnd, location };
   const newSlot = { ...courseData, id, savedAt: now, budget, speakers };
@@ -2050,11 +2082,13 @@ function saveBudgetSlot() {
   }
   putSavedSlots(slots.slice(0, 20));
 
-  gsApi('updateCourseField', {
-    no, course, batch,
-    dateStart: dateStart||date||'', dateEnd: dateEnd||'',
-    location, savedAt: new Date().toISOString()
-  });
+  // ✅ ส่ง dateStart/dateEnd ไปอัปเดต Sheet เฉพาะตอนที่มั่นใจว่าเป็นวันที่ของหลักสูตรนี้จริงๆ
+  // เท่านั้น (ไม่ fallback ไปใช้ค่า date ที่จัดรูปแบบเป็นข้อความไทยแล้ว เพราะไม่ใช่ ISO date
+  // จะทำให้ Sheet มีค่าเพี้ยน) ถ้าไม่มั่นใจ ไม่ส่งฟิลด์นี้ไปเลย กัน Sheet ถูกเขียนทับผิดๆ
+  const courseFieldPayload = { no, course, batch, location, savedAt: new Date().toISOString() };
+  if (dateStart) courseFieldPayload.dateStart = dateStart;
+  if (dateEnd)   courseFieldPayload.dateEnd   = dateEnd;
+  gsApi('updateCourseField', courseFieldPayload);
   gsApi('saveBudget', {
     no,
 
@@ -2205,12 +2239,15 @@ async function savePdf05(btn){
         border-left: none !important;
         border-right: 0.5px solid #000 !important;
         border-bottom: 0.5px solid #000 !important;
-        padding: 4px 8px !important;
         vertical-align: middle !important;
       }
+      /* หมายเหตุ: ไม่บังคับ padding ตายตัวแล้ว (ของเดิมเขียน padding:4px 8px!important ทับ
+         ตรงนี้ ซึ่งไปเอาชนะ var(--row-pad-v) ที่ปุ่ม +/- ระยะห่างบรรทัดตั้งค่าไว้ ทำให้ปรับ
+         ระยะห่างแล้วไม่มีผลกับ PDF เลย) ปล่อยให้ CSS หลักที่แนบไปกำหนด padding ตามค่า
+         --row-pad-v ที่ container ตั้งไว้แทน จะได้ตรงกับที่ปรับในหน้าพรีวิวเป๊ะๆ */
+      table.rpt th:first-child, table.rpt td:first-child { border-left: 0.5px solid #000 !important; }
       table.rpt thead tr:first-child th,
       table.rpt thead tr:first-child td { border-top: 0.5px solid #000 !important; }
-      table.rpt th:first-child, table.rpt td:first-child { border-left: 0.5px solid #000 !important; }
       table.rpt .nb { border-bottom: none !important; }
       table.rpt .nt { border-top: none !important; }
       table.rpt .bb2 { border-bottom: 0.5px solid #000 !important; }
