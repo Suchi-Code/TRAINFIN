@@ -1616,7 +1616,13 @@ async function _autoLoadGs05(no, cd) {
         const dispDate = isoThRange05(course.dateStart, course.dateEnd || '');
         const fDateEl = document.getElementById('f_date');
         if (fDateEl && dispDate) fDateEl.value = dispDate;
-        _courseDatesCache = { no, dateStart: course.dateStart || '', dateEnd: course.dateEnd || '' };
+        // ✅ เก็บแคชเป็นค่าที่ผ่านการชดเชย timezone แล้ว (YYYY-MM-DD ล้วน) ไม่ใช่ค่าดิบจาก API
+        // ที่อาจมี "T17:00:00.000Z" ติดมา — เดิมเก็บค่าดิบไว้ พอกด "ย้อนกลับ" (เรียก
+        // saveBudgetSlot() ก่อน redirect) จะเอาค่าดิบนี้ไปเก็บ sessionStorage และเขียนทับ
+        // Sheet ด้วย ทำให้ไฟล์ 01 อ่านค่าที่ยังไม่แปลงแล้วเพี้ยนไป 1 วัน
+        const normDS = _normThaiDate05(course.dateStart);
+        const normDE = _normThaiDate05(course.dateEnd || '') || normDS;
+        _courseDatesCache = { no, dateStart: normDS, dateEnd: normDE };
       } else {
         // ไม่มีวันที่จาก Sheet สำหรับเลขที่นี้ — เคลียร์แคชกันเอาของหลักสูตรอื่นมาใช้ผิด
         _courseDatesCache = { no, dateStart: '', dateEnd: '' };
