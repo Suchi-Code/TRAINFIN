@@ -449,8 +449,8 @@ let dc = {};
 .sm-tbl th{font-weight:700;text-align:center;background:#f2f2f2;white-space:nowrap}
 .sm-cat td{font-weight:700}
 .sm-grp td{font-weight:700;padding-left:20px!important}
-.sm-carry td{font-weight:700;background:#fafafa}
-.sm-grand td{font-weight:700;background:#eaeaea}
+.sm-carry td{font-weight:700;background:#fafafa;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+.sm-grand td{font-weight:700;background:#eaeaea;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
 .sm-blank td{border:none!important;padding:6px 0!important;}
 .sm-tr{text-align:right;white-space:nowrap}
 .sm-tc{text-align:center}
@@ -1724,14 +1724,18 @@ function sumBuildDoc(){
       <td class="sm-tr">${smFmt(s.val)}</td><td class="sm-tr">${smF2(s.vat)}</td>
       <td class="sm-tr">${smF2(s.wht)}</td><td class="sm-tr">${smFmt(s.total)}</td></tr>`;
 
+  // ผลรวมสะสม ณ ตำแหน่งแถวที่ endIdx (ไม่รวมแถว endIdx เอง) — รีเซ็ตกลับเป็น 0 ทันทีที่เริ่ม
+  // หมวดวิทยากรภายใน (แยกยอดยกไปของหมวดนี้ออกจากยอดสะสมของข้อ ก. ก่อนหน้า ไม่ให้นับต่อเนื่องกัน)
+  const cumulativeAsOf = (endIdx) => {
+    const startIdx = (hasInt && endIdx > intStartIdx) ? intStartIdx : 0;
+    return sumFields(rows.slice(startIdx, endIdx));
+  };
+
   let html = '';
   for(let p=0;p<totalPages;p++){
     const [pStart, pEnd] = pageBounds[p];
     const pageRows = rows.slice(pStart, pEnd);
-    const carryVal   = rows.slice(0,pStart).reduce((a,r)=>a+r.val,0);
-    const carryVat   = rows.slice(0,pStart).reduce((a,r)=>a+r.vat,0);
-    const carryWht   = rows.slice(0,pStart).reduce((a,r)=>a+r.wht,0);
-    const carryTotal = rows.slice(0,pStart).reduce((a,r)=>a+r.total,0);
+    const { val: carryVal, vat: carryVat, wht: carryWht, total: carryTotal } = cumulativeAsOf(pStart);
     const isFirst = p===0, isLast = p===totalPages-1;
 
     let pg = `<div class="sm-page">`;
@@ -1872,10 +1876,7 @@ function sumBuildDoc(){
     window.hasAddedOthers = false;
 
     if(!isLast){
-      const sv=carryVal+pageRows.reduce((a,r)=>a+r.val,0);
-      const svat=carryVat+pageRows.reduce((a,r)=>a+r.vat,0);
-      const swht=carryWht+pageRows.reduce((a,r)=>a+r.wht,0);
-      const st=carryTotal+pageRows.reduce((a,r)=>a+r.total,0);
+      const { val: sv, vat: svat, wht: swht, total: st } = cumulativeAsOf(pEnd);
       pg += `<tr class="sm-carry"><td class="sm-tc" colspan="3">ยกยอดไป</td>
         <td class="sm-tr">${smFmt(sv)}</td><td class="sm-tr">${smF2(svat)}</td>
         <td class="sm-tr">${smF2(swht)}</td><td class="sm-tr">${smFmt(st)}</td></tr>`;
@@ -2014,6 +2015,7 @@ ${originalStyles}
           scale: 1,
           margin: { top: '10mm', right: '5mm', bottom: '15mm', left: '5mm' },
           preferCSSPageSize: true,
+          printBackground: true, // ⚠️ ต้องเปิดไว้ ไม่งั้นพื้นหลังสีเทาของแถวสรุป (รวมเงินยืมทั้งสิ้น ฯลฯ) จะหายไปจาก PDF ทั้งที่ CSS ตั้งไว้ถูกแล้ว
         },
       })
     });
