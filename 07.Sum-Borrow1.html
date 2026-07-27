@@ -549,20 +549,38 @@ function normSpeakerName(s){
 }
 
 const _mo=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+// ✅ ป้องกันบั๊ก timezone shift: ถ้า Google Apps Script ส่ง dateStart/dateEnd มาเป็น ISO
+// datetime ที่มี time ต่อท้าย (เช่น "2026-05-27T17:00:00.000Z" ซึ่งจริงๆ คือเที่ยงคืนวันที่ 28
+// ตามเวลาไทย GMT+7) ต้องชดเชย +7 ชั่วโมงก่อนตัดเอาวันที่ ไม่งั้นจะได้วันที่ก่อนหน้า 1 วันเสมอ
+// (การตัด string ตรงๆ ด้วย regex แบบเดิมไม่ได้ชดเชยอะไรเลย จึงเพี้ยนไป 1 วันแบบเงียบๆ)
+function _normThaiDate07(v) {
+  if (!v) return '';
+  const s = String(v);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s; // date-only อยู่แล้ว ไม่ต้องแก้
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):/);
+  if (m) {
+    const hh = parseInt(m[4], 10);
+    if (hh >= 17) {
+      const d = new Date(s);
+      d.setUTCHours(d.getUTCHours() + 7);
+      const yy = d.getUTCFullYear(), mm = String(d.getUTCMonth()+1).padStart(2,'0'), dd = String(d.getUTCDate()).padStart(2,'0');
+      return `${yy}-${mm}-${dd}`;
+    }
+    return `${m[1]}-${m[2]}-${m[3]}`;
+  }
+  return s;
+}
 function isoTh(iso){
-  if(!iso) return '';
-  // รองรับ ISO datetime ที่มีเวลา/timezone ติดมาด้วย เช่น "2026-05-18T17:00:00.000Z"
-  // (Google Apps Script มักคืนค่า Date column มาเป็นรูปแบบนี้) — ตัดเอาเฉพาะ YYYY-MM-DD ก่อน
-  const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if(!m) return String(iso);
+  const clean = _normThaiDate07(iso);
+  if(!clean) return '';
+  const m = clean.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(!m) return clean;
   const y = parseInt(m[1]), mo = parseInt(m[2]), d = parseInt(m[3]);
   return `${d} ${_mo[mo-1]} ${y+543}`;
 }
 function isoThRange(ds,de){
+  ds = _normThaiDate07(ds); de = _normThaiDate07(de);
   if(!ds) return '';
-  // normalize ทั้งสองค่าให้เป็น YYYY-MM-DD ล้วนๆ ก่อนเทียบเดือน/ปี (กันกรณีมี T...Z ติดมา)
-  const norm = s => { const m = String(s||'').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[1]}-${m[2]}-${m[3]}` : (s||''); };
-  ds = norm(ds); de = norm(de);
   if(!de||de===ds) return isoTh(ds);
   const ps=ds.split('-'),pe=de.split('-');
   if(ps[0]===pe[0]&&ps[1]===pe[1]) return `${parseInt(ps[2])} – ${parseInt(pe[2])} ${_mo[parseInt(ps[1])-1]} ${parseInt(ps[0])+543}`;
