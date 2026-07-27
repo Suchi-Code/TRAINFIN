@@ -197,8 +197,8 @@ table.rpt tbody tr:last-child td{border-bottom:none}
 .doc-note p{margin-bottom:3px}
 
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- html2canvas/jsPDF ถูกลบออก — เปลี่ยนไปสร้าง PDF ผ่าน Puppeteer server ฝั่ง backend แทน (ดู savePdf06()) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -1866,91 +1866,133 @@ function confirmBack06() {
   document.body.appendChild(pop);
 }
 /* ── SAVE PDF ── */
-function savePdf06(btn){
+// URL ของ Puppeteer PDF server ที่ deploy ไว้บน Render (จุดเดียวกับที่ไฟล์ 05 ใช้)
+const PDF_SERVER_URL = 'https://trainfin.onrender.com/generate-pdf';
+
+// ===== Supabase (สำหรับอัปโหลด PDF ที่สร้างเสร็จแล้วขึ้นเก็บถาวร) =====
+const SUPABASE_URL = 'https://dcaydbxyjisegqzzildq.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjYXlkYnh5amlzZWdxenppbGRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2OTk5NDgsImV4cCI6MjEwMDI3NTk0OH0.cEk8k90NeTTnkZV0Sny7nuN8UbW15_eW8S_HTQSBwwA';
+const supabaseClient = (typeof window.supabase !== 'undefined')
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
+
+// อัปโหลด PDF ขึ้น Supabase Storage (bucket: pdfs) — คืนค่า public URL หรือ null ถ้าไม่สำเร็จ
+async function uploadPdfToSupabase06(pdfBlob, fname){
+  if(!supabaseClient){ console.warn('Supabase client ยังไม่พร้อม (โหลด SDK ไม่สำเร็จ)'); return null; }
+  try {
+    const asciiSafe = fname
+      .replace(/[^\w.\-]+/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_|_$/g, '') || 'report';
+    const fileName = `${asciiSafe}-${Date.now()}.pdf`;
+    const pdfFile  = new File([pdfBlob], fileName, { type: 'application/pdf' });
+    const { error: uploadError } = await supabaseClient
+      .storage.from('pdfs')
+      .upload(fileName, pdfFile, { cacheControl: '3600', upsert: true });
+    if(uploadError) throw uploadError;
+    const { data } = supabaseClient.storage.from('pdfs').getPublicUrl(fileName);
+    return data.publicUrl;
+  } catch(err){
+    console.error('uploadPdfToSupabase06 error:', err);
+    return null;
+  }
+}
+
+async function savePdf06(btn){
   const el = document.getElementById('sm_doc');
   if(!el || !el.innerHTML.trim()){ alert('กรุณาดูสรุปเอกสารก่อน'); return; }
+
   const safe  = s => s.replace(/[/\\:*?"<>|]/g,'_').trim();
   const fname = safe(`สรุปค่าใช้จ่าย_${shGet('sm_title')||''}_รุ่น${shGet('sm_run')||''}_${shGet('sm_runno')||''}`) || 'sum_06';
-  btn.disabled = true; btn.textContent = '⏳ กำลังสร้าง...';
-  const clone = el.cloneNode(true);
-  /* ลบ border/shadow ทุก element */
-  clone.querySelectorAll('*').forEach(e => {
-    e.style.boxShadow    = 'none';
-    e.style.outline      = 'none';
-    e.style.borderRadius = '0';
-    e.style.borderLeft   = 'none';
-    e.style.borderRight  = 'none';
-    e.style.borderTop    = 'none';
-    e.style.borderBottom = 'none';
-  });
-  /* ลบกรอบของ sum-print-wrap เอง */
-  clone.style.border     = 'none';
-  clone.style.boxShadow  = 'none';
-  clone.style.background = '#fff';
-  clone.style.maxWidth   = '100%';
-  clone.style.padding    = '0';
-  /* แปลง input → div */
-  clone.querySelectorAll('input[type=text],input:not([type])').forEach(inp => {
-    const cs = window.getComputedStyle(inp);
-    const d  = document.createElement('div');
-    d.style.cssText = `border:none;background:transparent;font-family:Sarabun,sans-serif;font-size:${cs.fontSize};font-weight:${cs.fontWeight};color:#000;text-align:${cs.textAlign};width:100%;line-height:1.5;`;
-    d.textContent = inp.value;
-    inp.parentNode.replaceChild(d, inp);
-  });
-  /* ล้าง border เดิมของ sm-tbl และ doc-table ทั้งหมดก่อน แล้วค่อย inject ใหม่ */
-  clone.querySelectorAll('table').forEach(tbl => {
-    tbl.style.borderCollapse = 'separate';
-    tbl.style.borderSpacing  = '0';
-    tbl.style.boxShadow      = 'none';
-    // ใส่เส้นขอบ ล่าง และ ขวา ให้กับตัวตารางหลัก
-    tbl.style.borderBottom   = '1px solid #000';
-    tbl.style.borderRight    = '1px solid #000';
-    tbl.style.borderTop      = 'none';
-    tbl.style.borderLeft     = 'none';
-  });
 
-  clone.querySelectorAll('table th, table td').forEach(cell => {
-    // ให้ทุกเซลล์มีเส้นขอบเฉพาะ บน และ ซ้าย (เส้นจะไม่ซ้อนกัน และไม่หายเวลาขึ้นหน้าใหม่)
-    cell.style.borderTop    = '1px solid #000';
-    cell.style.borderLeft   = '1px solid #000';
-    cell.style.borderBottom = 'none';
-    cell.style.borderRight  = 'none';
-    cell.style.background   = '#fff';
-    cell.style.boxShadow    = 'none';
-  });
-  const wrap = document.createElement('div');
-  wrap.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;background:#fff;font-family:Sarabun,sans-serif;border:none;box-shadow:none;padding:0;';
-  wrap.appendChild(clone);
-  document.body.appendChild(wrap);
-  setTimeout(()=>{
-    const ML=0.39,MT=0.5,MR=0.39,MB=1.7,SCALE=2;
-    const CONTENT_SCALE=0.85; // ลดขนาดเนื้อหาลงเหลือ 85% ตามที่ขอ (เดิมเต็มความกว้างหน้ากระดาษ ใหญ่เกินไป)
-    const fullW=8.27-ML-MR, printH=11.69-MT-MB;
-    const printW=fullW*CONTENT_SCALE;
-    const drawX=ML+(fullW-printW)/2; // จัดกึ่งกลางแนวนอนแทนการชิดซ้าย เพื่อไม่ให้เหลือที่ว่างด้านขวาเยอะ
-    html2canvas(clone,{scale:SCALE,useCORS:true,logging:false,backgroundColor:'#ffffff'}).then(canvas=>{
-      const {jsPDF}=window.jspdf;
-      const pdf=new jsPDF({unit:'in',format:'a4',orientation:'portrait'});
-      const ratio=printW/(canvas.width/SCALE);
-      const totalH=(canvas.height/SCALE)*ratio;
-      let yOff=0,page=0;
-      while(yOff<totalH){
-        if(page>0) pdf.addPage();
-        const srcY=Math.round((yOff/ratio)*SCALE);
-        const srcH=Math.round((printH/ratio)*SCALE);
-        const slice=document.createElement('canvas');
-        slice.width=canvas.width;
-        slice.height=Math.min(srcH,canvas.height-srcY);
-        slice.getContext('2d').drawImage(canvas,0,srcY,canvas.width,slice.height,0,0,canvas.width,slice.height);
-        pdf.addImage(slice.toDataURL('image/png',1),'PNG',drawX,MT,printW,(slice.height/SCALE)*ratio);
-        yOff+=printH; page++;
-      }
-      pdf.save(fname+'.pdf');
-    }).finally(()=>{
-      document.body.removeChild(wrap);
-      btn.disabled=false; btn.textContent='💾 บันทึก PDF';
+  btn.disabled = true; btn.textContent = '⏳ กำลังสร้าง...';
+
+  try {
+    const clone = el.cloneNode(true);
+
+    // แปลง input ที่แก้ไขได้ (หัวกระดาษบนหน้าแรก) ให้เป็นข้อความนิ่งๆ ก่อนส่งไป render
+    // (เก็บ inline style เดิมไว้ทั้งหมด เพราะแต่ละช่องตั้ง text-align/font-weight/width มาให้แล้ว)
+    clone.querySelectorAll('input.rpt-edit').forEach(inp => {
+      const d = document.createElement('div');
+      d.style.cssText = inp.getAttribute('style') || '';
+      d.style.border = 'none';
+      d.style.outline = 'none';
+      d.style.background = 'transparent';
+      d.textContent = inp.value || '';
+      inp.parentNode.replaceChild(d, inp);
     });
-  },300);
+
+    // ✅ ดึง CSS หลักของหน้าเว็บทั้งดวง (นิยาม .sum-print-wrap, .sm-tbl, .sm-hdr ฯลฯ) ไปแนบด้วย
+    // ไม่งั้นฝั่ง server ไม่รู้จัก class เหล่านี้ ตารางจะไม่มีเส้นขอบ/จัดหน้าตามที่ตั้งใจ
+    const originalStyles = Array.from(document.querySelectorAll('style'))
+      .map(s => s.innerHTML).join('\n');
+
+    // ประกอบเป็นเอกสาร HTML ฉบับสมบูรณ์ ส่งให้ฝั่งเซิร์ฟเวอร์ (Puppeteer) เปิดแล้ว render เป็น PDF จริง
+    // (Puppeteer ใช้ page.pdf() ของ Chromium ตัดหน้าอัตโนมัติเอง — ตาม .sm-page{page-break-after:always}
+    // ที่มีอยู่แล้วในไฟล์นี้ ไม่ต้องหั่นภาพเป็น canvas แบบเดิม)
+    const fullHtml = `<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+${originalStyles}
+</style>
+<style>
+  /* Override เฉพาะสำหรับไฟล์ PDF (มาทีหลัง จึงมีลำดับความสำคัญสูงกว่า CSS หลักด้านบน) */
+  * { box-sizing: border-box; }
+  html,body { margin:0; padding:0; background:#fff; font-family:'Sarabun',sans-serif; color:#000; }
+  /* .sum-print-wrap ใช้กรอบ/เงา/ความกว้างจำกัดไว้สำหรับแสดงบนจอ — ตอนพิมพ์ PDF ให้เต็มพื้นที่หน้ากระดาษแทน
+     (ระยะขอบจริงคุมผ่าน pdfOptions.margin ด้านล่าง ไม่ใช้ padding ของ container นี้) */
+  .sum-print-wrap { border:none !important; box-shadow:none !important; max-width:100% !important; margin:0 !important; padding:0 !important; }
+</style>
+</head>
+<body>${clone.outerHTML}</body>
+</html>`;
+
+    const res = await fetch(PDF_SERVER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        html: fullHtml,
+        filename: fname,
+        // ✅ pdfOptions เฉพาะของไฟล์ 06 — ไฟล์อื่น (05/08/09) กำหนดค่าของตัวเองแยกกันได้
+        // โดยไม่ต้องแก้ pdf-server.js เลย เพราะ server อ่านค่าจาก JSON นี้ตรงๆ
+        // (ค่าตั้งต้นนี้ยังไม่ได้จัดหน้าละเอียดเฉพาะไฟล์ 06 — ปรับ scale/margin เพิ่มได้ภายหลัง)
+        pdfOptions: {
+          format: 'A4',
+          landscape: false,
+          scale: 0.85,
+          margin: { top: '10mm', right: '5mm', bottom: '15mm', left: '5mm' },
+          preferCSSPageSize: true,
+        },
+      })
+    });
+    if(!res.ok){
+      const errText = await res.text().catch(()=>res.statusText);
+      throw new Error(`เซิร์ฟเวอร์สร้าง PDF ผิดพลาด (${res.status}): ${errText}`);
+    }
+
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = fname + '.pdf';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+
+    // อัปโหลดขึ้น Supabase เก็บถาวรด้วย (ไม่บล็อกการดาวน์โหลดในเครื่อง ถ้าอัปโหลดไม่สำเร็จ
+    // ผู้ใช้ก็ยังได้ไฟล์ในเครื่องตามปกติ แค่ไม่มีลิงก์ถาวรเก็บไว้)
+    const publicUrl = await uploadPdfToSupabase06(blob, fname);
+    if (publicUrl) {
+      console.log('อัปโหลด PDF ขึ้น Supabase สำเร็จ:', publicUrl);
+    }
+
+  } catch(err){
+    console.error('savePdf06 error:', err);
+    alert('สร้าง PDF ไม่สำเร็จ: ' + err.message + '\n\nตรวจสอบว่าตั้งค่า PDF_SERVER_URL ถูกต้อง และเซิร์ฟเวอร์ Puppeteer เปิดใช้งานอยู่');
+  } finally {
+    btn.disabled = false; btn.textContent = '💾 บันทึก PDF';
+  }
 }
 
 /* ============================================================
