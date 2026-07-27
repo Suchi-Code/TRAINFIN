@@ -1534,12 +1534,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
 const _MONTHS_TH_05 = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
                 'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+// ✅ ป้องกันบั๊ก timezone shift: ถ้า Google Apps Script ส่ง dateStart/dateEnd มาเป็น
+// ISO datetime ที่มี time ต่อท้าย (เช่น "2026-07-21T17:00:00.000Z" ซึ่งจริงๆ คือเที่ยงคืน
+// วันที่ 22 ตามเวลาไทย GMT+7) ต้องชดเชย +7 ชั่วโมงก่อนตัดเอาวันที่ ไม่งั้นจะได้วันที่ก่อนหน้า
+// 1 วันเสมอ (เอา parseInt ตัด string ตรงๆ จะโดนตัวอักษร T ทำให้ได้วันที่ผิดแบบเงียบๆ)
+function _normThaiDate05(v) {
+  if (!v) return '';
+  const s = String(v);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s; // date-only string อยู่แล้ว ไม่ต้องแก้
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):/);
+  if (m) {
+    const hh = parseInt(m[4], 10);
+    if (hh >= 17) {
+      const d = new Date(s);
+      d.setUTCHours(d.getUTCHours() + 7);
+      const yy = d.getUTCFullYear(), mm = String(d.getUTCMonth()+1).padStart(2,'0'), dd = String(d.getUTCDate()).padStart(2,'0');
+      return `${yy}-${mm}-${dd}`;
+    }
+    return `${m[1]}-${m[2]}-${m[3]}`;
+  }
+  return s;
+}
 function isoTh05(iso) {
-  if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso || '';
-  const p = iso.split('-');
+  const clean = _normThaiDate05(iso);
+  if (!clean || !/^\d{4}-\d{2}-\d{2}$/.test(clean)) return clean || '';
+  const p = clean.split('-');
   return `${parseInt(p[2])} ${_MONTHS_TH_05[parseInt(p[1])-1]} ${parseInt(p[0])+543}`;
 }
 function isoThRange05(ds, de) {
+  ds = _normThaiDate05(ds); de = _normThaiDate05(de);
   if (!ds) return '';
   if (!de || de === ds) return isoTh05(ds);
   const ps = ds.split('-'), pe = de.split('-');
