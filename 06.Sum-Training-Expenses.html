@@ -1683,7 +1683,7 @@ function sumBuildDoc(){
       : baseLabel; // '1.'/'2.' ฝังเลขไว้ใน label อยู่แล้ว
   });
 
-  const PER_PAGE = 6;
+  const PER_PAGE = 5;
   const totalPages = Math.max(1, Math.ceil(rows.length / PER_PAGE));
   let gVal=0,gVat=0,gWht=0,gTotal=0;
   rows.forEach(r=>{gVal+=r.val;gVat+=r.vat;gWht+=r.wht;gTotal+=r.total;});
@@ -1962,7 +1962,7 @@ ${originalStyles}
         pdfOptions: {
           format: 'A4',
           landscape: false,
-          scale: 0.85,
+          scale: 1,
           margin: { top: '10mm', right: '5mm', bottom: '15mm', left: '5mm' },
           preferCSSPageSize: true,
         },
