@@ -1683,18 +1683,34 @@ function sumBuildDoc(){
       : baseLabel; // '1.'/'2.' ฝังเลขไว้ใน label อยู่แล้ว
   });
 
-  const PER_PAGE = 5;
-  const totalPages = Math.max(1, Math.ceil(rows.length / PER_PAGE));
+  // หน้าแรกแสดงได้ 5 รายการ (มีหัวเอกสารกินพื้นที่ด้วย) หน้าที่ 2 เป็นต้นไปแสดงได้ 6 รายการ
+  // (ไม่มีหัวเอกสาร เหลือพื้นที่มากกว่า) เช่น หน้า 1: 1-5, หน้า 2: 6-11, หน้า 3: 12-17, ...
+  const FIRST_PAGE_SIZE = 5;
+  const REST_PAGE_SIZE = 6;
+  const pageBounds = [];
+  if (rows.length <= FIRST_PAGE_SIZE) {
+    pageBounds.push([0, rows.length]);
+  } else {
+    pageBounds.push([0, FIRST_PAGE_SIZE]);
+    let idx = FIRST_PAGE_SIZE;
+    while (idx < rows.length) {
+      const end = Math.min(idx + REST_PAGE_SIZE, rows.length);
+      pageBounds.push([idx, end]);
+      idx = end;
+    }
+  }
+  const totalPages = pageBounds.length;
   let gVal=0,gVat=0,gWht=0,gTotal=0;
   rows.forEach(r=>{gVal+=r.val;gVat+=r.vat;gWht+=r.wht;gTotal+=r.total;});
 
   let html = '';
   for(let p=0;p<totalPages;p++){
-    const pageRows = rows.slice(p*PER_PAGE,(p+1)*PER_PAGE);
-    const carryVal   = rows.slice(0,p*PER_PAGE).reduce((a,r)=>a+r.val,0);
-    const carryVat   = rows.slice(0,p*PER_PAGE).reduce((a,r)=>a+r.vat,0);
-    const carryWht   = rows.slice(0,p*PER_PAGE).reduce((a,r)=>a+r.wht,0);
-    const carryTotal = rows.slice(0,p*PER_PAGE).reduce((a,r)=>a+r.total,0);
+    const [pStart, pEnd] = pageBounds[p];
+    const pageRows = rows.slice(pStart, pEnd);
+    const carryVal   = rows.slice(0,pStart).reduce((a,r)=>a+r.val,0);
+    const carryVat   = rows.slice(0,pStart).reduce((a,r)=>a+r.vat,0);
+    const carryWht   = rows.slice(0,pStart).reduce((a,r)=>a+r.wht,0);
+    const carryTotal = rows.slice(0,pStart).reduce((a,r)=>a+r.total,0);
     const isFirst = p===0, isLast = p===totalPages-1;
 
     let pg = `<div class="sm-page">`;
