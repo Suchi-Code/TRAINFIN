@@ -450,7 +450,8 @@ let dc = {};
 .sm-cat td{font-weight:700}
 .sm-grp td{font-weight:700;padding-left:20px!important}
 .sm-carry td{font-weight:700;background:#fafafa}
-.sm-grand td{font-weight:700;background:#e6f2ff}
+.sm-grand td{font-weight:700;background:#eaeaea}
+.sm-blank td{border:none!important;padding:6px 0!important;}
 .sm-tr{text-align:right;white-space:nowrap}
 .sm-tc{text-align:center}
 .sm-tl{text-align:left}
@@ -1283,12 +1284,17 @@ async function sumSave(){
 }
 function buildGs06Payload(state){
 
-  // งบประมาณ = ใช้จริงเสมอ ไม่ต้องคีบิล
-  let totalVal = 0, totalVat = 0, totalWht = 0;
+  // totalVal/totalVat/totalWht/grandTotal ที่บันทึกลง Sheet = รวมเฉพาะหมวด "เงินยืม" เท่านั้น
+  // (ค่าน้ำมันฯ/วัสดุสำนักงาน/วัสดุเบ็ดเตล็ด/จ้างเหมา/เช่าสถานที่/อาหารฯ/เดินทางเจ้าหน้าที่/วิทยากรภายนอก
+  //  — ไม่รวมวิทยากรภายในที่จ่ายผ่าน Payroll เพราะไม่ใช่เงินที่ต้องเบิกยืมทดลองจ่าย)
+  const LOAN_SECTIONS = new Set(['fuel','1','2','lump','venue','3','4','ext']);
+  let totalVal = 0, totalVat = 0, totalWht = 0, grandTotalLoan = 0;
   (state.rows || []).forEach(r => {
+    if (!LOAN_SECTIONS.has(r.sec)) return;
     totalVal += parseFloat(r.val) || 0;
     totalVat += parseFloat(r.vat) || 0;
     totalWht += parseFloat(r.wht) || 0;
+    grandTotalLoan += parseFloat(r.total) || 0;
   });
   const bySec = state.actualBySection || {};
   const secTotal = k => bySec[k]?.total || 0;
@@ -1335,7 +1341,7 @@ function buildGs06Payload(state){
     secIntTravel: sub('int','int_travel'),
     secInt:  secIntTotal,
 
-    grandTotal: state.grandTotal || 0,
+    grandTotal: grandTotalLoan,
     totalVal, totalVat, totalWht,
     rowsJson:   JSON.stringify(state.rows || []),
     savedAt:    new Date().toISOString()
@@ -1703,6 +1709,21 @@ function sumBuildDoc(){
   let gVal=0,gVat=0,gWht=0,gTotal=0;
   rows.forEach(r=>{gVal+=r.val;gVat+=r.vat;gWht+=r.wht;gTotal+=r.total;});
 
+  // ── รวมเงินยืมทั้งสิ้น: เฉพาะหมวด ค่าน้ำมันฯ/วัสดุสำนักงาน/วัสดุเบ็ดเตล็ด/จ้างเหมา/เช่าสถานที่/
+  // อาหารฯ/เดินทางเจ้าหน้าที่/วิทยากรภายนอก (ไม่รวมวิทยากรภายในที่จ่ายผ่าน Payroll)
+  const LOAN_SECTIONS = new Set(['fuel','1','2','lump','venue','3','4','ext']);
+  const sumFields = (list) => list.reduce((a,r)=>({
+    val:a.val+(r.val||0), vat:a.vat+(r.vat||0), wht:a.wht+(r.wht||0), total:a.total+(r.total||0)
+  }), {val:0,vat:0,wht:0,total:0});
+  const loanSum = sumFields(rows.filter(r => LOAN_SECTIONS.has(r.secV)));
+  const intStartIdx = rows.findIndex(r => r.secV === 'int');
+  const hasInt = intStartIdx !== -1;
+  const intSum = hasInt ? sumFields(rows.filter(r => r.secV === 'int')) : {val:0,vat:0,wht:0,total:0};
+  const grandRowHtml = (label, s) =>
+    `<tr class="sm-grand"><td class="sm-tc" colspan="3">${label}</td>
+      <td class="sm-tr">${smFmt(s.val)}</td><td class="sm-tr">${smF2(s.vat)}</td>
+      <td class="sm-tr">${smF2(s.wht)}</td><td class="sm-tr">${smFmt(s.total)}</td></tr>`;
+
   let html = '';
   for(let p=0;p<totalPages;p++){
     const [pStart, pEnd] = pageBounds[p];
@@ -1757,6 +1778,14 @@ function sumBuildDoc(){
     pageRows.forEach(r => { seqSpan[r.seq] = (seqSpan[r.seq]||0) + 1; });
     const seqRendered = {};
     pageRows.forEach((r, ridx) => {
+      const globalIdx = pStart + ridx;
+
+      // แทรก "รวมเงินยืมทั้งสิ้น" (ถมเทาทั้งแถว) + แถวว่าง 1 แถว ก่อนแถวแรกของหมวดวิทยากรภายใน (ถ้ามี)
+      if (hasInt && globalIdx === intStartIdx) {
+        pg += grandRowHtml('รวมเงินยืมทั้งสิ้น', loanSum);
+        pg += `<tr class="sm-blank"><td colspan="7">&nbsp;</td></tr>`;
+      }
+
       // 1. ตรวจสอบการเปลี่ยนหมวดหมู่ (เพื่อใส่หัวข้อหมวดใหญ่ เช่น 2. ค่าวัสดุเบ็ดเตล็ด)
       if (r.secV !== lastSec) {
         // ถ้ารายการใดในกลุ่มหมวดนี้ (แถวติดกันที่หมวดเดียวกัน) ติ๊ก "ค่าใช้จ่ายตาม ว.119" ไว้ → ใส่ (ว.119) ต่อท้ายหัวข้อหมวด
@@ -1833,6 +1862,11 @@ function sumBuildDoc(){
         <td class="sm-tr">${smF2(r.vat)}</td>
         <td class="sm-tr">${smF2(r.wht)}</td>
         <td class="sm-tr">${smFmt(r.total)}</td></tr>`;
+
+      // แถวข้อมูลจริงแถวสุดท้ายของทั้งเอกสาร → แทรกแถวสรุปปิดท้าย (ถมเทาทั้งแถว)
+      if (globalIdx === rows.length - 1) {
+        pg += hasInt ? grandRowHtml('รวมค่าสมนาคุณเป็นเงิน', intSum) : grandRowHtml('รวมเงินยืมทั้งสิ้น', loanSum);
+      }
     });
     // Reset ตัวแปรหลังจบลูปหน้าปัจจุบัน
     window.hasAddedOthers = false;
@@ -1845,10 +1879,9 @@ function sumBuildDoc(){
       pg += `<tr class="sm-carry"><td class="sm-tc" colspan="3">ยกยอดไป</td>
         <td class="sm-tr">${smFmt(sv)}</td><td class="sm-tr">${smF2(svat)}</td>
         <td class="sm-tr">${smF2(swht)}</td><td class="sm-tr">${smFmt(st)}</td></tr>`;
-    } else {
-      pg += `<tr class="sm-grand"><td class="sm-tc" colspan="3">รวมเงินยืมทั้งสิ้น</td>
-        <td class="sm-tr">${smFmt(gVal)}</td><td class="sm-tr">${smF2(gVat)}</td>
-        <td class="sm-tr">${smF2(gWht)}</td><td class="sm-tr">${smFmt(gTotal)}</td></tr>`;
+    } else if(rows.length === 0) {
+      // ไม่มีรายการเลย — ยังคงแสดงแถวรวมเงินยืมทั้งสิ้น (0.00) ไว้เหมือนเดิม
+      pg += grandRowHtml('รวมเงินยืมทั้งสิ้น', loanSum);
     }
     pg += `</tbody></table></div>`;
     html += pg;
