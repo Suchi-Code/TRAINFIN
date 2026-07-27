@@ -80,19 +80,14 @@
     </header>
 
     <!-- HERO SECTION CONTAINER -->
-    <!-- รหัสและไอดี "vanta-bg" จะเป็นจุดที่เรียกคำสั่งสร้างคลื่นสีฟ้าขยับได้ที่พื้นหลัง -->
     <div id="vanta-bg" class="relative w-full flex items-center justify-center pt-16 pb-20 px-4 sm:px-6 lg:px-8">
 
-        <!-- แผ่นกรองพื้นหลังเพื่อให้ข้อความอ่านง่ายขึ้น -->
         <div class="absolute inset-0 bg-gradient-to-b from-blue-900/20 to-base-200/90 pointer-events-none"></div>
 
-        <!-- MAIN LAYOUT -->
         <div class="relative z-10 container mx-auto max-w-6xl">
 
-            <!-- ── แถวบน: ข้อความ (ซ้าย) + รูปภาพ/การ์ดสรุปงบ (ขวา) ── -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 
-                <!-- ฝั่งซ้าย: ข้อความและปุ่มกด -->
                 <div class="space-y-6 text-center lg:text-left text-white">
                     <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 backdrop-blur-sm">
                         <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
@@ -117,57 +112,45 @@
                     </div>
                 </div>
 
-                <!-- ฝั่งขวา: กล่องเดียว = รูปภาพ (บน) + การ์ดสรุปงบประมาณ 6 ใบ (ล่าง) -->
                 <div class="flex justify-center">
                     <div class="relative w-full max-w-[440px]">
 
-                        <!-- กล่องหลัง (เงาสี่เหลี่ยมเรืองแสง) -->
                         <div class="absolute inset-0 bg-gradient-to-tr from-blue-500 to-cyan-400 rounded-3xl opacity-20 blur-2xl transform scale-95 translate-y-4"></div>
 
-                        <!-- หลอดไฟลอยเหนือกล่อง มุมขวาบน (อยู่นอก overflow-hidden ของการ์ด จึงแสดงเต็มไม่โดนตัด) -->
                         <div class="absolute -top-5 -right-5 z-20 w-14 h-14 bg-cyan-400/20 backdrop-blur-sm border border-cyan-400/30 rounded-xl transform rotate-12 flex items-center justify-center text-cyan-300 shadow-xl animate-float">📸</div>
 
                         <div class="relative bg-slate-900/80 border border-white/10 rounded-3xl shadow-2xl backdrop-blur-md overflow-hidden">
 
-                            <!-- รูปภาพหลัก -->
                             <div class="relative w-full h-64 sm:h-72 overflow-hidden">
                                 <img id="course-image" 
                                         src="https://res.cloudinary.com/daytjjgll/image/upload/fl_preserve_transparency/v1783993162/gfr1/2569/qfkdnj9m6y0f9ilkklcl.jpg?_s=public-apps"
                                         alt="ภาพประกอบหลักสูตร"
                                         class="w-full h-full object-cover scale-105 opacity-0 transition-opacity duration-300">
 
-                                <!-- ไล่เฉดมืดด้านล่างให้ตัวหนังสืออ่านง่าย -->
                                 <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/10 to-transparent"></div>
-                                <!-- ไล่เฉดบางๆ ด้านบนให้ badge เด่นขึ้น -->
                                 <div class="absolute inset-0 bg-gradient-to-b from-slate-900/40 via-transparent to-transparent"></div>
 
-                                <!-- เส้นขอบเรืองแสงรอบรูป -->
                                 <div class="absolute inset-0 ring-1 ring-inset ring-white/15 rounded-t-3xl"></div>
 
-                                <!-- badge มุมบนซ้าย -->
                                 <div class="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/60 border border-white/20 backdrop-blur-sm">
                                     <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
                                     <span class="text-[10px] font-medium text-cyan-200 tracking-wide">กองฝึกอบรมภูมิภาค 1 กปภ.</span>
                                 </div>
 
-                                <!-- ข้อความแคปชั่นทับด้านล่างรูป -->
                                 <div class="absolute bottom-3 left-4 right-4">
                                     <div class="text-[11px] font-medium text-cyan-200/90 tracking-wide">ภาพกิจกรรมการฝึกอบรม</div>
                                     <div id="f_image_caption" class="text-sm font-semibold text-white drop-shadow leading-snug">ความปลอดภัยในการทำงานเกี่ยวกับสารเคมีอันตราย และการตอบโต้กรณีเกิดเหตุฉุกเฉิน รุ่นที่ 1-3/69</div>
                                 </div>
                             </div>
 
-                            <!-- แถบไล่สีคั่นบางๆ -->
                             <div class="h-1 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500"></div>
 
-                            <!-- การ์ดสรุปงบประมาณ 6 ใบ (ปรับจาก _renderBudgetPanel ของไฟล์ 01) -->
                             <div class="p-4">
                                 <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
                                     <span class="text-[11px] text-slate-300 tracking-wide">📌 สรุปงบประมาณ</span>
                                     <span id="summary-status" class="text-[11px] font-medium text-slate-400">ยังไม่มีข้อมูล</span>
                                 </div>
                                 <div id="summary-grid" class="grid grid-cols-2 gap-2.5">
-                                    <!-- การ์ดสรุปงบ ถูกสร้างด้วย JS -->
                                 </div>
                             </div>
 
@@ -177,33 +160,24 @@
 
             </div>
 
-            <!-- ── แถวล่าง: การ์ดรายงาน 6 ใบ เต็มความกว้าง (2 แถว x 3 คอลัมน์) ── -->
             <div id="report-panel" class="mt-14">
                 <div class="flex items-center gap-2 justify-center lg:justify-start mb-5">
                     <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
                     <span class="text-xs text-slate-200 tracking-wide">ระบบสร้างรายงานสรุปค่าใช้จ่ายการฝึกอบรม กฝภ.1</span>
                 </div>
                 <div id="report-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    <!-- การ์ดรายงานถูกสร้างด้วย JS จาก REPORTS array ด้านล่าง -->
                 </div>
             </div>
 
         </div>
     </div>
 
-    <!-- ═══════════════════════════════════════════════════════
-         แถบด้านล่าง (footer bar) — สไตล์เดียวกับแถบบน
-    ═══════════════════════════════════════════════════════ -->
     <footer class="bg-slate-900 border-t border-white/10">
       <div class="container mx-auto max-w-6xl flex items-center justify-center px-4 sm:px-6 lg:px-8 py-4">
         <div class="text-[11px] text-slate-400">© 2569 กองฝึกอบรมภูมิภาค 1 · การประปาส่วนภูมิภาค (กปภ.)</div>
       </div>
     </footer>
 
-    <!-- ═══════════════════════════════════════════════════════
-         ข้อมูลรายงาน 6 ใบ (ปรับรูปแบบใหม่ให้เข้ากับธีมหน้านี้ — อิงจากไฟล์ 01_Main-Reports.html)
-         แก้ href / ชื่อ / ไอคอน ตรงนี้ได้เลยถ้ารายการรายงานจริงมีเปลี่ยนแปลง
-    ═══════════════════════════════════════════════════════ -->
     <script>
         const REPORTS = [
             { num: '05', name: 'ประมาณการค่าใช้จ่าย',        icon: '⭐', color: 'from-amber-400/20 to-amber-600/10 border-amber-400/30 text-amber-300',  href: '05.Budgeted-Expenses.html' },
@@ -229,28 +203,22 @@
         }
         renderReportCards();
 
-        // ส่งเลขที่หลักสูตรปัจจุบันไปให้หน้ารายงาน (ตามกลไกเดียวกับ goDetail() ในไฟล์ dashboard — sessionStorage.courseData)
         function passRunToReport(e, href) {
             if (window.__courseData && window.__courseData.no) {
                 try { sessionStorage.setItem('courseData', JSON.stringify(window.__courseData)); } catch (err) {}
             }
-            return true; // ปล่อยให้ลิงก์ทำงานตามปกติ
+            return true;
         }
 
-        // ปุ่ม "ออกรายงาน" — เลื่อนไปที่กรอบการ์ดรายงานด้านล่าง (ยังไม่ผูกลิงก์อื่น)
         document.getElementById('btn-report').addEventListener('click', () => {
             document.getElementById('report-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
 
-        // ปุ่ม "รายละเอียด" — ยังไม่ต้องสร้างลิงก์ (รอคิดกระบวนการ) กันไว้เป็นจุดต่อโค้ดในอนาคต
         document.getElementById('btn-detail').addEventListener('click', () => {
             console.log('TODO: ยังไม่ได้กำหนดปลายทางของปุ่ม "รายละเอียด"');
         });
     </script>
 
-    <!-- ═══════════════════════════════════════════════════════
-         การ์ดสรุปงบประมาณ 6 ใบ (ปรับ logic มาจาก _renderBudgetPanel() ในไฟล์ 01 — ธีมกระจกมืด)
-    ═══════════════════════════════════════════════════════ -->
     <script>
         function fmtBaht(n) {
             return (n !== null && n !== undefined)
@@ -258,7 +226,6 @@
                 : null;
         }
 
-        // slot = { budget, speakers, actual06, actual07 } — เหมือนโครงสร้างที่ 01_Main-Reports.html ใช้
         function renderSummaryCards(slot) {
             const grid = document.getElementById('summary-grid');
             const statusEl = document.getElementById('summary-status');
@@ -299,7 +266,6 @@
             if (a06 && (a06.grandTotal || 0) > 0) actualTotal = a06.grandTotal;
             if (a07 && (a07.grandTotal || 0) > 0) actualTotal = a07.grandTotal;
 
-            // ค่าใช้จ่ายรวม ก. (ใช้จริง) — ตัดยอดวิทยากรภายใน/ประธานในพิธีออก (โอนตรงหน่วยงานต้นสังกัด ไม่ใช่เงินยืมทดลองจ่าย)
             let actualGorA = null;
             if (a07) {
                 const avf = k => parseFloat(a07[k] || 0);
@@ -364,11 +330,6 @@
         renderSummaryCards(null);
     </script>
 
-    <!-- ═══════════════════════════════════════════════════════
-         ดึงข้อมูลหลักสูตรจาก Google Sheet (GAS Web API เดียวกับไฟล์ 01_Main-Reports.html)
-         การทำงาน (init flow / retry / sessionStorage) พอร์ตมาจากไฟล์ 01 ทั้งหมด
-         สิ่งที่เพิ่ม: รูปภาพต่อหลักสูตร — อ่านจากคอลัมน์ "imageUrl" ในชีท courses (ดูหมายเหตุท้ายไฟล์)
-    ═══════════════════════════════════════════════════════ -->
     <script>
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbySJROnBMkxFBNyPvET3DC5ihdCz03OPzvi2xXm6cMQpoPFsi2pAiTQAQIVSDUwQNVZ5w/exec';
 
@@ -383,30 +344,49 @@
         }
 
         const _mo = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+        // ✅ ป้องกันบั๊ก timezone shift: ถ้า Google Apps Script ส่ง dateStart/dateEnd มาเป็น
+        // ISO datetime ที่มี time ต่อท้าย (เช่น "2026-07-21T17:00:00.000Z" ซึ่งจริงๆ คือเที่ยงคืน
+        // วันที่ 22 ตามเวลาไทย GMT+7) ต้องชดเชย +7 ชั่วโมงก่อนตัดเอาวันที่ ไม่งั้นจะได้วันที่ก่อนหน้า
+        // 1 วันเสมอ (หน้านี้ดึงข้อมูลสดจาก Sheet ทุกครั้งที่โหลดหน้า จึงต้องแก้ตรงนี้ด้วย
+        // ไม่งั้นต่อให้แก้ไฟล์อื่นแล้ว หน้านี้ก็จะดึงมาพังซ้ำเองอยู่ดี)
+        function _normThaiDate01(v) {
+            if (!v) return '';
+            const s = String(v);
+            if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s; // date-only อยู่แล้ว ไม่ต้องแก้
+            const m = s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):/);
+            if (m) {
+                const hh = parseInt(m[4], 10);
+                if (hh >= 17) {
+                    const d = new Date(s);
+                    d.setUTCHours(d.getUTCHours() + 7);
+                    const yy = d.getUTCFullYear(), mm = String(d.getUTCMonth()+1).padStart(2,'0'), dd = String(d.getUTCDate()).padStart(2,'0');
+                    return `${yy}-${mm}-${dd}`;
+                }
+                return `${m[1]}-${m[2]}-${m[3]}`;
+            }
+            return s;
+        }
         function isoTh(iso) {
-            if (!iso) return '';
-            const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
-            if (!m) return String(iso);
+            const clean = _normThaiDate01(iso);
+            if (!clean) return '';
+            const m = clean.match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (!m) return clean;
             return `${parseInt(m[3])} ${_mo[parseInt(m[2]) - 1]} ${parseInt(m[1]) + 543}`;
         }
         function isoThRange(ds, de) {
+            ds = _normThaiDate01(ds); de = _normThaiDate01(de);
             if (!ds) return '';
             if (!de || de === ds) return isoTh(ds);
             return isoTh(ds) + ' – ' + isoTh(de);
         }
 
-        // ── โหลดรูปแบบ "ทันที" — ไม่พึ่ง Google Sheet เลย ──
-        // สร้าง URL รูปจาก "เลขที่หลักสูตร" ตรงๆ (แอดมินอัปโหลดรูปไปตั้งชื่อไฟล์ = เลขที่หลักสูตร ไว้ล่วงหน้าใน Cloudinary
-        // path: gfr1/2569/{เลขที่หลักสูตร} เช่น เลขที่ 01320829 → อัปโหลดไฟล์ชื่อ "01320829.jpg" ไว้ใน path นี้)
-        // วิธีนี้ไม่ต้องยิง gsApi เลย จึงไม่มีความหน่วงจากการรอ Google Apps Script ตอบกลับ
         function courseImageUrl(no) {
                 return `https://res.cloudinary.com/daytjjgll/image/upload/f_auto,q_auto/gfr1/2569/${no}`;
             }
 
-            // ── แก้ไข Path ในนี้ให้ตรงกับตำแหน่งจริงของรูปภาพบน Cloudinary ──
             const FALLBACK_GFR1_IMAGES = [
-                'gfr1/heftpyre6z4aiotufazm', // แก้ไขเอา /2569/ ออกเพื่อให้ตรงกับลิงก์จริงของคุณ
-                'gfr1/s5epptybf473sotkli4h' // ฝากเช็คภาพนี้ด้วยครับว่าอยู่ในโฟลเดอร์ gfr1 หรือ gfr1/2569
+                'gfr1/heftpyre6z4aiotufazm',
+                'gfr1/s5epptybf473sotkli4h'
             ];
 
             function randomFallbackImage() {
@@ -422,20 +402,17 @@
             if (imgEl.dataset.wanted === url) return; 
             imgEl.dataset.wanted = url;
 
-            // 1. ซ่อนรูปปัจจุบันไว้ก่อน เพื่อไม่ให้ภาพเก่าค้างระหว่างดาวน์โหลดภาพใหม่
             imgEl.style.opacity = '0';
-            imgEl.style.transition = 'opacity 0.2s ease-in-out'; // เพิ่มความสมูทตอนแสดงผล
+            imgEl.style.transition = 'opacity 0.2s ease-in-out';
 
-            // 2. เมื่อภาพใหม่ (หรือภาพสำรอง) โหลดเสร็จเรียบร้อย ค่อยสั่งให้แสดงผล
             imgEl.onload = () => {
                 imgEl.style.opacity = '1';
             };
 
             imgEl.onerror = () => {
-                // ไม่พบรูปของหลักสูตรนี้ → สุ่มรูปสำรองจาก path gfr1 แทน
                 imgEl.onerror = () => { 
                     imgEl.onerror = null; 
-                    imgEl.style.opacity = '1'; // เผื่อกรณีแย่ที่สุดรูปสำรองพัง ก็ให้โชว์กล่อง (หรือภาพเก่า) ไม่ซ่อนค้าง
+                    imgEl.style.opacity = '1';
                 }; 
                 imgEl.src = randomFallbackImage();
             };
@@ -458,18 +435,10 @@
 
             document.getElementById('f_meta_line3').textContent = cr.location ? `ณ ${cr.location}` : '';
 
-            // แคปชั่นทับรูปภาพ — ชื่อหลักสูตร + รุ่นที่
             const capEl = document.getElementById('f_image_caption');
             if (capEl) capEl.textContent = cr.course ? `${cr.course}${cr.batch ? ' รุ่นที่ ' + cr.batch : ''}` : '';
-
-            // รูปภาพ: ไม่ต้องทำอะไรที่นี่แล้ว — setCourseImage(no) ถูกเรียกทันทีตั้งแต่รู้เลขที่หลักสูตร
-            // ใน initCourse() ก่อนหน้านี้แล้ว (ไม่พึ่งข้อมูลจาก Google Sheet อีกต่อไป)
         }
 
-        /* ============================================================
-           โหลดการ์ดสรุปงบประมาณ — มี retry อัตโนมัติ (พอร์ตจาก loadBudgetPanel() ไฟล์ 01)
-           GAS Web App บางครั้ง "cold start" ช้าในการเรียกครั้งแรก จึงลองใหม่ก่อนฟ้อง error
-        ============================================================ */
         function loadSummary(no, attempt) {
             attempt = attempt || 1;
             const statusEl = document.getElementById('summary-status');
@@ -481,11 +450,13 @@
                 const g7 = (gsRow && gsRow.actual07) || null;
                 const cr = (gsRow && gsRow.course)   || {};
 
-                // มีข้อมูลหลักสูตรจริงจากชีต — sync ฟอร์ม/รูปภาพให้ล่าสุดอีกครั้ง (เผื่อ sessionStorage เก่ากว่า)
                 if (cr && cr.course) {
                     setCourseFields({ ...cr, no });
-                    // เก็บ sessionStorage ให้หน้ารายงานอื่นดึงต่อได้ (รวม imageUrl ไปด้วย)
-                    try { sessionStorage.setItem('courseData', JSON.stringify({ ...cr, no, _fromCourseList: true })); } catch (e) {}
+                    // ✅ เก็บ dateStart/dateEnd แบบที่ normalize แล้ว (YYYY-MM-DD ล้วน) ไม่ใช่ค่าดิบ
+                    // ไม่งั้นไฟล์อื่น (เช่นไฟล์ 05) ที่อ่านต่อจาก sessionStorage นี้จะได้ค่าที่มี
+                    // "T17:00:00.000Z" ติดมาอีก แล้วเพี้ยนไป 1 วันซ้ำ
+                    const crClean = { ...cr, dateStart: _normThaiDate01(cr.dateStart), dateEnd: _normThaiDate01(cr.dateEnd) };
+                    try { sessionStorage.setItem('courseData', JSON.stringify({ ...crClean, no, _fromCourseList: true })); } catch (e) {}
                 }
 
                 renderSummaryCards({
@@ -508,7 +479,6 @@
             });
         }
 
-        // ── ข้อมูลตัวอย่าง — ใช้เฉพาะกรณีเปิดไฟล์นี้ตรงๆ โดยไม่มีเลขที่หลักสูตรส่งมาจากที่ไหนเลย (เดโมหน้าตา) ──
         const SAMPLE_COURSE = {
             no: '01320829',
             course: 'ความปลอดภัยในการทำงานเกี่ยวกับสารเคมีอันตราย และการตอบโต้กรณีเกิดเหตุฉุกเฉิน',
@@ -520,12 +490,6 @@
             location: 'การประปาส่วนภูมิภาคสาขาชัยนาท อำเภอเมืองชัยนาท จังหวัดชัยนาท'
         };
 
-        /* ============================================================
-           INIT — พอร์ต flow เดียวกับ init() ในไฟล์ 01:
-           1) อ่านเลขที่หลักสูตรจาก sessionStorage.courseData ก่อนเสมอ (ปุ่ม "รายละเอียด" ของ dashboard ส่งมาทางนี้)
-           2) ถ้าไม่มี ลอง URL param ?no=/?run= (เผื่อเปิดหน้านี้ตรงๆ)
-           3) ถ้าไม่มีจริงๆ ใช้ข้อมูลตัวอย่างไว้ดูหน้าตา (ไม่ใช่พฤติกรรมในไฟล์ 01 — เพิ่มเฉพาะหน้านี้เพื่อพรีวิว)
-        ============================================================ */
         (function initCourse() {
             let courseData = null;
             try {
@@ -540,20 +504,16 @@
             }
 
             if (no) {
-                // ⚡ ตั้งค่ารูปภาพทันทีจากเลขที่หลักสูตร (ไม่รอ fetch ใดๆ — เร็วที่สุดเท่าที่ทำได้)
                 setCourseImage(no);
-                // เติมข้อมูลที่มีอยู่แล้วทันที (ไม่ต้องรอ fetch) แล้วค่อยโหลดการ์ดสรุปงบ (มี retry ในตัว)
                 setCourseFields(courseData && courseData.no === no ? courseData : { no });
                 loadSummary(no);
             } else {
-                // ไม่มีเลขที่หลักสูตรจากที่ไหนเลย — โชว์ข้อมูลตัวอย่างไว้ดูหน้าตาก่อน
                 setCourseImage(SAMPLE_COURSE.no);
                 setCourseFields(SAMPLE_COURSE);
             }
         })();
     </script>
 
-    <!-- สคริปต์เปิดใช้งานระบบคลื่น Vanta.js ที่พื้นหลัง -->
     <script>
         window.addEventListener('DOMContentLoaded', () => {
             VANTA.WAVES({
@@ -565,7 +525,7 @@
                 minWidth: 200.00,
                 scale: 1.00,
                 scaleMobile: 1.00,
-                color: 0x0f172a,      /* โทนสีกรมท่าเข้ม */
+                color: 0x0f172a,
                 shininess: 35.00,
                 waveHeight: 15.00,
                 waveSpeed: 0.60,
