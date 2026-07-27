@@ -203,26 +203,23 @@ function fmtMoney2(n){
 }
 const gv = id => (document.getElementById(id)?.value?.trim()||'');
 
-/* ============================================================
-   แปลงวันที่จาก Google Sheet ให้เป็น YYYY-MM-DD เสมอ
-   (input[type=date] ต้องการรูปแบบนี้เท่านั้น ไม่งั้นจะโชว์ placeholder mm/dd/yyyy)
-   รองรับ: ISO datetime "2026-06-30T00:00:00.000Z", "2026-06-30 00:00:00",
-           "30/6/2026", "30-6-2026", Date object ที่ถูก serialize เป็น string,
-           และค่าที่ถูกต้องอยู่แล้ว "2026-06-30"
-   ============================================================ */
 function toISODate(v){
   if(!v) return '';
+
+  // 1. ถ้าเป็น Date Object อยู่แล้ว
   if(v instanceof Date && !isNaN(v)) {
     return v.getFullYear() + '-' + String(v.getMonth()+1).padStart(2,'0') + '-' + String(v.getDate()).padStart(2,'0');
   }
+
   const s = String(v).trim();
   if(!s) return '';
 
-  // กรณีตรงอยู่แล้ว: YYYY-MM-DD (ตัดส่วนเวลาออกถ้ามี เช่น ISO datetime)
-  const isoMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if(isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+  // 2. ถ้าเป็นวันที่เพียวๆ รูปแบบ YYYY-MM-DD (เช่น "2026-07-01") แบบนี้ดึงใช้ได้เลย ไม่ติดเรื่อง Time Zone
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    return s;
+  }
 
-  // กรณี D/M/YYYY หรือ DD/MM/YYYY (สลับเป็น D-M-Y ด้วยก็รองรับ)
+  // 3. กรณี D/M/YYYY หรือ DD/MM/YYYY (รวมถึง พ.ศ.)
   const dmy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
   if(dmy){
     const d = dmy[1].padStart(2,'0');
@@ -232,11 +229,13 @@ function toISODate(v){
     return `${y}-${m}-${d}`;
   }
 
-  // กรณีอื่นๆ ลอง parse ด้วย Date constructor เป็น fallback สุดท้าย
+  // 4. ถ้ามี ISO String / เวลาติดมาด้วย (เช่น "2026-06-30T17:00:00.000Z")
+  // ให้ใช้ Date object ช่วยแปลง Time Zone กลับเป็น Local Time (เวลาไทย) ก่อนดึงวันที่
   const parsed = new Date(s);
-  if(!isNaN(parsed)){
+  if(!isNaN(parsed.getTime())){
     return parsed.getFullYear() + '-' + String(parsed.getMonth()+1).padStart(2,'0') + '-' + String(parsed.getDate()).padStart(2,'0');
   }
+
   return '';
 }
 
