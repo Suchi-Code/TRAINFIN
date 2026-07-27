@@ -509,6 +509,27 @@ function switchYear(year, btn){
   btn.classList.add('active');
 }
 
+/* --- Popup แจ้งว่าฟีเจอร์นี้อยู่ระหว่างปรับปรุง (ใช้กับปุ่มแนบไฟล์) --- */
+function showUnderConstructionPopup(){
+  let overlay = document.getElementById('under-construction-overlay');
+  if(overlay){ overlay.style.display = 'flex'; return; }
+  overlay = document.createElement('div');
+  overlay.id = 'under-construction-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(10,20,40,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.onclick = (e) => { if(e.target === overlay) overlay.style.display = 'none'; };
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:14px;padding:30px 32px;max-width:340px;width:100%;
+      box-shadow:0 20px 60px rgba(0,0,0,.3);font-family:'Sarabun',sans-serif;text-align:center;">
+      <div style="font-size:42px;margin-bottom:12px;">🚧</div>
+      <div style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:8px;">อยู่ระหว่างปรับปรุง</div>
+      <div style="font-size:13px;color:var(--text-soft);margin-bottom:22px;line-height:1.6;">ฟีเจอร์แนบไฟล์กำลังอยู่ระหว่างการพัฒนา<br>ขออภัยในความไม่สะดวก</div>
+      <button onclick="document.getElementById('under-construction-overlay').style.display='none'"
+        style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:9px 28px;
+        font-family:'Sarabun',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">ตกลง</button>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
 /* --- Toggle file panel --- */
 let openPanel = null;
 function toggleFiles(runId){
@@ -1081,7 +1102,7 @@ function buildGsCourseCard(group) {
             <td class="center">${dateDisplay || '—'}</td>
             <td>${cr.location || '—'}</td>
             <td class="center">
-              <button class="attach-btn" id="abtn-${runid}" onclick="toggleFiles('${runid}')">📎 แนบไฟล์</button>
+              <button class="attach-btn" id="abtn-${runid}" onclick="showUnderConstructionPopup()">📎 แนบไฟล์</button>
             </td>
             <td class="center">
               <button class="detail-btn" onclick="goDetail('${runid}')">📊 รายละเอียด</button>
