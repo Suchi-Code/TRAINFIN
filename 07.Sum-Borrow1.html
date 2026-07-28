@@ -10,7 +10,7 @@
 *{box-sizing:border-box;}
 body{font-family:'Sarabun',sans-serif;background:var(--gray-50);color:var(--text);font-size:15px;line-height:1.6;margin:0;padding:0;}
 .site-header{background:var(--navy);color:#fff;position:sticky;top:0;z-index:200;box-shadow:0 2px 12px rgba(0,0,0,.25);}
-.header-inner{width:100%;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
+.header-inner{max-width:1060px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
 .header-title{display:flex;align-items:center;gap:12px;}
 .header-icon{width:38px;height:38px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
 .header-text h1{font-size:15px;font-weight:600;margin:0;}
@@ -135,7 +135,7 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:1px solid #000;verti
 .hdr-edit{border-bottom:1px dotted #aaa;}
 
 @media print{
-  .site-header,.print-toolbar,.sync-banner{display:none!important;}
+  .site-header,.print-toolbar,.sync-banner,footer{display:none!important;}
   #form-view{display:none!important;}
   #report-view{display:block!important;}
   body{background:#fff;padding:0;line-height:1.35;}
@@ -504,8 +504,25 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:1px solid #000;verti
       <button class="btn-sp" id="sp_inc" onclick="adjustRowSpacing(1)" title="เพิ่มระยะห่าง">＋</button>
     </div>
     
-    <button class="btn-do-print" onclick="window.print()">🖨️ พิมพ์แบบฟอร์ม</button>
-    <button onclick="savePdf07(this)" style="background:linear-gradient(135deg,#1a56db,#1241b0);color:#fff;border:none;border-radius:8px;padding:10px 28px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(26,86,219,.3);display:flex;align-items:center;gap:6px;transition:all .2s;">💾 บันทึก PDF</button>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+      <button class="btn-do-print" onclick="window.print()">🖨️ พิมพ์แบบฟอร์ม</button>
+      <span style="font-size:11px;color:#9ca3af;">ควรตั้งค่าหน้ากระดาษที่ 75%</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+      <button onclick="savePdf07(this)" style="background:linear-gradient(135deg,#1a56db,#1241b0);color:#fff;border:none;border-radius:8px;padding:10px 28px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(26,86,219,.3);display:flex;align-items:center;gap:6px;transition:all .2s;">💾 บันทึก PDF</button>
+      <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#6b7280;">
+        <label for="pdf_scale_07">สเกลหน้ากระดาษ:</label>
+        <select id="pdf_scale_07" style="border:1px solid var(--gray-200);border-radius:5px;padding:2px 6px;font-family:'Sarabun',sans-serif;font-size:11px;color:#374151;cursor:pointer;">
+          <option value="70">70%</option>
+          <option value="75" selected>75%</option>
+          <option value="80">80%</option>
+          <option value="85">85%</option>
+          <option value="90">90%</option>
+          <option value="95">95%</option>
+          <option value="100">100%</option>
+        </select>
+      </div>
+    </div>
   </div>
   
   <div class="report-container" id="report-container-07">
@@ -518,6 +535,11 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:1px solid #000;verti
     <div id="rpt_wrap"></div>
   </div>
 </div>
+
+<footer style="background:var(--navy);color:rgba(255,255,255,.4);text-align:center;padding:14px;font-size:11px">
+  <strong style="color:rgba(255,255,255,.65)">รายงาน · กฝภ.1 · กปภ.</strong> ·
+  ข้อมูลยังไม่ครบถ้วน อยู่ระหว่างปรับปรุงเพิ่มเติม
+</footer>
 
 <script>
 /* ── STATE — โหลดจาก slot เท่านั้น ไม่ให้ user แก้ budget ── */
@@ -1664,6 +1686,8 @@ function showReport(doPrint){
   
   document.getElementById('form-view').style.display='none';
   document.getElementById('report-view').style.display='block';
+  const hdr07 = document.querySelector('.site-header'); if(hdr07) hdr07.style.display='none';
+  const ftr07 = document.querySelector('footer'); if(ftr07) ftr07.style.display='none';
   applyRowSpacing();
   window.scrollTo(0,0);
   if(doPrint) setTimeout(()=>window.print(),300);
@@ -1671,6 +1695,8 @@ function showReport(doPrint){
 function backToForm(){
   document.getElementById('form-view').style.display='block';
   document.getElementById('report-view').style.display='none';
+  const hdr07 = document.querySelector('.site-header'); if(hdr07) hdr07.style.display='';
+  const ftr07 = document.querySelector('footer'); if(ftr07) ftr07.style.display='';
   window.scrollTo(0,0);
 }
 
@@ -2034,6 +2060,7 @@ async function savePdf07(btn){
   const safe = s => s.replace(/[/\\:*?"<>|]/g,'_').trim();
   const slot = _currentSlot;
   const fname = safe('สรุปค่าใช้จ่าย_07_' + (slot&&slot.course||'') + '_รุ่น' + (slot&&slot.batch||'')) || 'sum_07';
+  const pdfScale07 = (parseInt(document.getElementById('pdf_scale_07')?.value, 10) || 75) / 100;
   btn.disabled = true; btn.textContent = '⏳ กำลังสร้าง...';
 
   try {
@@ -2096,8 +2123,9 @@ ${originalStyles}
       body: JSON.stringify({
         html: fullHtml,
         filename: fname,
-        // ตัวเลขในตารางกว้างเกิน A4 เล็กน้อย ลดสัดส่วนทั้งหน้าเหลือ 75% กันล้น
-        pdfOptions: { scale: 0.75 },
+        // ตัวเลขในตารางกว้างเกิน A4 เล็กน้อย ผู้ใช้เลือกสเกลได้เองจากช่อง "สเกลหน้ากระดาษ"
+        // ใต้ปุ่มบันทึก PDF (ค่าเริ่มต้น 75% กันล้น)
+        pdfOptions: { scale: pdfScale07 },
       })
     });
     if(!res.ok) throw new Error('เซิร์ฟเวอร์สร้าง PDF ไม่สำเร็จ (HTTP ' + res.status + ')');
