@@ -115,6 +115,33 @@ a.btn-nav:hover{background:rgba(255,255,255,.1);color:#fff;}
 .btn-preview{background:#fff;color:var(--blue);border:2px solid var(--blue);border-radius:8px;padding:13px 28px;font-family:'Sarabun',sans-serif;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;}
 .btn-preview:hover{background:var(--blue-light);}
 
+/* =====================================================
+   LARGE ACTION BUTTONS — modern rounded style (ให้เหมือนไฟล์ 06)
+   ===================================================== */
+.btn-lg{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:11px 24px;
+  border-radius:12px;
+  font-family:'Sarabun',sans-serif;font-size:14px;font-weight:600;
+  cursor:pointer;border:none;
+  letter-spacing:.01em;
+  transition:all .2s cubic-bezier(.25,.8,.25,1);
+  white-space:nowrap;
+}
+.btn-lg:active{transform:translateY(0) scale(.97)!important;box-shadow:none!important}
+.btn-save{
+  background:linear-gradient(135deg,#1a7a4a,#22a05f);
+  color:#fff;
+  box-shadow:0 2px 8px rgba(26,122,74,.35);
+}
+.btn-save:hover{background:linear-gradient(135deg,#15693e,#1a8a50);transform:translateY(-1px);box-shadow:0 4px 12px rgba(26,122,74,.4)}
+.btn-next{
+  background:linear-gradient(135deg,var(--blue),#1450a3);
+  color:#fff;
+  box-shadow:0 3px 10px rgba(29,95,168,.4);
+}
+.btn-next:hover{background:linear-gradient(135deg,#2569c4,#0f3e8a);transform:translateY(-2px);box-shadow:0 6px 18px rgba(29,95,168,.45)}
+
 /* REPORT VIEW */
 #report-view{display:none;max-width:1060px;margin:0 auto;padding:20px;zoom:0.9;}
 .print-toolbar{display:flex;gap:10px;justify-content:center;margin-bottom:20px;}
@@ -241,7 +268,6 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
 </head>
 <body>
 
-<div id="form-view">
 <header class="site-header">
   <div class="header-inner">
     <div class="header-title">
@@ -256,6 +282,8 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
     </button>
   </div>
 </header>
+
+<div id="form-view">
 
 <div class="form-section">
   <div class="form-section-header">📌 ข้อมูลหลักสูตร</div>
@@ -525,17 +553,16 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
   </div></div>
 </div>
 
-<div class="btn-row">
-  <button onclick="saveBudgetSlot()"
-    style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:8px;
-    padding:13px 28px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;
-    box-shadow:0 4px 14px rgba(16,185,129,0.35);transition:all .2s;display:flex;align-items:center;gap:8px;"
-    onmouseover="this.style.background='linear-gradient(135deg,#059669,#047857)';this.style.transform='translateY(-2px)'"
-    onmouseout="this.style.background='linear-gradient(135deg,#10b981,#059669)';this.style.transform='translateY(0)'">
-    <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-    บันทึกงบประมาณ
-  </button>
-  <button class="btn-preview" onclick="showReport()">👁 ดูตัวอย่างรายงาน</button>
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-top:20px;padding:16px 20px;background:#fff;border:1px solid var(--gray-200);border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.05)">
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <button class="btn-lg btn-save" onclick="saveBudgetSlot()">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      บันทึกงบประมาณ
+    </button>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <button class="btn-lg btn-next" onclick="showReport()">ดูตัวอย่างรายงาน →</button>
+  </div>
 </div>
 <div class="save-toast" id="save-toast"></div>
 </div><div id="report-view">
@@ -549,20 +576,20 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
   </div>
   <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
     <button class="btn-do-print" onclick="window.print()">🖨️ พิมพ์แบบฟอร์ม</button>
-    <span style="font-size:11px;color:#9ca3af;">ควรตั้งค่าหน้ากระดาษที่ 85%</span>
+    <span style="font-size:11px;color:#6b7280;">💡 แนะนำตั้งค่ามาตราส่วนการพิมพ์ (Scale) ที่ 85%</span>
   </div>
-  <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
     <button onclick="savePdf05(this)" style="background:linear-gradient(135deg,#1a56db,#1241b0);color:#fff;border:none;border-radius:8px;padding:10px 28px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(26,86,219,.3);display:flex;align-items:center;gap:6px;transition:all .2s;">💾 บันทึก PDF</button>
-    <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#6b7280;">
-      <label for="pdf_scale_05">สเกลหน้ากระดาษ:</label>
-      <select id="pdf_scale_05" style="border:1px solid var(--gray-200);border-radius:5px;padding:2px 6px;font-family:'Sarabun',sans-serif;font-size:11px;color:#374151;cursor:pointer;">
-        <option value="70">70%</option>
-        <option value="75">75%</option>
-        <option value="80">80%</option>
-        <option value="85" selected>85%</option>
-        <option value="90">90%</option>
-        <option value="95">95%</option>
-        <option value="100">100%</option>
+    <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#6b7280;">
+      <span>มาตราส่วนหน้ากระดาษ:</span>
+      <select id="pdf_scale_05" style="font-size:11px;padding:2px 6px;border:1px solid var(--gray-200);border-radius:4px;font-family:'Sarabun',sans-serif;">
+        <option value="0.7">70%</option>
+        <option value="0.75">75%</option>
+        <option value="0.8">80%</option>
+        <option value="0.85">85%</option>
+        <option value="0.9" selected>90%</option>
+        <option value="0.95">95%</option>
+        <option value="1">100%</option>
       </select>
     </div>
   </div>
@@ -593,6 +620,7 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
   <strong style="color:rgba(255,255,255,.65)">รายงาน · กฝภ.1 · กปภ.</strong> ·
   ข้อมูลยังไม่ครบถ้วน อยู่ระหว่างปรับปรุงเพิ่มเติม
 </footer>
+
 
 <script>
 /* ============================================================
@@ -1487,6 +1515,8 @@ function showReport(doPrint){
   
   document.getElementById('form-view').style.display='none';
   document.getElementById('report-view').style.display='block';
+  const hdr05 = document.querySelector('.site-header'); if(hdr05) hdr05.style.display='none';
+  const ftr05 = document.querySelector('footer'); if(ftr05) ftr05.style.display='none';
   applyRowSpacing05();
   window.scrollTo(0,0);
   if(doPrint) setTimeout(()=>window.print(),300);
@@ -1494,6 +1524,8 @@ function showReport(doPrint){
 function backToForm(){
   document.getElementById('form-view').style.display='block';
   document.getElementById('report-view').style.display='none';
+  const hdr05 = document.querySelector('.site-header'); if(hdr05) hdr05.style.display='';
+  const ftr05 = document.querySelector('footer'); if(ftr05) ftr05.style.display='';
   window.scrollTo(0,0);
 }
 
@@ -2245,7 +2277,6 @@ async function savePdf05(btn){
   const batch  = document.getElementById('f_batch')?.value || '';
   const safe   = s => s.replace(/[/\\:*?"<>|]/g,'_').trim();
   const fname  = safe(`งบประมาณ_${course}_รุ่น${batch}`) || 'budget05';
-  const pdfScale05 = (parseInt(document.getElementById('pdf_scale_05')?.value, 10) || 85) / 100;
 
   btn.disabled = true; btn.textContent = '⏳ กำลังสร้าง...';
 
@@ -2346,10 +2377,9 @@ ${originalStyles}
         pdfOptions: {
           format: 'A4',
           landscape: false,
-          // #report-view ในไฟล์นี้ใช้ zoom:0.9 บนจอเพื่อให้พอดี แต่ค่า zoom ไม่ติดไปกับ
-          // clone ที่ส่งออก จึงตั้ง scale เทียบเท่ากันไว้ที่นี่แทน — ผู้ใช้เลือกสเกลเองได้จาก
-          // ช่อง "สเกลหน้ากระดาษ" ใต้ปุ่มบันทึก PDF (ค่าเริ่มต้น 85%)
-          scale: pdfScale05,
+          // มาตราส่วนหน้ากระดาษ — อ่านจากตัวเลือกที่ผู้ใช้ตั้งไว้ใต้ปุ่ม "บันทึก PDF"
+          // (ค่าเริ่มต้น 90% ถ้าหา element ไม่เจอด้วยเหตุผลใดก็ตาม)
+          scale: parseFloat(document.getElementById('pdf_scale_05')?.value) || 0.9,
           margin: { top: '12mm', right: '5mm', bottom: '12mm', left: '5mm' },
           preferCSSPageSize: true,
         },
