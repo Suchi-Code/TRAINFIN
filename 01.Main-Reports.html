@@ -268,7 +268,7 @@
                 `).join('') + `
                     <div class="col-span-2 relative overflow-hidden rounded-xl p-3.5 border border-white/10 bg-white/5">
                         <div class="flex items-center gap-2">
-                            <span class="text-lg"></span>
+                            <span class="text-lg">💰</span>
                             <span class="text-[12px] font-semibold text-slate-200 leading-tight">เงินคืน (คงเหลือของรวมเงิน ก.)</span>
                         </div>
                         <div class="mt-1.5">${noData}</div>
@@ -319,7 +319,7 @@
             const hasActual = actualTotal !== null;
 
             const spkHTML = spkNames.length
-                ? spkNames.map(n => `<div class="text-[11px] text-cyan-300 font-medium leading-relaxed">👤 ${n}</div>`).join('')
+                ? spkNames.map(n => `<div class="text-[15px] font-bold text-cyan-300 leading-snug">👤 ${n}</div>`).join('')
                 : noData;
 
             const refundBoxStyle = refund !== null
@@ -327,7 +327,7 @@
                     ? 'bg-gradient-to-r from-emerald-500/20 to-emerald-400/5 border-emerald-400/40'
                     : 'bg-gradient-to-r from-rose-500/20 to-rose-400/5 border-rose-400/40')
                 : 'bg-cyan-400/[0.07] border-cyan-400/20';
-            const refundIcon = refund !== null ? (refund >= 0 ? '💰' : '⚠️') : '';
+            const refundIcon = refund !== null ? (refund >= 0 ? '💰' : '⚠️') : '💰';
 
             grid.innerHTML = `
                 <div class="bg-cyan-400/[0.07] border border-cyan-400/20 rounded-xl p-3">
@@ -342,7 +342,7 @@
 
                 <div class="col-span-2 bg-cyan-400/[0.07] border border-cyan-400/20 rounded-xl p-3">
                     <div class="text-[11.5px] font-semibold text-slate-100 leading-tight">ชื่อวิทยากร / บริษัท</div>
-                    <div class="mt-1.5 space-y-0.5">${spkHTML}${hasInt ? '<div class="text-[11px] text-cyan-300 font-medium">🏢 มีวิทยากรภายใน</div>' : ''}</div>
+                    <div class="mt-1.5 space-y-0.5">${spkHTML}${hasInt ? '<div class="text-[15px] font-bold text-cyan-300 leading-snug">🏢 มีวิทยากรภายใน</div>' : ''}</div>
                 </div>
 
                 <div class="bg-cyan-400/[0.07] border border-cyan-400/20 rounded-xl p-3">
@@ -356,7 +356,6 @@
                 </div>
 
                 <div class="col-span-2 relative overflow-hidden rounded-xl p-3.5 border ${refundBoxStyle} shadow-lg ${refund !== null ? 'shadow-black/20' : ''}">
-                    <div class="absolute -right-3 -top-3 text-5xl opacity-10 select-none pointer-events-none">${refundIcon}</div>
                     <div class="relative flex items-center gap-2">
                         <span class="text-lg">${refundIcon}</span>
                         <span class="text-[12px] font-semibold text-slate-100 leading-tight tracking-wide">เงินคืน (คงเหลือของรวมเงิน ก.)</span>
@@ -557,8 +556,9 @@
     </script>
 
     <script>
+        let vantaEffect = null;
         window.addEventListener('DOMContentLoaded', () => {
-            VANTA.WAVES({
+            vantaEffect = VANTA.WAVES({
                 el: "#vanta-bg",
                 mouseControls: true,
                 touchControls: true,
@@ -572,7 +572,21 @@
                 waveHeight: 15.00,
                 waveSpeed: 0.60,
                 zoom: 0.85
-            })
+            });
+
+            // ✅ เนื้อหาในการ์ด (ชื่อหลักสูตร/สรุปงบประมาณ) โหลดมาจาก Google Sheet แบบ async
+            // หลังจาก Vanta คำนวณความสูงพื้นหลังไปแล้ว ทำให้พื้นหลังคลื่นไม่ยืดตามความสูงจริง
+            // ที่เปลี่ยนไปทีหลัง เหลือช่องว่างสีทึบก่อนถึงแถบล่าง — ใช้ ResizeObserver คอย
+            // สั่ง resize() ให้พื้นหลังคลื่นเต็มพื้นที่ตลอดเวลาที่ #vanta-bg เปลี่ยนความสูง
+            const vantaEl = document.getElementById('vanta-bg');
+            if (vantaEl && window.ResizeObserver) {
+                const ro = new ResizeObserver(() => {
+                    if (vantaEffect && typeof vantaEffect.resize === 'function') {
+                        vantaEffect.resize();
+                    }
+                });
+                ro.observe(vantaEl);
+            }
         });
     </script>
 </body>
