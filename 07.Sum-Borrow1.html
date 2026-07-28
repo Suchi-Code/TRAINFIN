@@ -196,10 +196,6 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:1px solid #000;verti
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════
-     FORM VIEW
-════════════════════════════════════════ -->
-<div id="form-view">
 <header class="site-header">
   <div class="header-inner">
     <div class="header-title">
@@ -215,9 +211,15 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:1px solid #000;verti
   </div>
 </header>
 
+<!-- ═══════════════════════════════════════
+     FORM VIEW
+════════════════════════════════════════ -->
+<div id="form-view">
+
 <!-- ข้อมูลหลักสูตร (readonly — มาจาก 01) -->
 <div class="form-section" style="margin-top:16px;">
   <div class="form-section-header">📌 ข้อมูลหลักสูตร <span style="font-size:11px;font-weight:400;opacity:.7"></span></div>
+
   <div class="form-section-body">
     <div class="form-row single"><div class="form-group"><label>ชื่อหลักสูตร</label><input type="text" id="f_courseName" readonly class="budget-field" placeholder="(จะแสดงเมื่อโหลดข้อมูล)"></div></div>
     <div class="form-row three">
