@@ -287,11 +287,13 @@ table.rpt tbody tr:last-child td{border-bottom:none}
 
 
   </div><div class="sv-view" id="sv-preview">
-    <div class="no-print" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;padding:14px 20px;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.05)">
-      <button class="btn-lg btn-prev" onclick="sumGoForm()">← แก้ไขข้อมูล</button>
-      
-      <button class="btn-lg btn-print-lg" onclick="window.print()">🖨️ พิมพ์แบบฟอร์ม</button>
-      <button onclick="savePdf06(this)" style="background:linear-gradient(135deg,#1a56db,#1241b0);color:#fff;border:none;border-radius:10px;padding:10px 28px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(26,86,219,.3);">💾 บันทึก PDF</button>
+    <div class="no-print print-toolbar">
+      <button class="btn-back-form" onclick="sumGoForm()">◀ กลับแก้ไขข้อมูล</button>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+        <button class="btn-do-print" onclick="window.print()">🖨️ พิมพ์แบบฟอร์ม</button>
+        <span style="font-size:11px;color:#9ca3af;">ควรตั้งค่าหน้ากระดาษที่ 100%</span>
+      </div>
+      <button onclick="savePdf06(this)" style="background:linear-gradient(135deg,#1a56db,#1241b0);color:#fff;border:none;border-radius:8px;padding:10px 28px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(26,86,219,.3);display:flex;align-items:center;gap:6px;transition:all .2s;">💾 บันทึก PDF</button>
     </div>
     <div id="sm_doc" class="sum-print-wrap"></div>
 
@@ -315,6 +317,7 @@ const fmt  = n => Math.round(n).toLocaleString('th-TH');
 const gv   = id => parseFloat(document.getElementById(id)?.value) || 0;
 const sv   = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v > 0 ? fmt(v) + ' บาท' : '-'; };
 const fmtF = n => n > 0 ? fmt(n) + ' บ.' : '-';
+const thaiNum = s => String(s ?? '').replace(/\d/g, d => '๐๑๒๓๔๕๖๗๘๙'[d]);
 let dc = {};
 
 
@@ -440,6 +443,20 @@ let dc = {};
 
 .sum-print-wrap{background:#fff;max-width:780px;margin:0 auto;padding:20px 28px;border:1px solid var(--border);font-family:'Sarabun',sans-serif;font-size:13px;line-height:1.5}
 .sm-page{page-break-after:always}
+
+/* =====================================================
+   PREVIEW TOOLBAR — ลอกรูปแบบจากไฟล์ 05.Budgeted-Expenses.html
+   ===================================================== */
+.print-toolbar{display:flex;gap:10px;justify-content:center;align-items:flex-start;flex-wrap:wrap;margin-bottom:20px;}
+.btn-back-form{background:#fff;color:#374151;border:2px solid var(--gray-200);border-radius:8px;padding:10px 22px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;}
+.btn-back-form:hover{border-color:#9ca3af;transform:translateY(-1px);}
+.btn-do-print{background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:8px;padding:10px 28px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(16,185,129,.3);display:flex;align-items:center;gap:6px;transition:all .2s;}
+.btn-do-print:hover{background:linear-gradient(135deg,#059669,#047857);transform:translateY(-1px);}
+
+/* เมื่ออยู่ในโหมดดูตัวอย่างรายงาน — ซ่อนแถบบนสุด (กดปุ่มย้อนกลับผิดบ่อย) และข้อมูลโครงการ/หลักสูตรที่ใช้ร่วมกัน */
+body.report-preview-mode .site-header,
+body.report-preview-mode .shared-meta-box,
+body.report-preview-mode footer{display:none!important;}
 .sm-page:last-child{page-break-after:avoid}
 .sm-pgnum{text-align:right;font-size:13px;margin-bottom:5px}
 .sm-hdr{text-align:center;margin-bottom:12px}
@@ -1123,10 +1140,13 @@ function sumGoPreview(){
   sumBuildDoc();
   smPS().querySelector('#sv-form').classList.remove('sv-active');
   smPS().querySelector('#sv-preview').classList.add('sv-active');
+  document.body.classList.add('report-preview-mode');
+  window.scrollTo(0,0);
 }
 function sumGoForm(){
   smPS().querySelector('#sv-preview').classList.remove('sv-active');
   smPS().querySelector('#sv-form').classList.add('sv-active');
+  document.body.classList.remove('report-preview-mode');
 }
 
 
@@ -1747,15 +1767,15 @@ function sumBuildDoc(){
                   style="width: 100%; text-align: center; font-weight: bold; font-family: 'Sarabun', sans-serif; background: transparent; border: none; outline: none; padding: 2px 0 2px 0; line-height: 1.5;">
          </div>
          <div style="width: 100%; margin-bottom: 1px;">
-           <input class="rpt-edit" type="text" value="หลักสูตร ${title} รุ่นที่ ${run}" 
+           <input class="rpt-edit" type="text" value="หลักสูตร ${thaiNum(title)} รุ่นที่ ${thaiNum(run)}" 
                   style="width: 100%; text-align: center;font-weight: bold; font-family: 'Sarabun', sans-serif; background: transparent; border: none; outline: none; padding: 2px 0 2px 0; line-height: 1.5;">
          </div>
          <div style="width: 100%; margin-bottom: 1px;">
-           <input class="rpt-edit" type="text" value="เลขที่รุ่นหลักสูตร ${runno} ในวันที่ ${date}" 
+           <input class="rpt-edit" type="text" value="เลขที่รุ่นหลักสูตร ${thaiNum(runno)} ในวันที่ ${thaiNum(date)}" 
                   style="width: 100%; text-align: center;font-weight: bold; font-family: 'Sarabun', sans-serif; background: transparent; border: none; outline: none; padding: 2px 0 2px 0; line-height: 1.5;">
          </div>
          <div style="width: 100%; margin-bottom: 1px;">
-           <input class="rpt-edit" type="text" value="ณ ${place}" 
+           <input class="rpt-edit" type="text" value="ณ ${thaiNum(place)}" 
                   style="width: 100%; text-align: center;font-weight: bold; font-family: 'Sarabun', sans-serif; background: transparent; border: none; outline: none; padding: 2px 0 2px 0; line-height: 1.5;">
          </div>
        </div>`;
