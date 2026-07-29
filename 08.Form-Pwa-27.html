@@ -1060,8 +1060,8 @@ ${originalStyles}
   }
 }
   if (publicUrl) {
-  const PDF_KEY   = 'pdf08';        // ← เปลี่ยนตามไฟล์: pdf05 / pdf06 / pdf07 / pdf08 / pdf09
-  const courseNo  = ''no08;
+  const PDF_KEY  = 'pdf08';
+  const courseNo = window.__courseNo08 || '';
   if (courseNo && typeof gsApi === 'function') {
     try {
       await gsApi('updateCourseField', {
