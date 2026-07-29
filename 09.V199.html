@@ -10,7 +10,17 @@
    RESET & BASE
    ============================================================ */
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Sarabun',sans-serif;background:#f3f4f6;color:#1e2533;font-size:14px;line-height:1.5}
+html{height:100%}
+body{
+  font-family:'Sarabun',sans-serif;
+  background:#f3f4f6;
+  color:#1e2533;
+  font-size:14px;
+  line-height:1.5;
+  display:flex;
+  flex-direction:column;
+  min-height:100vh;
+}
 
 /* ============================================================
    SITE HEADER
@@ -29,7 +39,13 @@ body{font-family:'Sarabun',sans-serif;background:#f3f4f6;color:#1e2533;font-size
 /* ============================================================
    MAIN LAYOUT
    ============================================================ */
-.page{max-width:1060px;margin:0 auto;padding:20px 24px 60px}
+.page{
+  max-width:1060px;
+  margin:0 auto;
+  padding:20px 24px 60px;
+  flex:1 0 auto;
+  width:100%;
+}
 
 /* ============================================================
    INPUT PANEL (like file 08)
@@ -77,12 +93,25 @@ body{font-family:'Sarabun',sans-serif;background:#f3f4f6;color:#1e2533;font-size
 .row-grand td{font-weight:700;background:#d9e1f2}
 
 /* ============================================================
+   FOOTER STYLE
+   ============================================================ */
+.site-footer{
+  background:#0f2744;
+  color:rgba(255,255,255,.4);
+  text-align:center;
+  padding:14px;
+  font-size:11px;
+  flex-shrink:0;
+  width:100%;
+}
+
+/* ============================================================
    PRINT MEDIA
    ============================================================ */
 @page{size:A4 portrait;margin:0.5in 0.47in 0 0.47in}
 @media print{
-  .site-header,#input-panel,footer{display:none!important}
-  body{background:#fff!important}
+  .site-header,#input-panel,.site-footer{display:none!important}
+  body{background:#fff!important;min-height:auto!important}
   .page{max-width:100%!important;padding:0!important;margin:0!important}
   #doc-display{padding:0!important;border:none!important;border-radius:0!important;background:transparent!important}
 }
@@ -157,7 +186,7 @@ body{font-family:'Sarabun',sans-serif;background:#f3f4f6;color:#1e2533;font-size
 
 </div><!-- end .page -->
 
-<footer style="background:#0f2744;color:rgba(255,255,255,.4);text-align:center;padding:14px;font-size:11px">
+<footer class="site-footer">
   <strong style="color:rgba(255,255,255,.65)">รายงาน · กฝภ.1 · กปภ.</strong> ·
   ข้อมูลยังไม่ครบถ้วน อยู่ระหว่างปรับปรุงเพิ่มเติม
 </footer>
