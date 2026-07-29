@@ -37,6 +37,7 @@ body{font-family:'Sarabun',sans-serif;background:#f3f4f6;color:#1e2533;font-size
 #input-panel{
   background:#f0f4f8;border:2px solid #1d5fa8;border-radius:12px;
   padding:18px 22px;margin-bottom:20px;
+  display:none;
 }
 #input-panel h3{margin:0 0 14px;font-size:15px;color:#0f2744;border-bottom:1px solid #c0d0e0;padding-bottom:8px;display:flex;align-items:center;gap:8px}
 .ip-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px 18px}
@@ -80,7 +81,7 @@ body{font-family:'Sarabun',sans-serif;background:#f3f4f6;color:#1e2533;font-size
    ============================================================ */
 @page{size:A4 portrait;margin:0.5in 0.47in 0 0.47in}
 @media print{
-  .site-header,#input-panel{display:none!important}
+  .site-header,#input-panel,footer{display:none!important}
   body{background:#fff!important}
   .page{max-width:100%!important;padding:0!important;margin:0!important}
   #doc-display{padding:0!important;border:none!important;border-radius:0!important;background:transparent!important}
@@ -89,8 +90,7 @@ body{font-family:'Sarabun',sans-serif;background:#f3f4f6;color:#1e2533;font-size
 .btn-save-pdf{background:#1a7a4a;color:#fff;border:none;border-radius:6px;padding:7px 20px;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit}
 .btn-save-pdf:hover{background:#22a05e}
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -157,6 +157,11 @@ body{font-family:'Sarabun',sans-serif;background:#f3f4f6;color:#1e2533;font-size
 
 </div><!-- end .page -->
 
+<footer style="background:#0f2744;color:rgba(255,255,255,.4);text-align:center;padding:14px;font-size:11px">
+  <strong style="color:rgba(255,255,255,.65)">รายงาน · กฝภ.1 · กปภ.</strong> ·
+  ข้อมูลยังไม่ครบถ้วน อยู่ระหว่างปรับปรุงเพิ่มเติม
+</footer>
+
 <!-- ============================================================
      JAVASCRIPT
      ============================================================ -->
@@ -202,6 +207,7 @@ function fmtMoney2(n){
   return v===0 ? '-' : v.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
 const gv = id => (document.getElementById(id)?.value?.trim()||'');
+const thaiNum = s => String(s ?? '').replace(/\d/g, d => '๐๑๒๓๔๕๖๗๘๙'[d]);
 
 function toISODate(v){
   if(!v) return '';
@@ -585,11 +591,11 @@ function buildDocHtml(){
 <div class="doc-title">
   <input class="hdr-inp" id="ph_title" value="">
   <input class="hdr-inp" id="ph_title" value="รายละเอียดค่าใช้จ่ายกรณีจัดซื้อ / จัดจ้างพัสดุ">
-  <input class="hdr-inp" id="ph_title" value="ที่เกี่ยวกับค่าใช้จ่ายในการบริหารงานที่มีวงเงินฯ ครั้งละไม่เกิน 10,000 บาท">
+  <input class="hdr-inp" id="ph_title" value="${thaiNum('ที่เกี่ยวกับค่าใช้จ่ายในการบริหารงานที่มีวงเงินฯ ครั้งละไม่เกิน 10,000 บาท')}">
 </div>
 <div class="doc-meta">
-  <input class="hdr-inp" id="ph_line1" value='หลักสูตร "${title}" รุ่นที่ ${run}'>
-  <input class="hdr-inp" id="ph_line2" value="เลขที่รุ่นหลักสูตร ${runno}${dateStr?' ในวันที่ '+dateStr:''}">
+  <input class="hdr-inp" id="ph_line1" value='หลักสูตร "${title}" รุ่นที่ ${thaiNum(run)}'>
+  <input class="hdr-inp" id="ph_line2" value="เลขที่รุ่นหลักสูตร ${thaiNum(runno)}${dateStr?' ในวันที่ '+thaiNum(dateStr):''}">
   <input class="hdr-inp" id="ph_line3" value="${location?'ณ '+location:''}">
   <input class="hdr-inp" id="ph_line4" value="">
 </div>
@@ -641,7 +647,40 @@ document.addEventListener('DOMContentLoaded', function(){
   autoLoadFromFile01();
 });
 
-function savePdf(btn){
+/* ── SAVE PDF (Puppeteer) — ก็อปรูปแบบมาจากไฟล์ 06.Sum-Training-Expenses.html ── */
+// URL ของ Puppeteer PDF server ที่ deploy ไว้บน Render (จุดเดียวกับที่ไฟล์ 06 ใช้)
+const PDF_SERVER_URL = 'https://trainfin.onrender.com/generate-pdf';
+
+// ===== Supabase (สำหรับอัปโหลด PDF ที่สร้างเสร็จแล้วขึ้นเก็บถาวร) =====
+const SUPABASE_URL = 'https://dcaydbxyjisegqzzildq.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjYXlkYnh5amlzZWdxenppbGRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2OTk5NDgsImV4cCI6MjEwMDI3NTk0OH0.cEk8k90NeTTnkZV0Sny7nuN8UbW15_eW8S_HTQSBwwA';
+const supabaseClient = (typeof window.supabase !== 'undefined')
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
+
+// อัปโหลด PDF ขึ้น Supabase Storage (bucket: pdfs) — คืนค่า public URL หรือ null ถ้าไม่สำเร็จ
+async function uploadPdfToSupabase09(pdfBlob, fname){
+  if(!supabaseClient){ console.warn('Supabase client ยังไม่พร้อม (โหลด SDK ไม่สำเร็จ)'); return null; }
+  try {
+    const asciiSafe = fname
+      .replace(/[^\w.\-]+/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_|_$/g, '') || 'report';
+    const fileName = `${asciiSafe}-${Date.now()}.pdf`;
+    const pdfFile  = new File([pdfBlob], fileName, { type: 'application/pdf' });
+    const { error: uploadError } = await supabaseClient
+      .storage.from('pdfs')
+      .upload(fileName, pdfFile, { cacheControl: '3600', upsert: true });
+    if(uploadError) throw uploadError;
+    const { data } = supabaseClient.storage.from('pdfs').getPublicUrl(fileName);
+    return data.publicUrl;
+  } catch(err){
+    console.error('uploadPdfToSupabase09 error:', err);
+    return null;
+  }
+}
+
+async function savePdf(btn){
   const el = document.getElementById('doc-display');
   if(!el || !el.innerHTML.trim()){ alert('ไม่พบข้อมูลเอกสาร'); return; }
 
@@ -653,100 +692,93 @@ function savePdf(btn){
 
   btn.disabled = true; btn.textContent = '⏳ กำลังสร้าง...';
 
-  const clone = el.cloneNode(true);
+  try {
+    const clone = el.cloneNode(true);
 
-  /* เอากรอบเทาจาง/padding/background ของ #doc-display (สำหรับแสดงผลบนหน้าจอ) ออก
-     ไม่ให้ติดไปใน PDF/พิมพ์ */
-  clone.style.border       = 'none';
-  clone.style.borderRadius = '0';
-  clone.style.background   = 'transparent';
-  clone.style.padding      = '0';
-  clone.style.margin       = '0';
-  clone.style.boxShadow    = 'none';
+    /* เอากรอบเทาจาง/padding/background ของ #doc-display (สำหรับแสดงผลบนหน้าจอ) ออก
+       ไม่ให้ติดไปใน PDF */
+    clone.style.border       = 'none';
+    clone.style.borderRadius = '0';
+    clone.style.background   = 'transparent';
+    clone.style.padding      = '0';
+    clone.style.margin       = '0';
+    clone.style.boxShadow    = 'none';
 
-  /* แปลง input.hdr-inp → div */
-  clone.querySelectorAll('input.hdr-inp').forEach(inp => {
-    const d = document.createElement('div');
-    d.style.cssText = 'font-family:Sarabun,sans-serif;font-size:13px;font-weight:700;color:#000;text-align:center;line-height:1.7;width:100%;';
-    d.textContent = inp.value;
-    inp.parentNode.replaceChild(d, inp);
-  });
-
-  /* แก้ตาราง border */
-  clone.querySelectorAll('table.doc-table').forEach(tbl => {
-    tbl.style.borderCollapse = 'separate';
-    tbl.style.borderSpacing  = '0';
-    tbl.style.width          = '100%';
-    tbl.style.fontSize       = '12.5px';
-  });
-  clone.querySelectorAll('table.doc-table th, table.doc-table td').forEach(cell => {
-    cell.style.border       = 'none';
-    cell.style.borderRight  = '0.5px solid #000';
-    cell.style.borderBottom = '0.5px solid #000';
-    cell.style.padding      = '5px 7px';
-    cell.style.verticalAlign= 'top';
-    cell.style.background   = '#fff';
-  });
-  clone.querySelectorAll('table.doc-table tr').forEach((row, ri) => {
-    Array.from(row.children).forEach((cell, ci) => {
-      if(ci === 0) cell.style.borderLeft = '0.5px solid #000';
-      if(ri === 0) cell.style.borderTop  = '0.5px solid #000';
+    /* แปลง input.hdr-inp → div (คงหน้าตาเดิม ตัดเส้นประ/พื้นหลังของ input ออก) */
+    clone.querySelectorAll('input.hdr-inp').forEach(inp => {
+      const d = document.createElement('div');
+      d.style.cssText = 'font-family:Sarabun,sans-serif;font-size:13px;font-weight:700;color:#000;text-align:center;line-height:1.7;width:100%;';
+      d.textContent = inp.value;
+      inp.parentNode.replaceChild(d, inp);
     });
-  });
 
-  const wrap = document.createElement('div');
-  wrap.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;background:#fff;font-family:Sarabun,sans-serif;';
-  wrap.appendChild(clone);
-  document.body.appendChild(wrap);
+    // ✅ ดึง CSS หลักของหน้าเว็บทั้งดวง (นิยาม .doc-wrap, .doc-table, .row-sub ฯลฯ) ไปแนบด้วย
+    // ไม่งั้นฝั่ง server ไม่รู้จัก class เหล่านี้ ตารางจะไม่มีเส้นขอบ/จัดหน้าตามที่ตั้งใจ
+    const originalStyles = Array.from(document.querySelectorAll('style'))
+      .map(s => s.innerHTML).join('\n');
 
-  setTimeout(()=>{
-    const A4_W_IN = 8.27, A4_H_IN = 11.69;
-    const MARGIN_T = 0.5, MARGIN_R = 0.47, MARGIN_B = 0.2, MARGIN_L = 0.47;
-    const SCALE = 2;
+    // ประกอบเป็นเอกสาร HTML ฉบับสมบูรณ์ ส่งให้ฝั่งเซิร์ฟเวอร์ (Puppeteer) เปิดแล้ว render เป็น PDF จริง
+    const fullHtml = `<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+${originalStyles}
+</style>
+<style>
+  /* Override เฉพาะสำหรับไฟล์ PDF (มาทีหลัง จึงมีลำดับความสำคัญสูงกว่า CSS หลักด้านบน) */
+  * { box-sizing: border-box; }
+  html,body { margin:0; padding:0; background:#fff; font-family:'Sarabun',sans-serif; color:#000; }
+  table.doc-table{ page-break-inside:auto; }
+  table.doc-table tr{ page-break-inside:avoid; page-break-after:auto; }
+</style>
+</head>
+<body>${clone.outerHTML}</body>
+</html>`;
 
-    html2canvas(clone, { scale:SCALE, useCORS:true, logging:false, backgroundColor:'#ffffff' }).then(canvas => {
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({ unit:'in', format:'a4', orientation:'portrait' });
-
-      const pageW  = A4_W_IN;
-      const pageH  = A4_H_IN;
-      const printW = pageW - MARGIN_L - MARGIN_R;          // พื้นที่พิมพ์กว้าง
-      const printH = pageH - MARGIN_T - MARGIN_B;          // พื้นที่พิมพ์สูงต่อหน้า
-
-      const imgW   = canvas.width;
-      const imgH   = canvas.height;
-      const ratio  = printW / (imgW / SCALE);              // px → inch
-      const totalH = (imgH / SCALE) * ratio;               // ความสูงรวมทั้งหมด (inch)
-
-      let yOffset = 0;   // ตำแหน่ง crop ใน inch
-      let page    = 0;
-
-      while(yOffset < totalH){
-        if(page > 0) pdf.addPage();
-
-        // crop canvas ส่วนที่ต้องการ
-        const srcY  = Math.round((yOffset / ratio) * SCALE);   // px ใน canvas
-        const srcH  = Math.round((printH / ratio) * SCALE);    // px ต่อหน้า
-        const slice = document.createElement('canvas');
-        slice.width  = imgW;
-        slice.height = Math.min(srcH, imgH - srcY);
-        const ctx = slice.getContext('2d');
-        ctx.drawImage(canvas, 0, srcY, imgW, slice.height, 0, 0, imgW, slice.height);
-
-        const sliceDataUrl = slice.toDataURL('image/png', 1);
-        const sliceH = (slice.height / SCALE) * ratio;
-        pdf.addImage(sliceDataUrl, 'PNG', MARGIN_L, MARGIN_T, printW, sliceH);
-
-        yOffset += printH;
-        page++;
-      }
-
-      pdf.save(fname + '.pdf');
-    }).finally(()=>{
-      document.body.removeChild(wrap);
-      btn.disabled = false; btn.textContent = '💾 บันทึก PDF';
+    const res = await fetch(PDF_SERVER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        html: fullHtml,
+        filename: fname,
+        // ✅ pdfOptions เฉพาะของไฟล์ 09 — บันทึก PDF ที่สเกลหน้ากระดาษ 100%
+        pdfOptions: {
+          format: 'A4',
+          landscape: false,
+          scale: 1,
+          margin: { top: '12mm', right: '12mm', bottom: '10mm', left: '12mm' },
+          preferCSSPageSize: true,
+          printBackground: true,
+        },
+      })
     });
-  }, 300);
+    if(!res.ok){
+      const errText = await res.text().catch(()=>res.statusText);
+      throw new Error(`เซิร์ฟเวอร์สร้าง PDF ผิดพลาด (${res.status}): ${errText}`);
+    }
+
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = fname + '.pdf';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+
+    // อัปโหลดขึ้น Supabase เก็บถาวรด้วย (ไม่บล็อกการดาวน์โหลดในเครื่อง ถ้าอัปโหลดไม่สำเร็จ
+    // ผู้ใช้ก็ยังได้ไฟล์ในเครื่องตามปกติ แค่ไม่มีลิงก์ถาวรเก็บไว้)
+    const publicUrl = await uploadPdfToSupabase09(blob, fname);
+    if (publicUrl) {
+      console.log('อัปโหลด PDF ขึ้น Supabase สำเร็จ:', publicUrl);
+    }
+
+  } catch(err){
+    console.error('savePdf error:', err);
+    alert('สร้าง PDF ไม่สำเร็จ: ' + err.message + '\n\nตรวจสอบว่าตั้งค่า PDF_SERVER_URL ถูกต้อง และเซิร์ฟเวอร์ Puppeteer เปิดใช้งานอยู่');
+  } finally {
+    btn.disabled = false; btn.textContent = '💾 บันทึก PDF';
+  }
 }
 </script>
 </body>
