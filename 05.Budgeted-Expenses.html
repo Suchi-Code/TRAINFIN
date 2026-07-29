@@ -2400,9 +2400,24 @@ ${originalStyles}
     // อัปโหลดขึ้น Supabase เก็บถาวรด้วย (ไม่บล็อกการดาวน์โหลดในเครื่อง ถ้าอัปโหลดไม่สำเร็จ
     // ผู้ใช้ก็ยังได้ไฟล์ในเครื่องตามปกติ แค่ไม่มีลิงก์ถาวรเก็บไว้)
     const publicUrl = await uploadPdfToSupabase05(blob, fname);
-    if (publicUrl) {
-      console.log('อัปโหลด PDF ขึ้น Supabase สำเร็จ:', publicUrl);
-    }
+    /* ============================================================
+   บันทึกลิงก์ PDF กลับเข้าชีต courses (ให้ 10.PDF-Overview.html ดึงไปแสดง)
+============================================================ */
+      if (publicUrl) {
+        const PDF_KEY   = 'pdf05';        // ← เปลี่ยนตามไฟล์: pdf05 / pdf06 / pdf07 / pdf08 / pdf09
+        const courseNo  = 'document.getElementById('f_courseNo')?.value';
+        if (courseNo && typeof gsApi === 'function') {
+          try {
+            await gsApi('updateCourseField', {
+              no: courseNo,
+              [PDF_KEY]: publicUrl,
+              [PDF_KEY + 'SavedAt']: new Date().toISOString()
+            });
+          } catch (saveErr) {
+            console.warn('บันทึกลิงก์ PDF กลับชีต courses ไม่สำเร็จ:', saveErr);
+          }
+        }
+      }
 
   } catch(err){
     console.error('savePdf05 error:', err);
