@@ -1059,22 +1059,6 @@ ${originalStyles}
     btn.disabled = false; btn.textContent = '💾 บันทึก PDF';
   }
 }
-if (publicUrl) {
-  const PDF_KEY   = 'pdf08';        // ← เปลี่ยนตามไฟล์: pdf05 / pdf06 / pdf07 / pdf08 / pdf09
-  const courseNo  = 'no08';
-  if (courseNo && typeof gsApi === 'function') {
-    try {
-      await gsApi('updateCourseField', {
-        no: courseNo,
-        [PDF_KEY]: publicUrl,
-        [PDF_KEY + 'SavedAt']: new Date().toISOString()
-      });
-    } catch (saveErr) {
-      console.warn('บันทึกลิงก์ PDF กลับชีต courses ไม่สำเร็จ:', saveErr);
-    }
-  }
-}
-  
 </script>
 </body>
 </html>
