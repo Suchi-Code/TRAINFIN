@@ -1048,32 +1048,48 @@ ${originalStyles}
 
     // อัปโหลดขึ้น Supabase เก็บถาวรด้วย (ไม่บล็อกการดาวน์โหลดในเครื่อง ถ้าอัปโหลดไม่สำเร็จ)
     const publicUrl = await uploadPdfToSupabase08(blob, fname);
-    if (publicUrl) {
-      console.log('อัปโหลด PDF ขึ้น Supabase สำเร็จ:', publicUrl);
-    }
-      if (publicUrl) {
-        const PDF_KEY  = 'pdf08';
-        const courseNo = window.__courseNo08 || '';
-        if (courseNo && typeof gsApi === 'function') {
-          try {
-            await gsApi('updateCourseField', {
-              no: courseNo,
-              [PDF_KEY]: publicUrl,
-              [PDF_KEY + 'SavedAt']: new Date().toISOString()
-            });
-          } catch (saveErr) {
-            console.warn('บันทึกลิงก์ PDF กลับชีต courses ไม่สำเร็จ:', saveErr);
+        if (publicUrl) {
+          console.log('อัปโหลด PDF ขึ้น Supabase สำเร็จ:', publicUrl);
+          
+          const PDF_KEY = 'pdf08';
+          
+          // 📌 1. ดึง courseNo (เพิ่มตัวช่วยดึงจากหลายช่องทาง กันค่าว่าง)
+          const courseNo = window.__courseNo08 
+                        || (document.getElementById('courseNo') ? document.getElementById('courseNo').value : '')
+                        || '';
+    
+          console.log('กำลังบันทึก PDF ลิงก์สำหรับ courseNo:', courseNo);
+    
+          if (!courseNo) {
+            console.error('❌ ไม่พบเลขหลักสูตร (courseNo) — ไม่สามารถบันทึกลิงก์ลง Sheet ได้');
+            alert('อัปโหลดไฟล์ขึ้น Supabase สำเร็จแล้ว แต่ไม่พบเลขหลักสูตร (courseNo) เพื่อบันทึกลง Sheet');
+          } else if (typeof gsApi === 'function') {
+            try {
+              // 📌 2. เปลี่ยน action เป็น 'updatePdfUrl' และระบุ sheetName ให้ชัดเจน
+              const res = await gsApi('updatePdfUrl', {
+                no: courseNo,
+                [PDF_KEY]: publicUrl,
+                [PDF_KEY + 'SavedAt']: new Date().toISOString(),
+                sheetName: 'courses' // ระบุชื่อ Sheet ปลายทาง
+              });
+    
+              console.log('✅ บันทึกลิงก์ PDF จาก Supabase ลง Google Sheet สำเร็จ:', res);
+            } catch (saveErr) {
+              console.warn('❌ บันทึกลิงก์ PDF กลับชีต courses ไม่สำเร็จ:', saveErr);
+            }
+          } else {
+            console.error('❌ ไม่พบฟังก์ชัน gsApi');
           }
         }
+        
+      } catch(err){
+        console.error('savePdf08 error:', err);
+        alert('สร้าง PDF ไม่สำเร็จ: ' + err.message + '\n\nตรวจสอบว่าตั้งค่า PDF_SERVER_URL ถูกต้อง และเซิร์ฟเวอร์ Puppeteer เปิดใช้งานอยู่');
+      } finally {
+        btn.disabled = false; 
+        btn.textContent = '💾 บันทึก PDF';
       }
-    
-  } catch(err){
-    console.error('savePdf08 error:', err);
-    alert('สร้าง PDF ไม่สำเร็จ: ' + err.message + '\n\nตรวจสอบว่าตั้งค่า PDF_SERVER_URL ถูกต้อง และเซิร์ฟเวอร์ Puppeteer เปิดใช้งานอยู่');
-  } finally {
-    btn.disabled = false; btn.textContent = '💾 บันทึก PDF';
-  }
-}
+    }
   
 </script>
 </body>
