@@ -1051,7 +1051,22 @@ ${originalStyles}
     if (publicUrl) {
       console.log('อัปโหลด PDF ขึ้น Supabase สำเร็จ:', publicUrl);
     }
-
+      if (publicUrl) {
+        const PDF_KEY  = 'pdf08';
+        const courseNo = window.__courseNo08 || '';
+        if (courseNo && typeof gsApi === 'function') {
+          try {
+            await gsApi('updateCourseField', {
+              no: courseNo,
+              [PDF_KEY]: publicUrl,
+              [PDF_KEY + 'SavedAt']: new Date().toISOString()
+            });
+          } catch (saveErr) {
+            console.warn('บันทึกลิงก์ PDF กลับชีต courses ไม่สำเร็จ:', saveErr);
+          }
+        }
+      }
+    
   } catch(err){
     console.error('savePdf08 error:', err);
     alert('สร้าง PDF ไม่สำเร็จ: ' + err.message + '\n\nตรวจสอบว่าตั้งค่า PDF_SERVER_URL ถูกต้อง และเซิร์ฟเวอร์ Puppeteer เปิดใช้งานอยู่');
@@ -1059,21 +1074,7 @@ ${originalStyles}
     btn.disabled = false; btn.textContent = '💾 บันทึก PDF';
   }
 }
-  if (publicUrl) {
-  const PDF_KEY  = 'pdf08';
-  const courseNo = window.__courseNo08 || '';
-  if (courseNo && typeof gsApi === 'function') {
-    try {
-      await gsApi('updateCourseField', {
-        no: courseNo,
-        [PDF_KEY]: publicUrl,
-        [PDF_KEY + 'SavedAt']: new Date().toISOString()
-      });
-    } catch (saveErr) {
-      console.warn('บันทึกลิงก์ PDF กลับชีต courses ไม่สำเร็จ:', saveErr);
-    }
-  }
-}
+  
 </script>
 </body>
 </html>
