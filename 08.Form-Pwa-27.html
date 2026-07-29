@@ -6,9 +6,9 @@
 <style type="text/css">
 @import url('https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,700;1,400&display=swap');
 @page { size: A4; margin: 10mm; }
-body { margin:4pt; font-family:'TH Sarabun PSK','Sarabun',sans-serif; font-size:15px; color:#000; }
+body { margin:0; font-family:'TH Sarabun PSK','Sarabun',sans-serif; font-size:15px; color:#000; }
 td { font-size:15px; padding:2px 4px; }
-.box_data1 { font-family:'TH Sarabun PSK','Sarabun',sans-serif; font-size:15px; height:26px; line-height:26px; border:0px; border-bottom:1px dotted #333; background-color:transparent; box-sizing:border-box; }
+.box_data1 { font-family:'TH Sarabun PSK','Sarabun',sans-serif; font-size:15px; height:26px; line-height:26px; border:0px; border-bottom:1px dotted #333; background-color:transparent; box-sizing:border-box; -webkit-appearance:none; appearance:none; outline:none; box-shadow:none; }
 .headTitle { font-size:18px; font-weight:bold; }
 .border-bottom-line { border-bottom:1px solid #000 !important; }
 .no-border-bottom { border-bottom:0px !important; }
@@ -270,13 +270,13 @@ td { font-size:15px; padding:2px 4px; }
             <div style="font-size:18px;font-weight:normal;">ใบหักล้างเงินยืมทดรองจ่าย (กปภ.บง.27)</div>
           </td>
         <td width="30%" valign="top" style="padding:0px;">
-              <div class="border-bottom-line" style="padding: 8px; height: 19px;">
+              <div class="border-bottom-line" style="padding: 4px 8px;">
                   &nbsp;เลขที่ : <input name="txt_doc_no" type="text" class="box_data1 no-border-bottom" style="text-align:center; width:190px;" value="" />
               </div>
-              <div class="border-bottom-line" style="padding: 8px; height: 19px;">
+              <div class="border-bottom-line" style="padding: 4px 8px;">
                   &nbsp;วันที่ : <input name="txt_doc_date" type="text" class="box_data1 no-border-bottom" style="text-align:center; width:190px;" value="" />
               </div>
-              <div style="padding: 8px; height: 19px;">
+              <div style="padding: 4px 8px;">
                   &nbsp;เลขที่ใบยืม : <input name="txt_borrow_no" type="text" class="box_data1 no-border-bottom" style="text-align:center; width:160px;" value="" />
               </div>
           </td>
@@ -1027,7 +1027,7 @@ ${originalStyles}
         pdfOptions: {
           format: 'A4',
           landscape: false,
-          scale: 1,
+          scale: 0.95,
           margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' },
           preferCSSPageSize: true,
           printBackground: true, // คงพื้นหลังสีเทาของ .print-bg-gray/.print-bg-darkgray ไว้ใน PDF
