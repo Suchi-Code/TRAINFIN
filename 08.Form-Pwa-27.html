@@ -741,6 +741,7 @@ document.addEventListener('DOMContentLoaded', function() {
   } catch(e) {}
 
   const no08    = d.no || d.courseNo || '';
+  window.__courseNo08 = no08;
   const course  = d.course || '';
   const batch   = d.batch  || '';
   console.log('[08] budgetSlotData:', d);
