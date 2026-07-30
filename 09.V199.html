@@ -403,6 +403,7 @@ async function gsApi(action, data, no) {
    โหลดข้อมูลจาก Google Sheet — key คือ "เลขที่หลักสูตร" (no)
    ============================================================ */
 async function loadFromGSheet09(no){
+   window.__courseNo09 = no;
   if(!no){
     document.getElementById('doc-display').innerHTML =
       '<div style="text-align:center;padding:40px;color:#888">⚠️ ไม่พบเลขที่หลักสูตร กรุณาเข้าจากหน้ารายการหลักสูตร</div>';
@@ -771,6 +772,15 @@ ${originalStyles}
     const publicUrl = await uploadPdfToSupabase09(blob, fname);
     if (publicUrl) {
       console.log('อัปโหลด PDF ขึ้น Supabase สำเร็จ:', publicUrl);
+      const courseNo = window.__courseNo09 || '';
+      if (courseNo) {
+        try {
+          await gsApi('updatePdfUrl', {
+            no: courseNo, pdf09: publicUrl,
+            pdf09SavedAt: new Date().toISOString(), sheetName: 'courses'
+          });
+        } catch(e) { console.warn('บันทึกลิงก์ PDF 09 ไม่สำเร็จ:', e); }
+      }
     }
 
   } catch(err){
