@@ -2056,14 +2056,14 @@ ${originalStyles}
     const publicUrl = await uploadPdfToSupabase06(blob, fname);
     if (publicUrl) {
       console.log('อัปโหลด PDF ขึ้น Supabase สำเร็จ:', publicUrl);
-      const courseNo = document.getElementById('f_courseNo')?.value || '';
+      const courseNo = shGet('sm_runno') || shGet('sh_runno') || '';
         if (courseNo) {
           try {
             await gsApi('updatePdfUrl', {
-              no: courseNo, pdf05: publicUrl,
-              pdf05SavedAt: new Date().toISOString(), sheetName: 'courses'
+              no: courseNo, pdf06: publicUrl,
+              pdf06SavedAt: new Date().toISOString(), sheetName: 'courses'
             });
-          } catch(e) { console.warn('บันทึกลิงก์ PDF 05 ไม่สำเร็จ:', e); }
+          } catch(e) { console.warn('บันทึกลิงก์ PDF 06 ไม่สำเร็จ:', e); }
         }
     }
 
