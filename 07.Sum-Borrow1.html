@@ -1543,7 +1543,6 @@ function buildTable(){
     }
   }
 
-  // ── ผลรวมก่อนวิทยากรภายใน/ประธาน (สำหรับหมายเหตุยืมเงินทดลองจ่าย) ──
   const coreOrderDesc = ['ext2','ext1','stafftravel','food','venue','lump','misc','office','fuel'];
   let preInternalLast = 0;
   for(const k of coreOrderDesc){ if(nums[k]){ preInternalLast = nums[k]; break; } }
@@ -1615,7 +1614,6 @@ function buildTable(){
   const aGrandTotal=aGorTotal+aKorTotal;
   rows.push(`<tr class="bb2">${td('รวมเงินข้อ ก. และ ข. เป็นเงิน ทั้งสิ้น','tc tw bgray bt2 double-bottom')+td('','bgray bt2 double-bottom')+td(fmt(grandTotal),'tr tw bgray bt2 double-bottom')+td('','bgray bt2 double-bottom')+td(fmt(aGrandTotal),'tr tw bgray bt2 double-bottom')+td(fmt(grandTotal-aGrandTotal),'tr tw bgray bt2 double-bottom')}</tr>`);
 
-  // คำนวณยอดเงินรวมเฉพาะข้อ ก. สำหรับยืมเงินทดลองจ่าย (ไม่รวมวิทยากรภายใน/ประธาน — โอนหน่วยงานต้นสังกัด ไม่ต้องยืม)
   const extTotalNote = extTotal;
   const baseNote = preInternalLast;
 
@@ -1637,7 +1635,7 @@ function buildTable(){
       <div style="overflow: hidden;">
     
         <div class="note-row-1">
-          <span style="color: #000;"> </span><input class="rpt-edit" type="text" placeholder="1. ยืมเงินทดลองจ่าย ข้อ ก. (1. - ${baseNote}.) เป็นเงิน ${fmt(extTotalNote)} บาท" style="width: 95%; font-family: 'Sarabun', sans-serif; font-size: 14px; color: #000;">
+          <span style="color: #000;"> </span><input class="rpt-edit" type="text" placeholder="พิมพ์เพื่อใส่หมายเหตุ (หากไม่มีให้ว่างไว้)" style="width: 95%; font-family: 'Sarabun', sans-serif; font-size: 14px; color: #000;">
         </div>
         <div class="note-row-2">
           <span style="color: #000;"> </span><input class="rpt-edit" type="text" placeholder="ระบุหมายเหตุเพิ่มเติมที่นี่ (ถ้ามี)..." style="width: 95%; font-family: 'Sarabun', sans-serif; font-size: 14px; color: #000;">
