@@ -1,593 +1,492 @@
-<!DOCTYPE html>
-<html lang="th" data-theme="winter" style="background:#0f172a;">
+<!doctype html>
+<html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>รายละเอียดหลักสูตร - กองฝึกอบรมภูมิภาค 1</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>รายละเอียดหลักสูตร | PWA Academy</title>
 
-    <!-- Google Fonts: Prompt -->
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Tailwind (layout utilities only — visual system below uses the shared PWA Academy CSS) -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Tailwind CSS & DaisyUI -->
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" />
-    <script src="https://cdn.tailwindcss.com"></script>
+  <!-- ── Shared modules (ต้องเรียงลำดับนี้เสมอ: config -> supabase SDK -> auth/date/gas-api) ── -->
+  <script src="js/config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/date-th.js"></script>
+  <script src="js/gas-api.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script>checkAuth();</script>
 
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Prompt', 'sans-serif'],
-                    },
-                    animation: {
-                        'float': 'float 6s ease-in-out infinite',
-                    },
-                    keyframes: {
-                        float: {
-                            '0%, 100%': { transform: 'translateY(0)' },
-                            '50%': { transform: 'translateY(-20px)' },
-                        }
-                    }
-                }
-            }
-        }
-    </script>
 
-    <!-- Vanta.js (Three.js Dependencies) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.waves.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap');
+    :root{--navy:#092c4c;--blue:#0b6aab;--sky:#eaf4fb;--line:#dce5ec;--ink:#1b2a38;--muted:#627587;--green:#197a5d;--amber:#bf7800;--purple:#7865c8;--teal:#0f8a83;--coral:#c4562f;--bg:#f3f6f8}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:"Prompt","Segoe UI",Tahoma,Arial,sans-serif;font-size:14px}
+    .layout{display:flex;min-height:100vh}
 
-    <!-- ═══ ตรวจสอบสิทธิ์การเข้าใช้งาน (Supabase Auth Route Guard) ═══
-         เช็กก่อนแสดงผลหน้าเว็บ ถ้ายังไม่ได้ล็อกอินจะเด้งกลับไปหน้า index.html ทันที
-         (ประกาศ SUPABASE_URL/ANON_KEY/supabaseClient ไว้ที่นี่แบบ global เพื่อให้
-          โค้ดส่วนอื่นของหน้านี้เรียกใช้ supabaseClient ตัวเดียวกันซ้ำได้ ไม่ต้องประกาศซ้ำ) -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        const SUPABASE_URL      = 'https://dcaydbxyjisegqzzildq.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjYXlkYnh5amlzZWdxenppbGRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2OTk5NDgsImV4cCI6MjEwMDI3NTk0OH0.cEk8k90NeTTnkZV0Sny7nuN8UbW15_eW8S_HTQSBwwA';
-        const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+    /* ===== Sidebar ===== */
+    .sidebar{position:sticky;top:0;align-self:flex-start;height:100vh;width:260px;flex:0 0 260px;background:var(--navy);color:#dce8f2;padding:20px 16px;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;transition:width .22s ease,flex-basis .22s ease,padding .22s ease}
+    .sidebar::-webkit-scrollbar{width:5px}
+    .sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:99px}
+    .sidebar-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:0 6px 20px;border-bottom:1px solid rgba(255,255,255,.15);margin-bottom:0}
+    .brand{display:flex;align-items:center;gap:11px;min-width:0;overflow:hidden}
+    .mark{height:37px;width:37px;flex:0 0 37px;border-radius:10px;object-fit:cover;background:#fff}
+    .brand-text{min-width:0}
+    .brand b{display:block;color:#fff;font-size:15px;white-space:nowrap}
+    .brand span{font-size:11px;color:#a9c3d6;white-space:nowrap}
+    .nav{padding-top:20px}
+    .nav-label{font-size:11px;letter-spacing:.08em;color:#82a4bd;padding:0 12px 10px;white-space:nowrap;overflow:hidden}
+    .nav a{display:flex;align-items:center;gap:12px;text-decoration:none;color:#c9dae7;padding:12px;border-radius:8px;margin:3px 0;transition:.15s;white-space:nowrap;overflow:hidden}
+    .nav a:hover{background:rgba(255,255,255,.08)}
+    .nav a.active{background:#1275b4;color:#fff;font-weight:700;box-shadow:inset 3px 0 #91d8ff}
+    .nav svg{width:19px;height:19px;flex:0 0 19px;fill:none;stroke:currentColor;stroke-width:1.8}
 
-        async function checkAuth() {
-            if (!supabaseClient) { console.warn('Supabase SDK โหลดไม่สำเร็จ — ข้ามการตรวจสิทธิ์'); return; }
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) {
-                alert("⚠️ กรุณาเข้าสู่ระบบก่อนใช้งาน");
-                window.location.href = 'index.html';
-            }
-        }
-        checkAuth();
-    </script>
+    /* ── รายการแบบขั้นบันได (breadcrumb hierarchy ในเมนู) ── */
+    .nav .step-1{padding-left:12px}
+    .nav .step-2{padding-left:28px;font-size:13px}
+    .nav .step-2 svg{width:16px;height:16px;flex:0 0 16px}
+    .sidebar.collapsed .nav .step-1,.sidebar.collapsed .nav .step-2{padding-left:8px;padding-right:8px}
+
+    .user{margin-top:auto;background:rgba(255,255,255,.07);padding:13px;border-radius:9px;font-size:12px;overflow:hidden;white-space:nowrap;flex:0 0 auto}
+    .user b{color:#fff;display:block;margin-bottom:3px}
+    .user span{color:#a9c3d6}
+
+    .sidebar-toggle{flex:0 0 26px;width:26px;height:26px;background:transparent;border:0;color:#cfe0ee;cursor:pointer;display:grid;place-items:center;transition:.15s;margin-top:2px;padding:0}
+    .sidebar-toggle:hover{color:#fff}
+    .sidebar-toggle svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.2;transition:transform .22s ease}
+    .sidebar-toggle.collapsed svg{transform:rotate(180deg)}
+
+    .sidebar.collapsed{width:76px;flex-basis:76px;padding-left:12px;padding-right:12px}
+    .sidebar.collapsed .sidebar-head{flex-direction:column;align-items:center;gap:12px;padding-left:0;padding-right:0}
+    .sidebar.collapsed .brand{justify-content:center}
+    .sidebar.collapsed .brand-text,.sidebar.collapsed .nav-label,.sidebar.collapsed .user{display:none}
+    .sidebar.collapsed .nav a{justify-content:center;padding-left:8px;padding-right:8px}
+    .sidebar.collapsed .nav a span{display:none}
+
+    .main{width:calc(100% - 260px);max-width:calc(100% - 260px);padding:30px 34px 42px;min-width:0;transition:width .22s ease,max-width .22s ease;overflow-x:hidden}
+    .main.wide{width:calc(100% - 76px);max-width:calc(100% - 76px)}
+
+    .topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:22px}
+    .crumb{font-size:12px;color:var(--muted);margin-bottom:5px}
+    .topbar h1{font-size:25px;margin:0;color:var(--navy);letter-spacing:-.4px;font-weight:700}
+
+    /* ===== Shared panel / card system ===== */
+    .panel{background:#fff;border:1px solid #e0e8ed;border-radius:11px;overflow:hidden;margin-bottom:20px}
+    .panel-head{padding:19px 20px 15px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+    .panel-head h2{font-size:16px;color:var(--navy);margin:0 0 4px;font-weight:700}
+    .panel-head p{margin:0;color:var(--muted);font-size:12px}
+    .count-chip{background:var(--sky);color:#0a5c8c;border:1px solid #cfe4f0;border-radius:999px;padding:6px 13px;font-size:12px;font-weight:700;white-space:nowrap}
+
+    .summary{display:grid;grid-template-columns:repeat(3,minmax(200px,1fr));gap:14px;padding:20px}
+    .card{background:#fff;border:1px solid #e5ebef;border-radius:10px;padding:16px 18px;box-shadow:0 2px 8px rgba(19,47,68,.035);display:flex;flex-direction:column;gap:2px}
+    .card .top-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+    .card label{font-size:12px;color:var(--muted);display:block}
+    .card .ic{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;flex:0 0 28px}
+    .card .ic svg{width:15px;height:15px;stroke-width:2.2}
+    .card strong{font-size:19px;color:var(--navy);line-height:1.3}
+    .card .sub{font-size:11px;margin-top:5px;color:var(--muted)}
+    .card .empty-val{color:#9aa9b4;font-size:13px;font-weight:500}
+    .spk-name{font-size:12.5px;color:var(--blue);font-weight:600;line-height:1.7}
+    .spk-int{font-size:12px;color:var(--purple);font-weight:600}
+
+    /* ===== Course detail panel ===== */
+    .course-grid{display:grid;grid-template-columns:380px 1fr;gap:26px;padding:22px}
+    .course-image-wrap{position:relative;border-radius:12px;overflow:hidden;background:#e5ebef;aspect-ratio:4/3}
+    .course-image-wrap img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .35s ease}
+    .course-image-wrap::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(6,20,34,.82),rgba(6,20,34,.08) 55%,rgba(6,20,34,0) 75%);pointer-events:none}
+    .img-badge{position:absolute;top:12px;left:12px;z-index:1;display:inline-flex;align-items:center;gap:6px;background:rgba(9,44,76,.72);color:#dff1fb;font-size:10.5px;padding:5px 10px;border-radius:999px;backdrop-filter:blur(2px)}
+    .img-badge .dot{width:6px;height:6px;border-radius:50%;background:#38d9f5}
+    .img-caption{position:absolute;left:14px;right:14px;bottom:12px;z-index:1;color:#fff}
+    .img-caption .cap-label{font-size:10.5px;color:#bcdcee;margin-bottom:2px}
+    .img-caption .cap-text{font-size:13.5px;font-weight:600;line-height:1.4}
+
+    .course-info{display:flex;flex-direction:column;justify-content:center;gap:9px;min-width:0}
+    .course-tag{display:inline-flex;align-items:center;gap:6px;background:var(--sky);color:#0a5c8c;border:1px solid #cfe4f0;border-radius:999px;padding:5px 12px;font-size:11.5px;font-weight:600;width:fit-content}
+    .course-tag .dot{width:6px;height:6px;border-radius:50%;background:#0b6aab}
+    .course-info h2{margin:4px 0 2px;font-size:22px;color:var(--navy);line-height:1.45;font-weight:700}
+    .meta-line{font-size:13px;color:var(--muted)}
+    .meta-line.strong{color:#1c3547;font-weight:600;font-size:13.5px}
+    .course-actions{display:flex;gap:10px;margin-top:14px}
+    .secondary{border:1px solid #ccd9e0;background:#fff;color:#506978;border-radius:8px;padding:10px 18px;font:inherit;font-weight:700;cursor:pointer;transition:.15s}
+    .secondary:hover{background:#f5f8fa;border-color:#b9cddb}
+    .primary{border:0;background:var(--blue);color:#fff;border-radius:8px;padding:10px 18px;font:inherit;font-weight:700;cursor:pointer;transition:.15s}
+    .primary:hover{background:#07598f}
+
+    /* ===== Report tiles ===== */
+    .report-grid{display:grid;grid-template-columns:repeat(3,minmax(150px,1fr));gap:14px;padding:20px}
+    .report-tile{display:flex;align-items:center;gap:12px;text-decoration:none;border:1px solid #e5ebef;border-radius:10px;padding:14px 16px;transition:.15s;background:#fff}
+    .report-tile:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(19,47,68,.09);border-color:#cfe4f0}
+    .report-tile .r-ic{width:40px;height:40px;flex:0 0 40px;border-radius:10px;display:grid;place-items:center;font-size:19px}
+    .report-tile .r-name{font-size:13.2px;font-weight:600;color:#1c3547;line-height:1.4}
+
+    @media(max-width:1200px){.summary{grid-template-columns:repeat(2,1fr)}.report-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:1050px){.main{padding:22px}.sidebar{width:215px;flex-basis:215px}.main{width:calc(100% - 215px)}.course-grid{grid-template-columns:1fr}.course-image-wrap{aspect-ratio:16/9}}
+    @media(max-width:720px){.sidebar{display:none}.main{width:100%;padding:18px}.summary{grid-template-columns:1fr}.report-grid{grid-template-columns:1fr}.topbar{align-items:flex-start;flex-direction:column}}
+  </style>
 </head>
-<body class="font-sans bg-slate-900 text-slate-800 antialiased overflow-x-hidden">
+<body>
+<div class="layout">
+  <div id="sidebarRoot"></div>
+  <script>
+    renderSidebar('training', [
+      { cls: 'step-1',        href: 'training_courses_gfr1.html', title: 'หลักสูตรการฝึกอบรม', icon: SIDEBAR_STEP_ICON.training },
+      { cls: 'step-2 active', href: '#',                          title: 'รายละเอียดหลักสูตร',  icon: SIDEBAR_STEP_ICON.chevron }
+    ]);
+  </script>
 
-    <!-- ═══════════════════════════════════════════════════════
-         แถบด้านบน (topbar) — สไตล์เดียวกับ site-header ที่ใช้ในไฟล์รายงาน 05/06/07
-    ═══════════════════════════════════════════════════════ -->
-    <header class="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-md border-b border-white/10 shadow-lg">
-      <div class="container mx-auto max-w-6xl flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3">
-        <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-base shadow-lg shadow-blue-500/30">🗃️</div>
-          <div>
-            <div class="text-[13px] font-semibold text-white leading-tight">ระบบสร้างรายงานการฝึกอบรม</div>
-            <div class="text-[11px] text-slate-400 leading-tight">กองฝึกอบรมภูมิภาค 1 · กปภ.</div>
-          </div>
-        </div>
-            <a href="training_courses_gfr1.html" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-transparent text-white/80 border border-white/20 rounded-lg text-xs font-medium hover:bg-white/10 hover:text-white transition-all">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-              ย้อนกลับ
-            </a>
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <div class="crumb">หลักสูตรการฝึกอบรม / รายละเอียดหลักสูตร</div>
+        <h1>รายละเอียดหลักสูตร</h1>
       </div>
     </header>
 
-    <!-- HERO SECTION CONTAINER -->
-    <div id="vanta-bg" class="relative w-full flex items-center justify-center pt-16 pb-20 px-4 sm:px-6 lg:px-8" style="background:#0f172a;">
-
-        <div class="absolute inset-0 bg-gradient-to-b from-blue-900/20 to-base-200/90 pointer-events-none"></div>
-
-        <div class="relative z-10 container mx-auto max-w-6xl">
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-
-                <div class="space-y-6 text-center lg:text-left text-white">
-                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 backdrop-blur-sm">
-                        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-                        <span class="text-xs font-medium text-cyan-200 tracking-wide">กองฝึกอบรมภูมิภาค 1</span>
-                    </div>
-                    <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight text-white drop-shadow">
-                        ชื่อหลักสูตร <br class="hidden sm:inline">
-                        <span id="f_course_name" class="bg-gradient-to-r from-cyan-300 to-blue-200 bg-clip-text text-transparent">กำลังโหลดข้อมูล...</span>
-                    </h1>
-                    <div class="space-y-1">
-                        <div id="f_meta_line1" class="text-base sm:text-lg font-medium text-sky-300 drop-shadow-sm">กำลังดึงข้อมูลรุ่น / เลขที่หลักสูตรจาก Google Sheet...</div>
-                        <div id="f_meta_line2" class="text-base sm:text-lg font-medium text-blue-200/85 drop-shadow-sm"></div>
-                        <div id="f_meta_line3" class="text-base sm:text-lg font-medium text-blue-100/70 drop-shadow-sm"></div>
-                    </div>
-                    <div class="pt-2 flex flex-col sm:flex-row justify-center lg:justify-start gap-4">
-                        <button id="btn-detail" class="btn btn-primary btn-lg shadow-lg shadow-blue-500/30 rounded-full text-white px-8">
-                            รายละเอียด
-                        </button>
-                        <button id="btn-report" class="btn btn-ghost btn-lg border-white/20 hover:bg-white/10 rounded-full text-white px-8 backdrop-blur-sm">
-                            ออกรายงาน
-                        </button>
-                    </div>
-                </div>
-
-                <div class="flex justify-center">
-                    <div class="relative w-full max-w-[440px]">
-
-                        <div class="absolute inset-0 bg-gradient-to-tr from-blue-500 to-cyan-400 rounded-3xl opacity-20 blur-2xl transform scale-95 translate-y-4"></div>
-
-                        <div class="absolute -top-5 -right-5 z-20 w-14 h-14 bg-cyan-400/20 backdrop-blur-sm border border-cyan-400/30 rounded-xl transform rotate-12 flex items-center justify-center text-cyan-300 shadow-xl animate-float">📸</div>
-
-                        <div class="relative bg-slate-900/80 border border-white/10 rounded-3xl shadow-2xl backdrop-blur-md overflow-hidden">
-
-                            <div class="relative w-full h-64 sm:h-72 overflow-hidden">
-                                <img id="course-image" 
-                                        src="https://res.cloudinary.com/daytjjgll/image/upload/fl_preserve_transparency/v1783993162/gfr1/2569/qfkdnj9m6y0f9ilkklcl.jpg?_s=public-apps"
-                                        alt="ภาพประกอบหลักสูตร"
-                                        class="w-full h-full object-cover scale-105 opacity-0 transition-opacity duration-300">
-
-                                <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/10 to-transparent"></div>
-                                <div class="absolute inset-0 bg-gradient-to-b from-slate-900/40 via-transparent to-transparent"></div>
-
-                                <div class="absolute inset-0 ring-1 ring-inset ring-white/15 rounded-t-3xl"></div>
-
-                                <div class="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/60 border border-white/20 backdrop-blur-sm">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
-                                    <span class="text-[10px] font-medium text-cyan-200 tracking-wide">กองฝึกอบรมภูมิภาค 1 กปภ.</span>
-                                </div>
-
-                                <div class="absolute bottom-3 left-4 right-4">
-                                    <div class="text-[11px] font-medium text-cyan-200/90 tracking-wide">ภาพกิจกรรมการฝึกอบรม</div>
-                                    <div id="f_image_caption" class="text-sm font-semibold text-white drop-shadow leading-snug">ความปลอดภัยในการทำงานเกี่ยวกับสารเคมีอันตราย และการตอบโต้กรณีเกิดเหตุฉุกเฉิน รุ่นที่ 1-3/69</div>
-                                </div>
-                            </div>
-
-                            <div class="h-1 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500"></div>
-
-                            <div class="p-4">
-                                <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
-                                    <span class="text-[11px] text-slate-300 tracking-wide">📌 สรุปงบประมาณ</span>
-                                    <span id="summary-status" class="text-[11px] font-medium text-slate-400">ไม่มีข้อมูล</span>
-                                </div>
-                                <div id="summary-grid" class="grid grid-cols-2 gap-2.5">
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-            <div id="report-panel" class="mt-14">
-                <div class="flex items-center gap-2 justify-center lg:justify-start mb-5">
-                    <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
-                    <span class="text-xs text-slate-200 tracking-wide">ระบบสร้างรายงานสรุปค่าใช้จ่ายการฝึกอบรม กฝภ.1</span>
-                </div>
-                <div id="report-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                </div>
-            </div>
-
+    <!-- ===== Course info panel ===== -->
+    <section class="panel">
+      <div class="course-grid">
+        <div class="course-image-wrap">
+          <img id="course-image"
+               src=""
+               alt="ภาพประกอบหลักสูตร">
+          <div class="img-badge"><span class="dot"></span>กองฝึกอบรมภูมิภาค 1 กปภ.</div>
+          <div class="img-caption">
+            <div class="cap-label">ภาพกิจกรรมการฝึกอบรม</div>
+            <div class="cap-text" id="f_image_caption"></div>
+          </div>
         </div>
-    </div>
-
-    <footer class="bg-slate-900 border-t border-white/10">
-      <div class="container mx-auto max-w-6xl flex items-center justify-center px-4 sm:px-6 lg:px-8 py-4">
-        <div class="text-[11px] text-slate-400">© 2569 กองฝึกอบรมภูมิภาค 1 · การประปาส่วนภูมิภาค (กปภ.)</div>
+        <div class="course-info">
+          <span class="course-tag"><span class="dot"></span>กองฝึกอบรมภูมิภาค 1</span>
+          <h2 id="f_course_name">กำลังโหลดข้อมูล...</h2>
+          <div class="meta-line strong" id="f_meta_line1">กำลังดึงข้อมูลรุ่น / เลขที่หลักสูตรจาก Google Sheet...</div>
+          <div class="meta-line" id="f_meta_line2"></div>
+          <div class="meta-line" id="f_meta_line3"></div>
+          <div class="course-actions">
+            <button id="btn-detail" class="primary">รายละเอียด</button>
+            <button id="btn-report" class="secondary">บันทึก</button>
+          </div>
+        </div>
       </div>
-    </footer>
+    </section>
 
-    <script>
-        const REPORTS = [
-            { num: '05', name: 'บันทึกประมาณการค่าใช้จ่าย',        icon: '⭐', color: 'from-amber-400/20 to-amber-600/10 border-amber-400/30 text-amber-300',  href: '05.Budgeted-Expenses.html' },
-            { num: '06', name: 'บันทึกสรุปค่าใช้จ่ายจริง',          icon: '📋', color: 'from-teal-400/20 to-teal-600/10 border-teal-400/30 text-teal-300',      href: '06.Sum-Training-Expenses.html' },
-            { num: '07', name: 'รายงานสรุปฯ (ใบปะหน้า)',            icon: '📝', color: 'from-fuchsia-500/40 to-pink-600/30 border-fuchsia-400/50 text-fuchsia-100', href: '07.Sum-Borrow1.html' },
-            { num: '08', name: 'ใบหักล้างยืมเงิน (บง.27)',    icon: '🧾', color: 'from-rose-400/20 to-rose-600/10 border-rose-400/30 text-rose-300',      href: '08.Form-Pwa-27.html' },
-            { num: '09', name: 'ค่าใช้จ่ายตาม ว.119',   icon: '⏱️', color: 'from-slate-400/20 to-slate-600/10 border-slate-400/30 text-slate-300',  href: '09.V199.html' },
-            { num: '01', name: 'รวมลิงค์เก็บเอกสารไฟล์ PDF',               icon: '🏠', color: 'from-indigo-500/40 to-cyan-500/30 border-cyan-300/50 text-cyan-100',    href: '10.PDF-Overview.html' },
-        ];
+    <!-- ===== Budget summary ===== -->
+    <section class="panel">
+      <div class="panel-head">
+        <div><h2>สรุปงบประมาณ</h2><p>ข้อมูลอัปเดตจากระบบบันทึกค่าใช้จ่ายการฝึกอบรม</p></div>
+        <span class="count-chip" id="summary-status">ยังไม่มีข้อมูล</span>
+      </div>
+      <div class="summary" id="summary-grid"></div>
+    </section>
 
-        function renderReportCards() {
-            const grid = document.getElementById('report-grid');
-            grid.innerHTML = REPORTS.map(r => `
-                <a href="${r.href}" onclick="return passRunToReport(event, '${r.href}')"
-                   class="group flex flex-col gap-2 bg-gradient-to-br ${r.color} border rounded-2xl p-4
-                          transition-all duration-300 ease-out
-                          hover:-translate-y-1.5 hover:scale-[1.04] hover:border-white/60
-                          hover:shadow-2xl hover:shadow-cyan-500/20 hover:brightness-125">
-                    <span class="text-xl">${r.icon}</span>
-                    <span class="text-[15px] font-semibold text-white leading-snug">${r.name}</span>
-                </a>
-            `).join('');
+    <!-- ===== Report shortcuts ===== -->
+    <section class="panel" id="report-panel">
+      <div class="panel-head">
+        <div><h2>บันทึก/ออกรายงาน</h2><p>เลือกประเภทรายงานที่ต้องการเพื่อดำเนินการต่อ</p></div>
+      </div>
+      <div class="report-grid" id="report-grid"></div>
+    </section>
+  </main>
+</div>
+
+<!-- toggleSidebar() มาจาก js/sidebar.js แล้ว (โมดูลกลาง) — ไม่ต้องประกาศซ้ำในไฟล์นี้อีก -->
+
+<script>
+    const REPORTS = [
+        { num: '05', name: 'ประมาณการค่าใช้จ่าย',        icon: '⭐', bg: '#fff6e8', fg: '#bf7800', href: '05_Budgeted-Expenses.html' },
+        { num: '06', name: 'สรุปค่าใช้จ่ายจริง',          icon: '📋', bg: '#eafaf5', fg: '#0f8a73', href: '06_Sum-Training-Expenses.html' },
+        { num: '07', name: 'สรุปฯ (ใบปะหน้า)',            icon: '📝', bg: '#f1edfc', fg: '#7865c8', href: '07_Sum-Borrow1.html' },
+        { num: '08', name: 'ใบหักล้างยืมเงิน (บง.27)',    icon: '🧾', bg: '#fdeeea', fg: '#c4562f', href: '08_Form-Pwa-27.html' },
+        { num: '09', name: 'ค่าใช้จ่ายตาม ว.119',   icon: '⏱️', bg: '#f0f4f7', fg: '#557080', href: '09_V199.html' },
+        { num: '01', name: 'ภาพรวมทั้งหมด',               icon: '🏠', bg: '#eaf4fb', fg: '#0b6aab', href: '10_PDF-Overview.html' },
+    ];
+
+    function renderReportCards() {
+        const grid = document.getElementById('report-grid');
+        grid.innerHTML = REPORTS.map(r => `
+            <a href="${r.href}" onclick="return passRunToReport(event, '${r.href}')" class="report-tile">
+                <span class="r-ic" style="background:${r.bg};color:${r.fg}">${r.icon}</span>
+                <span class="r-name">${r.name}</span>
+            </a>
+        `).join('');
+    }
+    renderReportCards();
+
+    function passRunToReport(e, href) {
+        if (window.__courseData && window.__courseData.no) {
+            try { sessionStorage.setItem('courseData', JSON.stringify(window.__courseData)); } catch (err) {}
         }
-        renderReportCards();
+        return true;
+    }
 
-        function passRunToReport(e, href) {
-            if (window.__courseData && window.__courseData.no) {
-                try { sessionStorage.setItem('courseData', JSON.stringify(window.__courseData)); } catch (err) {}
-            }
-            return true;
-        }
+    document.getElementById('btn-report').addEventListener('click', () => {
+        document.getElementById('report-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
 
-        document.getElementById('btn-report').addEventListener('click', () => {
-            document.getElementById('report-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
+    document.getElementById('btn-detail').addEventListener('click', () => {
+        showUnderConstructionPopup();
+    });
 
-        document.getElementById('btn-detail').addEventListener('click', () => {
-            showUnderConstructionPopup01();
-        });
+    /* ── Popup แจ้งว่าฟีเจอร์นี้อยู่ระหว่างปรับปรุง ── */
+    function showUnderConstructionPopup(){
+        let overlay = document.getElementById('under-construction-overlay');
+        if(overlay){ overlay.style.display = 'flex'; return; }
+        overlay = document.createElement('div');
+        overlay.id = 'under-construction-overlay';
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(10,20,40,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+        overlay.onclick = (e) => { if(e.target === overlay) overlay.style.display = 'none'; };
+        overlay.innerHTML = `
+            <div style="background:#fff;border-radius:14px;padding:30px 32px;max-width:340px;width:100%;
+              box-shadow:0 20px 60px rgba(0,0,0,.3);font-family:'Prompt',sans-serif;text-align:center;">
+              <div style="font-size:42px;margin-bottom:12px;">🚧</div>
+              <div style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:8px;">อยู่ระหว่างปรับปรุง</div>
+              <div style="font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.6;">ฟีเจอร์นี้กำลังอยู่ระหว่างการพัฒนา<br>ขออภัยในความไม่สะดวก</div>
+              <button onclick="document.getElementById('under-construction-overlay').style.display='none'"
+                style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:9px 28px;
+                font-family:'Prompt',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">ตกลง</button>
+            </div>`;
+        document.body.appendChild(overlay);
+    }
+</script>
 
-        /* --- Popup แจ้งว่าฟีเจอร์นี้อยู่ระหว่างปรับปรุง (ใช้กับปุ่มรายละเอียด) --- */
-        function showUnderConstructionPopup01(){
-            let overlay = document.getElementById('under-construction-overlay-01');
-            if(overlay){ overlay.style.display = 'flex'; return; }
-            overlay = document.createElement('div');
-            overlay.id = 'under-construction-overlay-01';
-            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(2,6,23,.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px);';
-            overlay.onclick = (e) => { if(e.target === overlay) overlay.style.display = 'none'; };
-            overlay.innerHTML = `
-                <div style="background:#0f172a;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:30px 32px;max-width:340px;width:100%;
-                    box-shadow:0 20px 60px rgba(0,0,0,.5);font-family:'Prompt',sans-serif;text-align:center;">
-                    <div style="font-size:42px;margin-bottom:12px;">🚧</div>
-                    <div style="font-size:16px;font-weight:600;color:#fff;margin-bottom:8px;">อยู่ระหว่างปรับปรุง</div>
-                    <div style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:22px;line-height:1.6;">ฟีเจอร์ "รายละเอียด" กำลังอยู่ระหว่างการพัฒนา<br>ขออภัยในความไม่สะดวก</div>
-                    <button onclick="document.getElementById('under-construction-overlay-01').style.display='none'"
-                        style="background:linear-gradient(135deg,#22d3ee,#2563eb);color:#fff;border:none;border-radius:999px;padding:9px 30px;
-                        font-family:'Prompt',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">ตกลง</button>
-                </div>`;
-            document.body.appendChild(overlay);
-        }
-    </script>
+<script>
+    function fmtBaht(n) {
+        return (n !== null && n !== undefined)
+            ? Number(n).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' บาท'
+            : null;
+    }
 
-    <script>
-        function fmtBaht(n) {
-            return (n !== null && n !== undefined)
-                ? Number(n).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' บาท'
-                : null;
-        }
-
-        function renderSummaryCards(slot) {
-            const grid = document.getElementById('summary-grid');
-            const statusEl = document.getElementById('summary-status');
-            const noData = '<span class="text-slate-500 text-[13px]">ไม่มีข้อมูล</span>';
-
-            if (!slot) {
-                const rows = [
-                    { l: 'ประมาณการค่าใช้จ่ายทั้งหมด', span: false },
-                    { l: 'จำนวนเงินยืมทดลองจ่าย', span: false },
-                    { l: 'ชื่อวิทยากร / บริษัท', span: true },
-                    { l: 'ค่าใช้จ่ายเกิดจริงทั้งหมด', span: false },
-                    { l: 'ค่าใช้จ่ายรวม ก. (ใช้จริง)', span: false },
-                ];
-                grid.innerHTML = rows.map(r => `
-                    <div class="${r.span ? 'col-span-2 ' : ''}bg-white/5 border border-white/10 rounded-xl p-3">
-                        <div class="text-[11.5px] font-semibold text-slate-200 leading-tight">${r.l}</div>
-                        <div class="mt-1.5">${noData}</div>
-                    </div>
-                `).join('') + `
-                    <div class="col-span-2 relative overflow-hidden rounded-xl p-3.5 border border-white/10 bg-white/5">
-                        <div class="flex items-center gap-2">
-                            <span class="text-lg">💰</span>
-                            <span class="text-[12px] font-semibold text-slate-200 leading-tight">เงินคืน (คงเหลือของรวมเงิน ก.)</span>
-                        </div>
-                        <div class="mt-1.5">${noData}</div>
-                    </div>`;
-                statusEl.textContent = 'ไม่มีข้อมูล';
-                return;
-            }
-
-            const b   = slot.budget   || {};
-            const sp  = slot.speakers || {};
-            const a06 = slot.actual06 || null;
-            const a07 = slot.actual07 || null;
-
-            const budgetTotal = b.budgetTotal || b.grandTotal || 0;
-            const borrowAmt = (Number(b.secFuel)||0)
-                             + (Number(b.sec1)||0) + (Number(b.sec2)||0)
-                             + (Number(b.secLump)||0) + (Number(b.secVenue)||0)
-                             + (Number(b.sec3)||0)    + (Number(b.sec4)||0)
-                             + (Number(b.sec5)||0)    + (Number(b.sec6)||0);
-
-            const spkList = Array.isArray(sp.EXT) ? sp.EXT : [];
-            const spkNames = spkList.filter(s => s && s.name).map(s => s.name);
-            const hasInt = (b.secInternal || 0) > 0;
-
-            let actualTotal = null;
-            if (a06 && (a06.grandTotal || 0) > 0) actualTotal = a06.grandTotal;
-            if (a07 && (a07.grandTotal || 0) > 0) actualTotal = a07.grandTotal;
-
-            let actualGorA = null;
-            if (a07) {
-                const avf = k => parseFloat(a07[k] || 0);
-                const spkA07 = a07.spkActual || {};
-                const spkSum = Array.isArray(spkA07.EXT)
-                    ? spkA07.EXT.reduce((s,x)=>s+(x.aHotel||0)+(x.aTravel||0)+(x.aAmt||0),0)
-                    : (spkA07.A||[]).reduce((s,x)=>s+(x.aAmt||0),0)
-                    + (spkA07.B||[]).reduce((s,x)=>s+(x.aAmt||0),0)
-                    + (spkA07.C||[]).reduce((s,x)=>s+(x.aHotel||0)+(x.aTravel||0)+(x.aAmt||0),0);
-                actualGorA = avf('a_fuel') + avf('a_1_1')+avf('a_1_2') + avf('a_2_1') + avf('a_lump')
-                           + avf('a_venue_meet')+avf('a_venue_vip')+avf('a_venue_staff')
-                           + avf('a_3_1')+avf('a_food_dinner')+avf('a_3_2')+avf('a_3_3')
-                           + avf('a_4_1')+avf('a_4_2')+avf('a_4_3') + spkSum;
-            } else if (a06) {
-                actualGorA = Number(a06.grandTotal) || 0;
-            }
-
-            const refund = (actualGorA !== null && borrowAmt > 0) ? (borrowAmt - actualGorA) : null;
-            const hasBudget = budgetTotal > 0;
-            const hasActual = actualTotal !== null;
-
-            const spkHTML = spkNames.length
-                ? spkNames.map(n => `<div class="text-[15px] font-bold text-cyan-300 leading-snug">👤 ${n}</div>`).join('')
-                : noData;
-
-            const refundBoxStyle = refund !== null
-                ? (refund >= 0
-                    ? 'bg-gradient-to-r from-emerald-500/20 to-emerald-400/5 border-emerald-400/40'
-                    : 'bg-gradient-to-r from-rose-500/20 to-rose-400/5 border-rose-400/40')
-                : 'bg-cyan-400/[0.07] border-cyan-400/20';
-            const refundIcon = refund !== null ? (refund >= 0 ? '💰' : '⚠️') : '💰';
-
-            grid.innerHTML = `
-                <div class="bg-cyan-400/[0.07] border border-cyan-400/20 rounded-xl p-3">
-                    <div class="text-[11.5px] font-semibold text-slate-100 leading-tight">ประมาณการค่าใช้จ่ายทั้งหมด</div>
-                    <div class="text-[15px] font-bold text-cyan-300 mt-1.5">${hasBudget ? fmtBaht(budgetTotal) : noData}</div>
+    function cardHTML(iconSvg, bg, fg, label, valueHtml, subHtml) {
+        return `
+            <div class="card">
+                <div class="top-row">
+                    <label>${label}</label>
+                    <div class="ic" style="background:${bg};color:${fg}">${iconSvg}</div>
                 </div>
+                <div>${valueHtml}</div>
+                ${subHtml ? `<div class="sub">${subHtml}</div>` : ''}
+            </div>`;
+    }
 
-                <div class="bg-cyan-400/[0.07] border border-cyan-400/20 rounded-xl p-3">
-                    <div class="text-[11.5px] font-semibold text-slate-100 leading-tight">จำนวนเงินยืมทดลองจ่าย</div>
-                    <div class="text-[15px] font-bold text-cyan-300 mt-1.5">${hasBudget ? fmtBaht(borrowAmt) : noData}</div>
-                </div>
+    const ICONS = {
+        coins: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18M7 6h1v4M16.71 13.88l.7.71-2.82 2.82"/></svg>',
+        wallet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v3M3 7v10a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1h-4a2 2 0 1 0 0 4h5"/></svg>',
+        users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.5 2.8-6 6.5-6s6.5 2.5 6.5 6M16.5 8.3a3 3 0 1 1 3.3 4.6M20 20c0-2.7-1.6-4.9-4-5.7"/></svg>',
+        receipt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>',
+        chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>',
+        refund: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4v6h6M4.5 14a8 8 0 1 0 2-9.5L4 10"/></svg>'
+    };
 
-                <div class="col-span-2 bg-cyan-400/[0.07] border border-cyan-400/20 rounded-xl p-3">
-                    <div class="text-[11.5px] font-semibold text-slate-100 leading-tight">ชื่อวิทยากร / บริษัท</div>
-                    <div class="mt-1.5 space-y-0.5">${spkHTML}${hasInt ? '<div class="text-[15px] font-bold text-cyan-300 leading-snug">🏢 มีวิทยากรภายใน</div>' : ''}</div>
-                </div>
+    function renderSummaryCards(slot) {
+        const grid = document.getElementById('summary-grid');
+        const statusEl = document.getElementById('summary-status');
+        const noData = '<span class="empty-val">ยังไม่มีข้อมูล</span>';
 
-                <div class="bg-cyan-400/[0.07] border border-cyan-400/20 rounded-xl p-3">
-                    <div class="text-[11.5px] font-semibold text-slate-100 leading-tight">ค่าใช้จ่ายเกิดจริงทั้งหมด</div>
-                    <div class="text-[15px] font-bold text-cyan-300 mt-1.5">${hasActual ? fmtBaht(actualTotal) : noData}</div>
-                </div>
-
-                <div class="bg-cyan-400/[0.07] border border-cyan-400/20 rounded-xl p-3">
-                    <div class="text-[11.5px] font-semibold text-slate-100 leading-tight">ค่าใช้จ่ายรวม ก. (ใช้จริง)</div>
-                    <div class="text-[15px] font-bold text-cyan-300 mt-1.5">${actualGorA !== null ? fmtBaht(actualGorA) : noData}</div>
-                </div>
-
-                <div class="col-span-2 relative overflow-hidden rounded-xl p-3.5 border ${refundBoxStyle} shadow-lg ${refund !== null ? 'shadow-black/20' : ''}">
-                    <div class="relative flex items-center gap-2">
-                        <span class="text-lg">${refundIcon}</span>
-                        <span class="text-[12px] font-semibold text-slate-100 leading-tight tracking-wide">เงินคืน (คงเหลือของรวมเงิน ก.)</span>
-                    </div>
-                    <div class="relative text-[20px] font-extrabold mt-1.5" style="color:${refund !== null ? (refund >= 0 ? '#34d399' : '#fb7185') : '#64748b'}">
-                        ${refund !== null ? fmtBaht(refund) : noData}
-                    </div>
-                </div>
-            `;
-            statusEl.textContent = 'เชื่อมต่อสำเร็จ';
+        if (!slot) {
+            grid.innerHTML =
+                cardHTML(ICONS.coins, '#eaf4fb', '#0b6aab', 'ประมาณการค่าใช้จ่ายทั้งหมด', noData) +
+                cardHTML(ICONS.wallet, '#fff6e8', '#bf7800', 'จำนวนเงินยืมทดลองจ่าย', noData) +
+                cardHTML(ICONS.users, '#f1edfc', '#7865c8', 'ชื่อวิทยากร / บริษัท', noData) +
+                cardHTML(ICONS.receipt, '#eafaf5', '#0f8a73', 'ค่าใช้จ่ายเกิดจริงทั้งหมด', noData) +
+                cardHTML(ICONS.chart, '#fdeeea', '#c4562f', 'ค่าใช้จ่ายรวม ก. เฉพาะเงินยืม (ใช้จริง)', noData) +
+                cardHTML(ICONS.refund, '#eef2f5', '#556577', 'เงินคืน (คงเหลือของรวมเงิน ก.)', noData);
+            statusEl.textContent = 'ยังไม่มีข้อมูล';
+            return;
         }
 
-        renderSummaryCards(null);
-    </script>
+        const b   = slot.budget   || {};
+        const sp  = slot.speakers || {};
+        const a06 = slot.actual06 || null;
+        const a07 = slot.actual07 || null;
 
-    <script>
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbySJROnBMkxFBNyPvET3DC5ihdCz03OPzvi2xXm6cMQpoPFsi2pAiTQAQIVSDUwQNVZ5w/exec';
+        const budgetTotal = b.budgetTotal || b.grandTotal || 0;
+        const borrowAmt = (Number(b.secFuel)||0)
+                         + (Number(b.sec1)||0) + (Number(b.sec2)||0)
+                         + (Number(b.secLump)||0) + (Number(b.secVenue)||0)
+                         + (Number(b.sec3)||0)    + (Number(b.sec4)||0)
+                         + (Number(b.sec5)||0)    + (Number(b.sec6)||0);
 
-        async function gsApi(action, data, no) {
-            const params = new URLSearchParams({ action });
-            if (data) params.set('data', JSON.stringify(data));
-            if (no)   params.set('no', no);
-            const res = await fetch(GAS_URL + '?' + params.toString());
-            const json = await res.json();
-            if (!json.ok) throw new Error(json.error || 'GAS error');
-            return json.data;
+        const spkList = Array.isArray(sp.EXT) ? sp.EXT : [];
+        const spkNames = spkList.filter(s => s && s.name).map(s => s.name);
+        const hasInt = (b.secInternal || 0) > 0;
+
+        let actualTotal = null;
+        if (a06 && (a06.grandTotal || 0) > 0) actualTotal = a06.grandTotal;
+        if (a07 && (a07.grandTotal || 0) > 0) actualTotal = a07.grandTotal;
+
+        let actualGorA = null;
+        if (a07) {
+            const avf = k => parseFloat(a07[k] || 0);
+            const spkA07 = a07.spkActual || {};
+            const spkSum = Array.isArray(spkA07.EXT)
+                ? spkA07.EXT.reduce((s,x)=>s+(x.aHotel||0)+(x.aTravel||0)+(x.aAmt||0),0)
+                : (spkA07.A||[]).reduce((s,x)=>s+(x.aAmt||0),0)
+                + (spkA07.B||[]).reduce((s,x)=>s+(x.aAmt||0),0)
+                + (spkA07.C||[]).reduce((s,x)=>s+(x.aHotel||0)+(x.aTravel||0)+(x.aAmt||0),0);
+            actualGorA = avf('a_fuel') + avf('a_1_1')+avf('a_1_2') + avf('a_2_1') + avf('a_lump')
+                       + avf('a_venue_meet')+avf('a_venue_vip')+avf('a_venue_staff')
+                       + avf('a_3_1')+avf('a_food_dinner')+avf('a_3_2')+avf('a_3_3')
+                       + avf('a_4_1')+avf('a_4_2')+avf('a_4_3') + spkSum;
+        } else if (a06) {
+            actualGorA = Number(a06.grandTotal) || 0;
         }
 
-        const _mo = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
-        // ✅ ป้องกันบั๊ก timezone shift: ถ้า Google Apps Script ส่ง dateStart/dateEnd มาเป็น
-        // ISO datetime ที่มี time ต่อท้าย (เช่น "2026-07-21T17:00:00.000Z" ซึ่งจริงๆ คือเที่ยงคืน
-        // วันที่ 22 ตามเวลาไทย GMT+7) ต้องชดเชย +7 ชั่วโมงก่อนตัดเอาวันที่ ไม่งั้นจะได้วันที่ก่อนหน้า
-        // 1 วันเสมอ (หน้านี้ดึงข้อมูลสดจาก Sheet ทุกครั้งที่โหลดหน้า จึงต้องแก้ตรงนี้ด้วย
-        // ไม่งั้นต่อให้แก้ไฟล์อื่นแล้ว หน้านี้ก็จะดึงมาพังซ้ำเองอยู่ดี)
-        function _normThaiDate01(v) {
-            if (!v) return '';
-            const s = String(v);
-            if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s; // date-only อยู่แล้ว ไม่ต้องแก้
-            const m = s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):/);
-            if (m) {
-                const hh = parseInt(m[4], 10);
-                if (hh >= 17) {
-                    const d = new Date(s);
-                    d.setUTCHours(d.getUTCHours() + 7);
-                    const yy = d.getUTCFullYear(), mm = String(d.getUTCMonth()+1).padStart(2,'0'), dd = String(d.getUTCDate()).padStart(2,'0');
-                    return `${yy}-${mm}-${dd}`;
-                }
-                return `${m[1]}-${m[2]}-${m[3]}`;
-            }
-            return s;
-        }
-        function isoTh(iso) {
-            const clean = _normThaiDate01(iso);
-            if (!clean) return '';
-            const m = clean.match(/^(\d{4})-(\d{2})-(\d{2})/);
-            if (!m) return clean;
-            return `${parseInt(m[3])} ${_mo[parseInt(m[2]) - 1]} ${parseInt(m[1]) + 543}`;
-        }
-        function isoThRange(ds, de) {
-            ds = _normThaiDate01(ds); de = _normThaiDate01(de);
-            if (!ds) return '';
-            if (!de || de === ds) return isoTh(ds);
-            return isoTh(ds) + ' – ' + isoTh(de);
-        }
+        const refund = (actualGorA !== null && borrowAmt > 0) ? (borrowAmt - actualGorA) : null;
+        const hasBudget = budgetTotal > 0;
+        const hasActual = actualTotal !== null;
 
-        function courseImageUrl(no) {
-                return `https://res.cloudinary.com/daytjjgll/image/upload/f_auto,q_auto/gfr1/2569/${no}`;
-            }
+        const spkHTML = spkNames.length
+            ? spkNames.map(n => `<div class="spk-name">👤 ${n}</div>`).join('')
+            : noData;
 
-            const FALLBACK_GFR1_IMAGES = [
-                'gfr1/heftpyre6z4aiotufazm',
-                'gfr1/s5epptybf473sotkli4h'
-            ];
+        grid.innerHTML =
+            cardHTML(ICONS.coins, '#eaf4fb', '#0b6aab', 'ประมาณการค่าใช้จ่ายทั้งหมด',
+                `<strong>${hasBudget ? fmtBaht(budgetTotal) : noData}</strong>`) +
+            cardHTML(ICONS.wallet, '#fff6e8', '#bf7800', 'จำนวนเงินยืมทดลองจ่าย',
+                `<strong>${hasBudget ? fmtBaht(borrowAmt) : noData}</strong>`) +
+            cardHTML(ICONS.users, '#f1edfc', '#7865c8', 'ชื่อวิทยากร / บริษัท',
+                `${spkHTML}${hasInt ? '<div class="spk-int">🏢 มีวิทยากรภายใน</div>' : ''}`) +
+            cardHTML(ICONS.receipt, '#eafaf5', '#0f8a73', 'ค่าใช้จ่ายเกิดจริงทั้งหมด',
+                `<strong>${hasActual ? fmtBaht(actualTotal) : noData}</strong>`) +
+            cardHTML(ICONS.chart, '#fdeeea', '#c4562f', 'ค่าใช้จ่ายรวม ก. เฉพาะเงินยืม (ใช้จริง)',
+                `<strong>${actualGorA !== null ? fmtBaht(actualGorA) : noData}</strong>`) +
+            cardHTML(ICONS.refund, '#eef2f5', '#556577', 'เงินคืน (คงเหลือของรวมเงิน ก.)',
+                refund !== null
+                  ? `<strong style="color:${refund >= 0 ? '#197a5d' : '#c0364f'}">${fmtBaht(refund)}</strong>`
+                  : `<strong>${noData}</strong>`);
 
-            function randomFallbackImage() {
-                const pick = FALLBACK_GFR1_IMAGES[Math.floor(Math.random() * FALLBACK_GFR1_IMAGES.length)];
-                return `https://res.cloudinary.com/daytjjgll/image/upload/f_auto,q_auto/${pick}`;
-            }
+        statusEl.textContent = 'เชื่อมต่อสำเร็จ';
+    }
 
-       function setCourseImage(no) {
-            const imgEl = document.getElementById('course-image');
-            if (!imgEl || !no) return;
-            
-            const url = courseImageUrl(no);
-            if (imgEl.dataset.wanted === url) return; 
-            imgEl.dataset.wanted = url;
+    renderSummaryCards(null);
+</script>
 
-            imgEl.style.opacity = '0';
-            imgEl.style.transition = 'opacity 0.2s ease-in-out';
+<script>
+    function courseImageUrl(no) {
+        return `https://res.cloudinary.com/daytjjgll/image/upload/f_auto,q_auto/gfr1/2569/${no}`;
+    }
 
-            imgEl.onload = () => {
-                imgEl.style.opacity = '1';
-            };
+    const FALLBACK_GFR1_IMAGES = [
+        'gfr1/heftpyre6z4aiotufazm',
+        'gfr1/s5epptybf473sotkli4h'
+    ];
 
-            imgEl.onerror = () => {
-                imgEl.onerror = () => { 
-                    imgEl.onerror = null; 
-                    imgEl.style.opacity = '1';
-                }; 
-                imgEl.src = randomFallbackImage();
-            };
-            
-            imgEl.src = url;
-        }
+    function randomFallbackImage() {
+        const pick = FALLBACK_GFR1_IMAGES[Math.floor(Math.random() * FALLBACK_GFR1_IMAGES.length)];
+        return `https://res.cloudinary.com/daytjjgll/image/upload/f_auto,q_auto/${pick}`;
+    }
 
-        function setCourseFields(cr) {
-            window.__courseData = cr;
-            document.getElementById('f_course_name').textContent = cr.course || 'ยังไม่พบข้อมูลหลักสูตร';
+    function setCourseImage(no) {
+        const imgEl = document.getElementById('course-image');
+        if (!imgEl || !no) return;
 
-            const line1Parts = [];
-            if (cr.batch) line1Parts.push(`รุ่นที่ ${cr.batch}`);
-            if (cr.no)    line1Parts.push(`เลขที่หลักสูตร ${cr.no}`);
-            document.getElementById('f_meta_line1').textContent =
-                line1Parts.length ? line1Parts.join(' · ') : 'ยังไม่มีข้อมูลรุ่น/เลขที่หลักสูตร';
+        const url = courseImageUrl(no);
+        if (imgEl.dataset.wanted === url) return;
+        imgEl.dataset.wanted = url;
 
-            const dateTxt = isoThRange(cr.dateStart, cr.dateEnd);
-            document.getElementById('f_meta_line2').textContent = dateTxt ? `วันที่ ${dateTxt}` : '';
+        imgEl.style.opacity = '0';
 
-            document.getElementById('f_meta_line3').textContent = cr.location ? `ณ ${cr.location}` : '';
-
-            const capEl = document.getElementById('f_image_caption');
-            if (capEl) capEl.textContent = cr.course ? `${cr.course}${cr.batch ? ' รุ่นที่ ' + cr.batch : ''}` : '';
-        }
-
-        function loadSummary(no, attempt) {
-            attempt = attempt || 1;
-            const statusEl = document.getElementById('summary-status');
-            statusEl.textContent = attempt === 1 ? 'กำลังโหลด...' : `กำลังลองใหม่ (${attempt}/3)...`;
-
-            gsApi('getByNo', null, no).then(gsRow => {
-                const gb = (gsRow && gsRow.budget)   || {};
-                const g6 = (gsRow && gsRow.actual06) || null;
-                const g7 = (gsRow && gsRow.actual07) || null;
-                const cr = (gsRow && gsRow.course)   || {};
-
-                if (cr && cr.course) {
-                    setCourseFields({ ...cr, no });
-                    // ✅ เก็บ dateStart/dateEnd แบบที่ normalize แล้ว (YYYY-MM-DD ล้วน) ไม่ใช่ค่าดิบ
-                    // ไม่งั้นไฟล์อื่น (เช่นไฟล์ 05) ที่อ่านต่อจาก sessionStorage นี้จะได้ค่าที่มี
-                    // "T17:00:00.000Z" ติดมาอีก แล้วเพี้ยนไป 1 วันซ้ำ
-                    const crClean = { ...cr, dateStart: _normThaiDate01(cr.dateStart), dateEnd: _normThaiDate01(cr.dateEnd) };
-                    try { sessionStorage.setItem('courseData', JSON.stringify({ ...crClean, no, _fromCourseList: true })); } catch (e) {}
-                }
-
-                renderSummaryCards({
-                    budget: gb,
-                    speakers: gb.spkJson ? (typeof gb.spkJson === 'string' ? JSON.parse(gb.spkJson) : gb.spkJson) : {},
-                    actual06: g6,
-                    actual07: g7 ? {
-                        ...g7,
-                        spkActual: typeof g7.spkActualJson === 'string'
-                            ? JSON.parse(g7.spkActualJson || '{}')
-                            : (g7.spkActualJson || {})
-                    } : null,
-                });
-            }).catch(() => {
-                if (attempt < 3) {
-                    setTimeout(() => loadSummary(no, attempt + 1), 1200);
-                } else {
-                    statusEl.innerHTML = '⚠️ เชื่อมต่อไม่สำเร็จ <button onclick="loadSummary(\'' + no + '\')" class="underline ml-1">ลองใหม่</button>';
-                }
-            });
-        }
-
-        const SAMPLE_COURSE = {
-            no: '01320829',
-            course: 'ความปลอดภัยในการทำงานเกี่ยวกับสารเคมีอันตราย และการตอบโต้กรณีเกิดเหตุฉุกเฉิน',
-            batch: '1-3/69',
-            courseNum: '13',
-            year: '2569',
-            dateStart: '2026-05-25',
-            dateEnd: '2026-05-25',
-            location: 'การประปาส่วนภูมิภาคสาขาชัยนาท อำเภอเมืองชัยนาท จังหวัดชัยนาท'
+        imgEl.onload = () => { imgEl.style.opacity = '1'; };
+        imgEl.onerror = () => {
+            imgEl.onerror = () => { imgEl.onerror = null; imgEl.style.opacity = '1'; };
+            imgEl.src = randomFallbackImage();
         };
 
-        (function initCourse() {
-            let courseData = null;
-            try {
-                const raw = sessionStorage.getItem('courseData');
-                if (raw) courseData = JSON.parse(raw);
-            } catch (e) { courseData = null; }
+        imgEl.src = url;
+    }
 
-            let no = (courseData && courseData.no) ? String(courseData.no).trim() : '';
-            if (!no) {
-                const params = new URLSearchParams(window.location.search);
-                no = params.get('no') || params.get('run') || '';
-            }
+    function setCourseFields(cr) {
+        window.__courseData = cr;
+        document.getElementById('f_course_name').textContent = cr.course || 'ยังไม่พบข้อมูลหลักสูตร';
 
-            if (no) {
-                setCourseImage(no);
-                setCourseFields(courseData && courseData.no === no ? courseData : { no });
-                loadSummary(no);
+        const line1Parts = [];
+        if (cr.batch) line1Parts.push(`รุ่นที่ ${cr.batch}`);
+        if (cr.no)    line1Parts.push(`เลขที่หลักสูตร ${cr.no}`);
+        document.getElementById('f_meta_line1').textContent =
+            line1Parts.length ? line1Parts.join(' · ') : 'ยังไม่มีข้อมูลรุ่น/เลขที่หลักสูตร';
+
+        const dateTxt = DateTH.formatRange(cr.dateStart, cr.dateEnd);
+        document.getElementById('f_meta_line2').textContent = dateTxt ? `วันที่ ${dateTxt}` : '';
+
+        document.getElementById('f_meta_line3').textContent = cr.location ? `ณ ${cr.location}` : '';
+
+        const capEl = document.getElementById('f_image_caption');
+        if (capEl) capEl.textContent = cr.course ? `${cr.course}${cr.batch ? ' รุ่นที่ ' + cr.batch : ''}` : '';
+    }
+
+    async function loadSummary(no, attempt) {
+        attempt = attempt || 1;
+        const statusEl = document.getElementById('summary-status');
+        statusEl.textContent = attempt === 1 ? 'กำลังโหลด...' : `กำลังลองใหม่ (${attempt}/3)...`;
+        showGsLoader(attempt === 1 ? '📥 กำลังโหลดข้อมูล' : `📥 กำลังลองใหม่ (${attempt}/3)...`);
+
+        const gsRow = await gsApi('getByNo', null, no);
+
+        // gsApi คืนค่า null เมื่อเชื่อมต่อไม่สำเร็จ (ไม่ throw แล้ว) — เช็คตรงนี้แทน .catch()
+        if (gsRow === null) {
+            if (attempt < 3) {
+                setTimeout(() => loadSummary(no, attempt + 1), 1200);
             } else {
-                setCourseImage(SAMPLE_COURSE.no);
-                setCourseFields(SAMPLE_COURSE);
+                hideGsLoader();
+                statusEl.innerHTML = '⚠️ เชื่อมต่อไม่สำเร็จ <button onclick="loadSummary(\'' + no + '\')" style="border:0;background:transparent;color:#0b6aab;text-decoration:underline;cursor:pointer;font:inherit;padding:0;margin-left:4px">ลองใหม่</button>';
             }
-        })();
-    </script>
+            return;
+        }
 
-    <script>
-        let vantaEffect = null;
-        window.addEventListener('DOMContentLoaded', () => {
-            vantaEffect = VANTA.WAVES({
-                el: "#vanta-bg",
-                mouseControls: true,
-                touchControls: true,
-                gyroControls: false,
-                minHeight: 200.00,
-                minWidth: 200.00,
-                scale: 1.00,
-                scaleMobile: 1.00,
-                color: 0x0f172a,
-                shininess: 35.00,
-                waveHeight: 15.00,
-                waveSpeed: 0.60,
-                zoom: 0.85
-            });
+        const gb = (gsRow && gsRow.budget)   || {};
+        const g6 = (gsRow && gsRow.actual06) || null;
+        const g7 = (gsRow && gsRow.actual07) || null;
+        const cr = (gsRow && gsRow.course)   || {};
 
-            // ✅ เนื้อหาในการ์ด (ชื่อหลักสูตร/สรุปงบประมาณ) โหลดมาจาก Google Sheet แบบ async
-            // หลังจาก Vanta คำนวณความสูงพื้นหลังไปแล้ว ทำให้พื้นหลังคลื่นไม่ยืดตามความสูงจริง
-            // ที่เปลี่ยนไปทีหลัง เหลือช่องว่างสีทึบก่อนถึงแถบล่าง — ใช้ ResizeObserver คอย
-            // สั่ง resize() ให้พื้นหลังคลื่นเต็มพื้นที่ตลอดเวลาที่ #vanta-bg เปลี่ยนความสูง
-            const vantaEl = document.getElementById('vanta-bg');
-            if (vantaEl && window.ResizeObserver) {
-                const ro = new ResizeObserver(() => {
-                    if (vantaEffect && typeof vantaEffect.resize === 'function') {
-                        vantaEffect.resize();
-                    }
-                });
-                ro.observe(vantaEl);
-            }
+        if (cr && cr.course) {
+            setCourseFields({ ...cr, no });
+            const crClean = { ...cr, dateStart: DateTH.normalize(cr.dateStart), dateEnd: DateTH.normalize(cr.dateEnd) };
+            try { sessionStorage.setItem('courseData', JSON.stringify({ ...crClean, no, _fromCourseList: true })); } catch (e) {}
+        }
+
+        renderSummaryCards({
+            budget: gb,
+            speakers: gb.spkJson ? (typeof gb.spkJson === 'string' ? JSON.parse(gb.spkJson) : gb.spkJson) : {},
+            actual06: g6,
+            actual07: g7 ? {
+                ...g7,
+                spkActual: typeof g7.spkActualJson === 'string'
+                    ? JSON.parse(g7.spkActualJson || '{}')
+                    : (g7.spkActualJson || {})
+            } : null,
         });
-    </script>
+        hideGsLoader();
+    }
+
+    (function initCourse() {
+        let courseData = null;
+        try {
+            const raw = sessionStorage.getItem('courseData');
+            if (raw) courseData = JSON.parse(raw);
+        } catch (e) { courseData = null; }
+
+        let no = (courseData && courseData.no) ? String(courseData.no).trim() : '';
+        if (!no) {
+            const params = new URLSearchParams(window.location.search);
+            no = params.get('no') || params.get('run') || '';
+        }
+
+        if (no) {
+            setCourseImage(no);
+            setCourseFields(courseData && courseData.no === no ? courseData : { no });
+            loadSummary(no);
+        } else {
+            // ไม่มีเลขที่หลักสูตรส่งมาเลย (เข้าหน้านี้ตรงๆ ไม่ผ่านปุ่ม "รายละเอียด")
+            // ต้องไม่แสดงข้อมูลหลักสูตรใดๆ ทั้งสิ้น (ของเดิมเคยโชว์ข้อมูลตัวอย่างซึ่งทำให้เข้าใจผิดว่าเป็นข้อมูลจริง)
+            document.getElementById('f_course_name').textContent = 'ไม่พบข้อมูลหลักสูตร';
+            document.getElementById('f_meta_line1').textContent = 'กรุณาเข้าหน้านี้ผ่านปุ่ม "รายละเอียด" จากหน้าหลักสูตรการฝึกอบรม';
+            document.getElementById('f_meta_line2').textContent = '';
+            document.getElementById('f_meta_line3').textContent = '';
+            document.getElementById('summary-status').textContent = '';
+        }
+    })();
+
+    loadCurrentUser();
+</script>
 </body>
 </html>
