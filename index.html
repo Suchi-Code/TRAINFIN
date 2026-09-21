@@ -211,7 +211,7 @@
     }
   });
 
-  const MAIN_URL = 'training_courses_gfr1.html';
+  const MAIN_URL = 'overview.html';
   let pwVisible  = false;
 
   // Background Animations
@@ -299,7 +299,26 @@
         btn.querySelector('.btn-text').textContent = '✓ กำลังเข้าสู่ระบบ…';
         btn.classList.remove('loading');
         btn.style.background = 'linear-gradient(135deg,#1e7d5a,#27ae7a)';
-        
+
+        // ── ดึงชื่อ-นามสกุลจากตาราง profiles (ตาราง lookup ที่ผูกกับ auth user) ──
+        let displayName = empId; // ค่าเริ่มต้น เผื่อยังไม่มีข้อมูลชื่อในตาราง
+        try {
+          const { data: profile, error: profileErr } = await supabaseClient
+            .from('profiles')
+            .select('full_name')
+            .eq('id', data.user.id)
+            .single();
+          if (!profileErr && profile && profile.full_name) {
+            displayName = profile.full_name;
+          }
+        } catch (pe) {
+          console.warn('ไม่พบข้อมูลชื่อผู้ใช้ใน profiles:', pe.message);
+        }
+
+        try {
+          sessionStorage.setItem('currentUser', JSON.stringify({ empId, name: displayName }));
+        } catch (se) {}
+
         setTimeout(() => { 
           window.location.href = MAIN_URL; 
         }, 500);
