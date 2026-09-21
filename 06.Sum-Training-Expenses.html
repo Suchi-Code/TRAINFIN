@@ -198,7 +198,16 @@ table.rpt tbody tr:last-child td{border-bottom:none}
 
 </style>
 <!-- html2canvas/jsPDF ถูกลบออก — เปลี่ยนไปสร้าง PDF ผ่าน Puppeteer server ฝั่ง backend แทน (ดู savePdf06()) -->
+
+<!-- ── Shared modules (ต้องเรียงลำดับนี้เสมอ: config -> supabase SDK -> auth/date/gas-api/schema) ── -->
+<script src="js/config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/auth.js"></script>
+<script src="js/date-th.js"></script>
+<script src="js/gas-api.js"></script>
+<script src="js/schema.js"></script>
+<script src="js/print-layout.js"></script>
+<script>checkAuth();</script>
 </head>
 <body>
 
@@ -289,11 +298,31 @@ table.rpt tbody tr:last-child td{border-bottom:none}
   </div><div class="sv-view" id="sv-preview">
     <div class="no-print print-toolbar">
       <button class="btn-back-form" onclick="sumGoForm()">◀ กลับแก้ไขข้อมูล</button>
+      <div class="spacing-ctrl">
+        <span>ระยะห่างบรรทัด</span>
+        <button class="btn-sp" id="sp_dec_06" onclick="rowSpacing06.adjust(-1)" title="ลดระยะห่าง">−</button>
+        <span class="sp-level" id="sp_level_06">ปกติ</span>
+        <button class="btn-sp" id="sp_inc_06" onclick="rowSpacing06.adjust(1)" title="เพิ่มระยะห่าง">＋</button>
+      </div>
       <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
         <button class="btn-do-print" onclick="window.print()">🖨️ พิมพ์แบบฟอร์ม</button>
         <span style="font-size:11px;color:#9ca3af;">ควรตั้งค่าหน้ากระดาษที่ 100%</span>
       </div>
-      <button onclick="savePdf06(this)" style="background:linear-gradient(135deg,#1a56db,#1241b0);color:#fff;border:none;border-radius:8px;padding:10px 28px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(26,86,219,.3);display:flex;align-items:center;gap:6px;transition:all .2s;">💾 บันทึก PDF</button>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <button onclick="savePdf06(this)" style="background:linear-gradient(135deg,#1a56db,#1241b0);color:#fff;border:none;border-radius:8px;padding:10px 28px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(26,86,219,.3);display:flex;align-items:center;gap:6px;transition:all .2s;">💾 บันทึก PDF</button>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#6b7280;">
+          <label for="pdf_scale_06">สเกลหน้ากระดาษ:</label>
+          <select id="pdf_scale_06" style="border:1px solid var(--gray-200);border-radius:5px;padding:2px 6px;font-family:'Sarabun',sans-serif;font-size:11px;color:#374151;cursor:pointer;">
+            <option value="70">70%</option>
+            <option value="75">75%</option>
+            <option value="80">80%</option>
+            <option value="85">85%</option>
+            <option value="90">90%</option>
+            <option value="95">95%</option>
+            <option value="100" selected>100%</option>
+          </select>
+        </div>
+      </div>
     </div>
     <div id="sm_doc" class="sum-print-wrap"></div>
 
@@ -350,6 +379,11 @@ let dc = {};
 .sum-row-top{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .sum-row-num{width:26px;height:26px;border-radius:50%;background:var(--navy);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .sum-row-title{font-size:13px;font-weight:600;color:var(--navy)}
+.sum-order-btns{display:flex;gap:3px}
+.sum-order-btn{width:24px;height:24px;border:1px solid var(--border);background:#fff;color:var(--navy);border-radius:5px;font-size:11px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.sum-order-btn:hover:not(:disabled){background:var(--info-bg);border-color:var(--blue);color:var(--blue)}
+.sum-order-btn:disabled{opacity:.3;cursor:not-allowed}
+.sum-order-warn{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:#b91c1c;background:#fee2e2;border:1px solid #f3c7cf;border-radius:4px;padding:2px 8px;cursor:default;white-space:nowrap}
 .sum-merge-label{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--amber);background:var(--amber-bg);border:1px solid var(--accent);border-radius:4px;padding:2px 8px;cursor:pointer}
 .sum-merge-label input{margin:0;cursor:pointer}
 .sum-w119-label{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--info);background:var(--info-bg);border:1px solid var(--blue);border-radius:4px;padding:2px 8px;cursor:pointer}
@@ -370,6 +404,8 @@ let dc = {};
 .sum-del-btn{margin-left:auto;padding:3px 10px;background:var(--red-bg);color:var(--red);border:1px solid var(--red);border-radius:4px;font-family:'Sarabun',sans-serif;font-size:11.5px;cursor:pointer}
 .sum-row-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .sum-row-4col{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+.sum-gross-icon{display:inline-flex;align-items:center;cursor:pointer}
+.sum-gross-icon input[type=checkbox]{width:13px;height:13px;cursor:pointer;margin:0}
 .sum-inp{display:flex;flex-direction:column;gap:3px}
 .sum-inp label{font-size:11px;color:var(--text-soft);font-weight:500}
 .sum-inp input,.sum-inp select{padding:6px 8px;border:1px solid var(--border);border-radius:5px;font-family:'Sarabun',sans-serif;font-size:12.5px;color:var(--text)}
@@ -441,7 +477,7 @@ let dc = {};
 }
 .btn-print-lg:hover{background:linear-gradient(135deg,#c07d0c,#f0b020);transform:translateY(-2px);box-shadow:0 6px 18px rgba(232,160,32,.5)}
 
-.sum-print-wrap{background:#fff;max-width:780px;margin:0 auto;padding:20px 28px;border:1px solid var(--border);font-family:'Sarabun',sans-serif;font-size:13px;line-height:1.5}
+.sum-print-wrap{background:#fff;max-width:780px;margin:0 auto;padding:20px 28px;border:1px solid var(--border);font-family:'Sarabun',sans-serif;font-size:13px;line-height:1.5;--row-pad-v:5px;}
 .sm-page{page-break-after:always}
 
 /* =====================================================
@@ -462,8 +498,16 @@ body.report-preview-mode footer{display:none!important;}
 .sm-hdr{text-align:center;margin-bottom:12px}
 .sm-hdr div{font-weight:700;font-size:14px;margin:2px 0}
 .sm-tbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
-.sm-tbl th,.sm-tbl td{border:1px solid #000;padding:5px 6px;vertical-align:top}
+.sm-tbl th,.sm-tbl td{border:1px solid #000;padding:var(--row-pad-v,5px) 6px;vertical-align:top}
 .sm-tbl th{font-weight:700;text-align:center;background:#f2f2f2;white-space:nowrap}
+/* ✅ ปุ่มปรับระยะห่างบรรทัด — ย้ายมาจาก 05/07 (ใช้ร่วมกับ PaginateTH.makeRowSpacingControl) */
+.spacing-ctrl{display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid var(--gray-200);border-radius:8px;padding:6px 8px 6px 14px;box-shadow:0 2px 6px rgba(0,0,0,.05);}
+.spacing-ctrl span{font-size:12px;font-weight:700;color:#374151;white-space:nowrap;}
+.spacing-ctrl .sp-level{font-size:12px;font-weight:700;color:var(--blue);min-width:48px;text-align:center;}
+.btn-sp{width:30px;height:30px;border:1.5px solid var(--gray-200);background:#fff;border-radius:6px;font-size:16px;font-weight:700;color:var(--blue-dark,var(--blue));cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;line-height:1;}
+.btn-sp:hover{background:var(--blue-light);border-color:var(--blue);}
+.btn-sp:disabled{opacity:.35;cursor:not-allowed;}
+.btn-sp:disabled:hover{background:#fff;border-color:var(--gray-200);}
 .sm-cat td{font-weight:700}
 .sm-grp td{font-weight:700;padding-left:20px!important}
 .sm-carry td{font-weight:700;background:#fafafa;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
@@ -484,63 +528,31 @@ body.report-preview-mode footer{display:none!important;}
    ============================================================ */
 // ⚠️ ทุกหมวด (รวม "ค่าวัสดุสำนักงาน"/"ค่าวัสดุเบ็ดเตล็ด") ไม่ใส่เลขไว้ล่วงหน้าอีกต่อไป
 // เลขข้อทั้งหมด "dynamic" ตามหมวดที่ตั้งงบประมาณไว้ในไฟล์ 05 (ดู computeMajorNumbers())
-const SEC_OPTS = [
-  {v:'fuel',  l:'ค่าน้ำมันเชื้อเพลิงและหล่อลื่น'},
-  {v:'1',     l:'ค่าวัสดุสำนักงาน'},
-  {v:'2',     l:'ค่าวัสดุเบ็ดเตล็ด'},
-  {v:'lump',  l:'ค่าจ้างเหมา (รถตู้/พาหนะรับจ้าง)'},
-  {v:'venue', l:'ค่าเช่าสถานที่'},
-  {v:'3',     l:'ค่าอาหารและเครื่องดื่ม'},
-  {v:'4',     l:'ค่าเดินทางเจ้าหน้าที่ดำเนินการและประสานงาน (กฝภ.1)'},
-  {v:'ext',   l:'ค่าสมนาคุณวิทยากรภายนอก'},
-  {v:'int',   l:'ค่าสมนาคุณวิทยากรภายใน (จ่ายผ่าน payroll)'},
-];
-
-// ลำดับตายตัวของหมวดทั้งหมด (ใช้คำนวณเลขข้อจริงตอนสร้างเอกสาร — ต้องตรงลำดับกับไฟล์ 05)
-const DYNAMIC_SEC_ORDER = ['fuel','1','2','lump','venue','3','4','ext','int'];
-
-// หมวดย่อยตามหมวดใหญ่
-const SUB_OPTS = {
-  '1': [
-    {v:'',    l:'— ไม่ระบุหมวดย่อย —'},
-    {v:'1_1', l:'ค่าเครื่องเขียนแบบพิมพ์'},
-    {v:'1_2', l:'ค่าถ่ายเอกสารและเข้าเล่ม'},
-  ],
-  'venue': [
-    {v:'',            l:'— ไม่ระบุหมวดย่อย —'},
-    {v:'venue_meet',  l:'ค่าเช่าห้องประชุม'},
-    {v:'venue_vip',   l:'ค่าเช่าห้องพัก ประธานในพิธี'},
-    {v:'venue_staff', l:'ค่าเช่าห้องพัก ผู้เข้าอบรม/เจ้าหน้าที่'},
-  ],
-  '3': [
-    {v:'',        l:'— ไม่ระบุหมวดย่อย —'},
-    {v:'3_12',    l:'อาหารกลางวัน / อาหารว่างและเครื่องดื่ม'},
-    {v:'3_dinner',l:'อาหารเย็น'},
-    {v:'3_3',     l:'อาหารเย็นวิทยากรภายนอก'},
-  ],
-  '4': [
-    {v:'',    l:'— ไม่ระบุหมวดย่อย —'},
-    {v:'4_1', l:'ค่าเบี้ยเลี้ยง'},
-    {v:'4_2', l:'ค่าที่พัก'},
-    {v:'4_3', l:'ค่าพาหนะ'},
-  ],
-  'ext': [
-    {v:'',           l:'— ไม่ระบุหมวดย่อย —'},
-    {v:'ext_honor',  l:'ค่าสมนาคุณวิทยากร'},
-    {v:'ext_lodging',l:'ค่าที่พักวิทยากร'},
-    {v:'ext_travel', l:'ค่าพาหนะ/เดินทางวิทยากร'},
-  ],
-  'int': [
-    {v:'',           l:'— ไม่ระบุหมวดย่อย —'},
-    {v:'int_honor',  l:'ค่าสมนาคุณวิทยากร'},
-    {v:'int_lodging',l:'ค่าที่พักวิทยากร'},
-    {v:'int_travel', l:'ค่าพาหนะ/เดินทางวิทยากร'},
-  ],
-};
-
+//
+// SEC_OPTS/DYNAMIC_SEC_ORDER/SUB_OPTS/getActiveSections/computeMajorNumbers ก้อนใหญ่ที่เคย
+// ก็อปวางซ้ำกับไฟล์ 09 ถูกย้ายไปรวมที่ js/schema.js แล้ว (SchemaTH) — ใช้ผ่าน alias ด้านล่าง
+// เพื่อไม่ต้องแก้จุดเรียกใช้ทั่วทั้งไฟล์ทีเดียว (SEC_OPTS/DYNAMIC_SEC_ORDER ยังใช้ชื่อเดิมได้)
+//
+// ⚠️ สำคัญมาก — รหัสหมวด/หมวดย่อยเปลี่ยนจากตัวเลขล้วนเป็นชื่อสื่อความหมาย (camelCase):
+//   หมวดใหญ่:  '1'→SchemaTH.SEC.OFFICE('office')  '2'→MISC('misc')  '3'→FOOD('food')  '4'→STAFF_TRAVEL('staffTravel')
+//              (fuel/lump/venue/ext/int ค่าเดิมไม่เปลี่ยน)
+//   หมวดย่อย:  '1_1'→officeStationery  '1_2'→officeCopy  'venue_meet'→venueMeeting  'venue_vip'→venueVipLodging
+//              'venue_staff'→venueStaffLodging  '3_12'→foodLunchSnack  '3_dinner'→foodDinner  '3_3'→foodSpeakerDinner
+//              '4_1'→staffAllowance  '4_2'→staffLodging  '4_3'→staffTransport  'ext_honor'→extHonorarium
+//              'ext_lodging'→extLodging  'ext_travel'→extTravel  'int_honor'→intHonorarium
+//              'int_lodging'/'int_travel' → ถูกตัดออกจาก dropdown แล้ว (ธุรกิจ: ที่พัก/พาหนะวิทยากรภายในเป็น
+//              เงินโอนหน่วยงานต้นสังกัด คีย์ที่ไฟล์ 05 แล้ว ไม่ต้องคีย์ซ้ำที่นี่)
+//
+// ผลกระทบที่ต้องรู้ (ดูสรุปท้ายงาน): ข้อมูล actual06.rowsJson ที่เคยบันทึกไว้ก่อนหน้านี้ในชีต
+// Google Sheets ใช้รหัสเก่า — restoreRowsFromGs() ด้านล่างมี legacy-code migration shim
+// แปลงรหัสเก่า→ใหม่ตอนโหลดแล้ว แต่ไฟล์ 07 (applyActuals07/computeBySectionFromRows) ยังอ่าน
+// คีย์เก่า ('1','2','3','4') จาก by06[...] อยู่ — ต้องอัปเดตไฟล์ 07 ให้ตรงกันในงานถัดไป
+const SEC_OPTS          = SchemaTH.SEC_OPTS;
+const DYNAMIC_SEC_ORDER = SchemaTH.DYNAMIC_SEC_ORDER;
+const SUB_OPTS          = SchemaTH.SUB_OPTS;
 
 function getSubOpts(sec) {
-  return SUB_OPTS[sec] || [];
+  return SchemaTH.getSubOpts(sec);
 }
 
 // ข้อมูล toggle ของหมวดต่างๆ จากไฟล์ 05 (โหลดตอน autoLoadFromSheet) — ใช้ตัดสินว่าหมวดไหน "ตั้งงบไว้"
@@ -548,28 +560,11 @@ let BUDGET05 = null;
 let BUDGET05_TOGGLES = null;
 
 /* หมวดที่ "ตั้งงบประมาณไว้" ตามไฟล์ 05 — ถ้ายังไม่มีข้อมูลงบ (ยังไม่เคยบันทึกไฟล์05/โหลดไม่สำเร็จ)
-   fallback กลับไปใช้ตรรกะเดิม (หมวดที่มีรายการคีบิลจริงในรายงานนี้) เพื่อไม่ให้รายงานเก่าพัง */
+   fallback กลับไปใช้ตรรกะเดิม (หมวดที่มีรายการคีบิลจริงในรายงานนี้) เพื่อไม่ให้รายงานเก่าพัง
+   (ตัวจัดการจริงคือ SchemaTH.getActiveSections(rows, toggles, budget) — ตรงกับที่เคยอยู่ในไฟล์นี้เป๊ะ
+   รวม fix บั๊ก #2 ในเลดเจอร์ (extHasAmount) ไปแล้วในตัว) */
 function getActiveSections(rows){
-  const t = BUDGET05_TOGGLES;
-  if (t) {
-    const b = BUDGET05 || {};
-    const set = new Set();
-    if (t.fuel && t.fuel.on) set.add('fuel');
-    if (!t.toggles || t.toggles.office !== false) set.add('1');
-    if (!t.toggles || t.toggles.misc   !== false) set.add('2');
-    if (t.lump  && t.lump.on)  set.add('lump');
-    if (t.venue && t.venue.on) set.add('venue');
-    if (!t.toggles || t.toggles.food        !== false) set.add('3');
-    if (!t.toggles || t.toggles.stafftravel !== false) set.add('4');
-    const extHasAmount = (Number(b.sec5)||0) + (Number(b.sec6)||0) > 0;
-    const extHasSpeakers = Array.isArray(t.EXT) && t.EXT.length > 0;
-    if (t.hasExternal !== false && (extHasAmount || extHasSpeakers)) set.add('ext');
-    // หมวดวิทยากรภายใน — ไฟล์ 05 อาจยังไม่มี toggle นี้ จึงอิงจากรายการที่กรอกจริงในไฟล์นี้ด้วย
-    const intHasSpeakers = Array.isArray(t.INT) && t.INT.length > 0;
-    if (t.hasInternal || intHasSpeakers || (rows||[]).some(r=>(r.secV||r.sec)==='int')) set.add('int');
-    return set;
-  }
-  return new Set((rows||[]).map(r=>r.secV||r.sec));
+  return SchemaTH.getActiveSections(rows, BUDGET05_TOGGLES, BUDGET05);
 }
 
 /* ─────────────────────────────────────────────────────
@@ -586,28 +581,28 @@ function computeMajorNumbers(rows){
   });
   return nums;
 }
-const DOC_OPTS = [
-  'ใบเสร็จรับเงิน/ใบกำกับภาษี',
-  'ใบสำคัญรับเงิน',
-  'บิลเงินสด',
-];
+const DOC_OPTS = SchemaTH.DOC_OPTS;
 let smCnt = 0;
-const TH_MON = ['','มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
-// ดึงเฉพาะส่วน YYYY-MM-DD จากสตริงวันที่ใดๆ (รองรับ ISO datetime ที่มีเวลา/timezone ติดมาด้วย
-// เช่น "2026-07-20T00:00:00.000Z" ซึ่ง Google Apps Script มักคืนค่า Date column มาเป็นรูปแบบนี้
-// — ล้อวิธีเดียวกับไฟล์ 07 isoTh()/isoThRange() ที่ดึงวันที่ได้ถูกต้อง)
+
+// ✅ ปุ่มปรับระยะห่างบรรทัด (ย้าย logic ไป PaginateTH.makeRowSpacingControl ใน js/print-layout.js
+// แล้ว — ไฟล์นี้แค่ผูก selector/id ของตัวเองเข้ากับ control ที่ใช้ร่วมกับ 05/07) sessionKey ต้อง
+// ไม่ซ้ำกับไฟล์อื่น (ใช้ตัวเลขไฟล์ต่อท้ายกันชนกัน)
+const rowSpacing06 = PaginateTH.makeRowSpacingControl({
+  containerSelector: '.sum-print-wrap',
+  sessionKey: 'rpt06_rowSpacing',
+  labelId: 'sp_level_06', decId: 'sp_dec_06', incId: 'sp_inc_06',
+});
+rowSpacing06.init();
+// TH_MON / normDateStr / sumFmtDate / sumFmtDateRange — logic วันที่ทั้งหมดย้ายไปรวมที่
+// js/date-th.js แล้ว (DateTH) ใช้ร่วมกันทุกไฟล์ ไฟล์นี้ไม่เคยชดเชย timezone +7 ชม. มาก่อน
+// (ต่างจาก 05/07 ที่แก้บั๊กนี้ไปแล้ว) — เปลี่ยนมาใช้ DateTH.normalize/format/formatRange
+// จะได้รับการแก้บั๊กนี้ไปด้วยในตัว ยังคงชื่อฟังก์ชันเดิมไว้เป็น wrapper บางๆ กันไม่ต้องแก้จุด
+// เรียกใช้ทั้งไฟล์
 function normDateStr(s){
-  const m = String(s||'').match(/^(\d{4})-(\d{2})-(\d{2})/);
-  return m ? `${m[1]}-${m[2]}-${m[3]}` : '';
+  return DateTH.normalize(s);
 }
 function sumFmtDate(d){
-  if(!d) return '';
-  const parts = d.split('-');
-  if(parts.length===3){
-    const y=parseInt(parts[0])+543, m=parseInt(parts[1]), day=parseInt(parts[2]);
-    return `${day} ${TH_MON[m]} ${y}`;
-  }
-  return d;
+  return DateTH.format(d);
 }
 const smF2 = n => n === 0 ? '-' : n.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
 const smFmt = n => n.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -620,17 +615,7 @@ const shGet = id => {
   return document.getElementById(realId)?.value?.trim() || '';
 };
 function sumFmtDateRange(s, e){
-  if(!s && !e) return '';
-  if(!e || s === e) return sumFmtDate(s || e);
-  const ps = s.split('-'), pe = e.split('-');
-  if(ps.length===3 && pe.length===3){
-    const y1=parseInt(ps[0])+543, m1=parseInt(ps[1]), d1=parseInt(ps[2]);
-    const y2=parseInt(pe[0])+543, m2=parseInt(pe[1]), d2=parseInt(pe[2]);
-    if(y1===y2 && m1===m2) return `${d1} - ${d2} ${TH_MON[m1]} ${y1}`;
-    if(y1===y2) return `${d1} ${TH_MON[m1]} – ${d2} ${TH_MON[m2]} ${y1}`;
-    return `${d1} ${TH_MON[m1]} ${y1} – ${d2} ${TH_MON[m2]} ${y2}`;
-  }
-  return sumFmtDate(s) + ' – ' + sumFmtDate(e);
+  return DateTH.formatRange(s, e);
 }
 function shSyncDateRange(){
   const s = document.getElementById('sh_date')?.value || '';
@@ -649,7 +634,7 @@ function sumAddRow(){
   smCnt++;
   const id = 'smr'+smCnt;
   const secOpts = SEC_OPTS.map(s=>`<option value="${s.v}">${s.l}</option>`).join('');
-  const subOpts = getSubOpts('1').map(s=>`<option value="${s.v}">${s.l}</option>`).join('');
+  const subOpts = getSubOpts(SchemaTH.SEC.OFFICE).map(s=>`<option value="${s.v}">${s.l}</option>`).join('');
   const docOpts = DOC_OPTS.map(d=>`<option value="${d}">${d}</option>`).join('');
   const div = document.createElement('div');
   div.className = 'sum-row-card'; div.id = id;
@@ -664,6 +649,11 @@ function sumAddRow(){
     <div class="sum-row-top">
       <div class="sum-row-num">${smCnt}</div>
       <div class="sum-row-title">รายการที่ ${smCnt}</div>
+      <div class="sum-order-btns">
+        <button type="button" class="sum-order-btn" id="${id}_up" onclick="sumMoveRow('${id}',-1)" title="เลื่อนขึ้น">▲</button>
+        <button type="button" class="sum-order-btn" id="${id}_down" onclick="sumMoveRow('${id}',1)" title="เลื่อนลง">▼</button>
+      </div>
+      <span class="sum-order-warn" id="${id}_orderwarn" style="display:none" title=""></span>
       <label class="sum-merge-label" id="${id}_mergelabel" style="display:none">
         <input type="checkbox" id="${id}_merge" onchange="sumRenumber()">
         <span>รวมลำดับกับรายการก่อนหน้า</span>
@@ -687,12 +677,7 @@ function sumAddRow(){
         <div class="sum-inp" style="max-width:210px;">
           <label>หมวดหมู่</label>
           <select id="${id}_vcat">
-            <option value="office">🏢 สำนักงาน กปภ.</option>
-            <option value="shop">🏪 ร้านค้า</option>
-            <option value="hotel">🏨 โรงแรม</option>
-            <option value="fuel">⛽ ปั๊มน้ำมัน</option>
-            <option value="restaurant">🍽️ ร้านอาหาร</option>
-            <option value="other">📦 อื่นๆ</option>
+            ${VENDOR_CATEGORIES.map(c=>`<option value="${c.v}">${c.icon} ${c.l}</option>`).join('')}
           </select>
         </div>
         <div class="sum-inp" style="max-width:320px;flex:1;">
@@ -735,8 +720,15 @@ function sumAddRow(){
       <div class="sum-inp"><label>รหัสบัญชี</label>
         <input type="text" id="${id}_acct" value="6212001"></div>
     </div>
+    <div id="${id}_gross_val" class="sum-row-4col" style="display:none;margin-bottom:8px;background:var(--info-bg);border:1px dashed var(--blue);border-radius:8px;padding:10px 12px 4px;">
+      <div class="sum-inp sum-wide"><label style="color:var(--blue);font-weight:700;">ยอดเต็ม (รวม VAT) (บาท)</label>
+        <input type="number" id="${id}_gross_val_input" value="0" step="0.01" oninput="sumApplyGross('${id}','val','vat')"></div>
+    </div>
     <div id="${id}_normal_4col" class="sum-row-4col">
-      <div class="sum-inp"><label>มูลค่าสินค้า (บาท)</label>
+      <div class="sum-inp"><label style="display:inline-flex;align-items:center;gap:5px;">มูลค่าสินค้า (บาท)
+          <span class="sum-gross-icon" title="ติ๊กถ้ามีแต่ยอดรวม VAT (ยอดเต็ม) — ระบบจะคำนวณมูลค่าสินค้า/VAT ให้อัตโนมัติ (หาร 1.07)">
+            <input type="checkbox" id="${id}_grossmode_val" onchange="sumToggleGrossMode('${id}','val','vat')">
+          </span></label>
         <input type="number" id="${id}_val" value="0" step="0.01" oninput="sumRowCalc('${id}')"></div>
       <div class="sum-inp"><label>ภาษีมูลค่าเพิ่ม (บาท)</label>
         <input type="number" id="${id}_vat" value="0" step="0.01" oninput="sumRowCalc('${id}')"></div>
@@ -747,15 +739,29 @@ function sumAddRow(){
     </div>
     <div id="${id}_combined_3_12" style="display:none;background:var(--info-bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-top:6px;">
       <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:8px;">3.1 อาหารกลางวัน</div>
+      <div id="${id}_gross_v31" class="sum-row-4col" style="display:none;margin-bottom:8px;background:#fff;border:1px dashed var(--blue);border-radius:8px;padding:10px 12px 4px;">
+        <div class="sum-inp sum-wide"><label style="color:var(--blue);font-weight:700;">ยอดเต็ม 3.1 (รวม VAT) (บาท)</label>
+          <input type="number" id="${id}_gross_v31_input" value="0" step="0.01" oninput="sumApplyGross('${id}','v31','vat31')"></div>
+      </div>
       <div class="sum-row-4col" style="margin-bottom:10px;">
-        <div class="sum-inp"><label>มูลค่าสินค้า 3.1 (บาท)</label>
+        <div class="sum-inp"><label style="display:inline-flex;align-items:center;gap:5px;">มูลค่าสินค้า 3.1 (บาท)
+            <span class="sum-gross-icon" title="ติ๊กถ้ามีแต่ยอดรวม VAT (ยอดเต็ม) ของบิล 3.1 — ระบบจะคำนวณให้อัตโนมัติ (หาร 1.07)">
+              <input type="checkbox" id="${id}_grossmode_v31" onchange="sumToggleGrossMode('${id}','v31','vat31')">
+            </span></label>
           <input type="number" id="${id}_v31" value="0" step="0.01" oninput="sumRowCalc312('${id}')"></div>
         <div class="sum-inp"><label>ภาษีมูลค่าเพิ่ม 3.1 (บาท)</label>
           <input type="number" id="${id}_vat31" value="0" step="0.01" oninput="sumRowCalc312('${id}')"></div>
       </div>
       <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:8px;">3.2 อาหารว่างและเครื่องดื่ม</div>
+      <div id="${id}_gross_v32" class="sum-row-4col" style="display:none;margin-bottom:8px;background:#fff;border:1px dashed var(--blue);border-radius:8px;padding:10px 12px 4px;">
+        <div class="sum-inp sum-wide"><label style="color:var(--blue);font-weight:700;">ยอดเต็ม 3.2 (รวม VAT) (บาท)</label>
+          <input type="number" id="${id}_gross_v32_input" value="0" step="0.01" oninput="sumApplyGross('${id}','v32','vat32')"></div>
+      </div>
       <div class="sum-row-4col" style="margin-bottom:10px;">
-        <div class="sum-inp"><label>มูลค่าสินค้า 3.2 (บาท)</label>
+        <div class="sum-inp"><label style="display:inline-flex;align-items:center;gap:5px;">มูลค่าสินค้า 3.2 (บาท)
+            <span class="sum-gross-icon" title="ติ๊กถ้ามีแต่ยอดรวม VAT (ยอดเต็ม) ของบิล 3.2 — ระบบจะคำนวณให้อัตโนมัติ (หาร 1.07)">
+              <input type="checkbox" id="${id}_grossmode_v32" onchange="sumToggleGrossMode('${id}','v32','vat32')">
+            </span></label>
           <input type="number" id="${id}_v32" value="0" step="0.01" oninput="sumRowCalc312('${id}')"></div>
         <div class="sum-inp"><label>ภาษีมูลค่าเพิ่ม 3.2 (บาท)</label>
           <input type="number" id="${id}_vat32" value="0" step="0.01" oninput="sumRowCalc312('${id}')"></div>
@@ -801,10 +807,10 @@ function sumSecChange(id){
   }
 
   // แสดง/ซ่อน sub-dropdown (หมวดที่มีหมวดย่อย)
-  const SECS_WITH_SUB = ['1','3','4','venue','ext','int'];
+  const SECS_WITH_SUB = [SchemaTH.SEC.OFFICE, SchemaTH.SEC.FOOD, SchemaTH.SEC.STAFF_TRAVEL, SchemaTH.SEC.VENUE, SchemaTH.SEC.EXT, SchemaTH.SEC.INT];
   if(subWrap) subWrap.style.display = SECS_WITH_SUB.includes(sec) ? '' : 'none';
 
-  if(sec === '4'){
+  if(sec === SchemaTH.SEC.STAFF_TRAVEL){
     // ใช้ sub ที่เลือกอยู่ตอนนี้ (ถ้ายังไม่มีให้ default เป็น '' = 4_1 logic)
     const curSub = ps.querySelector(`#${id}_sub`)?.value || '';
     apply4Logic(ps, id, curSub);
@@ -817,19 +823,20 @@ function sumSecChange(id){
     if(staffSelOut) staffSelOut.selectedIndex = 0;
   }
   sumCalc();
+  sumValidateOrder();
 }
 
 
 /* ─────────────────────────────────────────────────────
-   apply4Logic — จัดการช่องกรอกเมื่อเลือกหมวด 4
-   sub = '' | '4_1' → ล็อกที่อยู่ กฝภ.1 (ใบสำคัญรับเงิน)
-   sub = '4_3'      → กรอกเองได้ (เหมือนหมวดอื่นๆ)
+   apply4Logic — จัดการช่องกรอกเมื่อเลือกหมวดค่าเดินทางเจ้าหน้าที่ (SEC.STAFF_TRAVEL)
+   sub = '' | SUB.STAFF_ALLOWANCE/STAFF_LODGING → ล็อกที่อยู่ กฝภ.1 (ใบสำคัญรับเงิน)
+   sub = SUB.STAFF_TRANSPORT                    → กรอกเองได้ (เหมือนหมวดอื่นๆ)
 ───────────────────────────────────────────────────── */
 function apply4Logic(ps, id, sub){
   const nameWrap  = ps.querySelector(`#${id}_name_wrap`);
   const staffWrap = ps.querySelector(`#${id}_staff_wrap`);
 
-  if(sub === '4_3'){
+  if(sub === SchemaTH.SUB.STAFF_TRANSPORT){
     // ── 4.3 ค่าพาหนะ: กรอกเสรี เหมือนหมวดอื่น ──
     if(nameWrap)  nameWrap.style.display  = '';
     if(staffWrap) staffWrap.style.display = 'none';
@@ -870,18 +877,19 @@ function sumSubChange(id){
   const ps  = smPS();
   const sec = ps.querySelector(`#${id}_sec`)?.value;
   const sub = ps.querySelector(`#${id}_sub`)?.value || '';
-  if(sec === '4') apply4Logic(ps, id, sub);
-  if(sec === '3') apply3_12Logic(ps, id, sub);
+  if(sec === SchemaTH.SEC.STAFF_TRAVEL) apply4Logic(ps, id, sub);
+  if(sec === SchemaTH.SEC.FOOD) apply3_12Logic(ps, id, sub);
   sumCalc();
+  sumValidateOrder();
 }
 
 /* ─────────────────────────────────────────────────────
-   apply3_12Logic — แสดง 2 บรรทัดย่อย (3.1 + 3.2) เมื่อเลือก 3_12
+   apply3_12Logic — แสดง 2 บรรทัดย่อย (3.1 + 3.2) เมื่อเลือก foodLunchSnack (เดิม '3_12')
 ───────────────────────────────────────────────────── */
 function apply3_12Logic(ps, id, sub){
   const combined   = ps.querySelector(`#${id}_combined_3_12`);
   const normal4col = ps.querySelector(`#${id}_normal_4col`);
-  if(sub === '3_12'){
+  if(sub === SchemaTH.SUB.FOOD_LUNCH_SNACK){
     if(combined)   combined.style.display = '';
     if(normal4col) normal4col.style.display = 'none';
     sumRowCalc312(id);
@@ -925,14 +933,9 @@ let VENDOR_LIST = null;
 let _vendorPickerTargetId = null;
 let _vendorPickerCategory = 'all';
 
-const VENDOR_CATEGORIES = [
-  {v:'office',     l:'สำนักงาน กปภ.', icon:'🏢'},
-  {v:'shop',       l:'ร้านค้า',        icon:'🏪'},
-  {v:'hotel',      l:'โรงแรม',        icon:'🏨'},
-  {v:'fuel',       l:'ปั๊มน้ำมัน',      icon:'⛽'},
-  {v:'restaurant', l:'ร้านอาหาร',      icon:'🍽️'},
-  {v:'other',      l:'อื่นๆ',          icon:'📦'},
-];
+// ✅ ย้าย VENDOR_CATEGORIES เข้า schema.js แล้ว (SchemaTH.VENDOR_CATEGORIES) รวมจุดแก้กับ
+// SEC_OPTS/SUB_OPTS/DOC_OPTS ไว้ที่เดียว — เพิ่ม/แก้หมวดในอนาคตแก้ที่ schema.js ที่เดียวพอ
+const VENDOR_CATEGORIES = SchemaTH.VENDOR_CATEGORIES;
 function vendorCatLabel(v){ const c = VENDOR_CATEGORIES.find(c=>c.v===v); return c ? `${c.icon} ${c.l}` : '📦 อื่นๆ'; }
 
 async function ensureVendorList(force){
@@ -1039,19 +1042,21 @@ function sumRenumber(){
   const cards = Array.from(ps.querySelectorAll('#sm_rows .sum-row-card'));
   let displaySeq = 0;
   cards.forEach((card, i) => {
-    const id = card.id;
+    const id         = card.id;
     const mergeLabel = card.querySelector('.sum-merge-label');
     const mergeCb    = card.querySelector(`#${id}_merge`);
     const numEl      = card.querySelector('.sum-row-num');
     const titleEl    = card.querySelector('.sum-row-title');
-    // ซ่อน checkbox รายการแรก, แสดงรายการถัดไป
+    const upBtn      = card.querySelector(`#${id}_up`);
+    const downBtn    = card.querySelector(`#${id}_down`);
+    // ซ่อน checkbox รายการแรก (ไม่มี "รายการก่อนหน้า" ให้รวมด้วย), แสดงรายการถัดไป
     if(i === 0){
       if(mergeLabel) mergeLabel.style.display = 'none';
       if(mergeCb) mergeCb.checked = false;
     } else {
       if(mergeLabel) mergeLabel.style.display = '';
     }
-    // คำนวณ display seq
+    // คำนวณ display seq (รายการที่ merge ไว้ไม่นับเป็นลำดับใหม่)
     const isMerged = mergeCb && mergeCb.checked;
     if(!isMerged) displaySeq++;
     numEl.textContent   = displaySeq;
@@ -1059,15 +1064,163 @@ function sumRenumber(){
     // highlight แถวที่ merge
     card.style.borderLeft = isMerged ? '4px solid var(--accent)' : '';
     card.style.background = isMerged ? 'var(--amber-bg)' : '';
+    if(upBtn)   upBtn.disabled   = (i === 0);
+    if(downBtn) downBtn.disabled = (i === cards.length - 1);
   });
+  sumValidateOrder();
+}
+
+/* ============================================================
+   VALIDATION: ลำดับหมวด/หมวดย่อยต้องเรียงถูกต้อง (งาน 06 ข้อ 5) — ทำงานสดๆ ทุกครั้งที่
+   เปลี่ยนหมวด (sumSecChange/sumSubChange), สลับ ▲▼ หรือเพิ่ม/ลบรายการ (sumRenumber ถูกเรียกอยู่แล้ว
+   จากทุกจุดนั้น), และตอนโหลดข้อมูลเก่าเข้ามา (restoreRowsFromGs ก็เรียก sumRenumber เช่นกัน)
+   ตรวจ 2 ระดับ:
+   (ก) ลำดับหมวดใหญ่ต้องไม่ย้อนกลับ (ตาม SchemaTH.DYNAMIC_SEC_ORDER) — ครั้งหนึ่งย้ายไปหมวดถัดไปแล้ว
+       ห้ามมีรายการของหมวดก่อนหน้าโผล่มาอีก (ไม่งั้นหัวข้อหมวดใหญ่ใน sumBuildDoc จะขึ้นซ้ำ)
+   (ข) ภายในหมวดวัสดุสำนักงาน (SEC.OFFICE) ต้องกรอก "ค่าเครื่องเขียนแบบพิมพ์" ให้ครบก่อน แล้วค่อย
+       "ค่าถ่ายเอกสารและเข้าเล่ม" ห้ามสลับ (ผูกกับเลขหัวข้อย่อย 1.1/1.2 ที่เพิ่มในข้อ 2 — ถ้าสลับ
+       เลขที่ขึ้นในรายงานจะไม่ตรงกับไฟล์ 05)
+   คืนค่า true = เรียงถูกทั้งหมด, false = มีอย่างน้อย 1 การ์ดผิดลำดับ (ติดป้ายแดง + tooltip ให้แล้ว)
+   ============================================================ */
+function sumValidateOrder(){
+  const ps = smPS();
+  const cards = Array.from(ps.querySelectorAll('#sm_rows .sum-row-card'));
+  const OFFICE_SUB_ORDER = [SchemaTH.SUB.OFFICE_STATIONERY, SchemaTH.SUB.OFFICE_COPY];
+
+  // เคลียร์ป้ายแดงทุกใบก่อนตรวจใหม่ทุกครั้ง
+  cards.forEach(card => {
+    const warn = card.querySelector(`#${card.id}_orderwarn`);
+    if(warn){ warn.style.display = 'none'; warn.title = ''; }
+  });
+
+  let maxSecIdx = -1;
+  let maxOfficeSubIdx = -1;
+  let ok = true;
+
+  cards.forEach(card => {
+    const id = card.id;
+    const secV = ps.querySelector(`#${id}_sec`)?.value || '';
+    const subV = ps.querySelector(`#${id}_sub`)?.value || '';
+    const secIdx = SchemaTH.DYNAMIC_SEC_ORDER.indexOf(secV);
+    const msgs = [];
+
+    if(secIdx !== -1){
+      if(secIdx < maxSecIdx) msgs.push('หมวดใหญ่ไม่เรียงลำดับ ก.1→ก.x — ย้ายรายการนี้ไปรวมกับกลุ่มหมวดเดียวกันก่อนหน้า หรือสลับลำดับหมวดใหม่ให้ถูก');
+      else maxSecIdx = secIdx;
+    }
+
+    if(secV === SchemaTH.SEC.OFFICE && subV){
+      const subIdx = OFFICE_SUB_ORDER.indexOf(subV);
+      if(subIdx !== -1){
+        if(subIdx < maxOfficeSubIdx) msgs.push('หมวดวัสดุสำนักงาน: ต้องกรอก "ค่าเครื่องเขียนแบบพิมพ์" ให้ครบก่อน แล้วค่อยกรอก "ค่าถ่ายเอกสารและเข้าเล่ม" ห้ามสลับกัน');
+        else maxOfficeSubIdx = subIdx;
+      }
+    }
+
+    if(msgs.length){
+      ok = false;
+      const warn = card.querySelector(`#${id}_orderwarn`);
+      if(warn){
+        warn.style.display = '';
+        warn.title = msgs.join(' / ');
+        warn.textContent = '⚠️ ลำดับผิด';
+      }
+    }
+  });
+
+  return ok;
+}
+
+/* ── sumMoveRow — สลับตำแหน่งการ์ดจริงใน DOM (ผู้ใช้กำหนดลำดับหมวด ก.1-ก.x เองตรงนี้)
+   ลำดับที่สลับแล้วจะถูกใช้ทั้งตอน sumRenumber (เลขที่โชว์), sumCollectState (ลำดับที่ส่งไปบันทึก
+   ลง Sheet ตอนกด "บันทึกแบบร่าง"), และ sumBuildDoc (ลำดับที่ขึ้นตัวอย่างรายงาน/PDF) เพราะทุกจุด
+   อ่านจาก DOM order ของ #sm_rows เป็นความจริงหนึ่งเดียวเหมือนกันหมด — สลับแล้วยังไม่ถือว่าบันทึก
+   จนกว่าจะกด "บันทึกแบบร่าง" อีกครั้ง (เหมือนแก้ตัวเลขในบิลแล้วไม่กดบันทึก)
+   ⚠️ ทุกครั้งที่กด ▲▼ จะ "เคลียร์ checkbox รวมลำดับกับรายการก่อนหน้า" ของทุกการ์ดในหน้าทั้งหมดทันที
+   (ไม่ใช่แค่การ์ดที่ถูกย้าย) เพราะความหมาย "รายการก่อนหน้า" เปลี่ยนไปทันทีที่ลำดับเปลี่ยน หาก
+   ปล่อยให้ merge state ค้างไว้ต่อจะจับคู่กับรายการที่ผิดตัวและยอด/การแสดงผลรายงานจะพังแบบเงียบๆ ── */
+function sumMoveRow(id, dir){
+  const ps = smPS();
+  const rowsWrap = ps.querySelector('#sm_rows');
+  const card = document.getElementById(id);
+  if(!rowsWrap || !card) return;
+  if(dir < 0){
+    const prev = card.previousElementSibling;
+    if(prev) rowsWrap.insertBefore(card, prev);
+  } else {
+    const next = card.nextElementSibling;
+    if(next) rowsWrap.insertBefore(next, card);
+  }
+  ps.querySelectorAll('#sm_rows [id$="_merge"]').forEach(cb => { cb.checked = false; });
+  sumRenumber();
+  sumCalc();
+}
+
+/* ============================================================
+   GROSS→NET VAT EXTRACTION — "กรอกยอดเต็ม ให้ระบบถอด VAT ให้" (งาน 06 ข้อ 3)
+   ใช้ร่วมกันทั้งบิลปกติ (val/vat) และบิลรวม 3.1/3.2 (v31/vat31, v32/vat32) โดยรับ valKey/vatKey
+   เป็น "ส่วนหลัง" ของ id เช่น 'val'/'vat' หรือ 'v31'/'vat31' — เมื่อติ๊ก: val/vat เดิมล็อก (readonly)
+   แต่ยังโชว์ตัวเลขปกติ ไม่ซ่อน + โผล่แถวใหม่ "ยอดเต็ม (รวม VAT)" ด้านบน 4-คอลัมน์เดิม
+   สูตร: มูลค่าสินค้า = ยอดเต็ม ÷ 1.07 (ปัด 2 ตำแหน่ง), VAT = ยอดเต็ม − มูลค่าสินค้า
+   จำนวนเงิน (total) ยังคำนวณจากสูตรเดิม (val+vat−wht) ผ่าน sumRowCalc/sumRowCalc312 ตามปกติ
+   ============================================================ */
+function sumToggleGrossMode(rowId, valKey, vatKey){
+  const ps = smPS();
+  const cb      = ps.querySelector(`#${rowId}_grossmode_${valKey}`);
+  const valEl   = ps.querySelector(`#${rowId}_${valKey}`);
+  const vatEl   = ps.querySelector(`#${rowId}_${vatKey}`);
+  const rowWrap = ps.querySelector(`#${rowId}_gross_${valKey}`);
+  const grossEl = ps.querySelector(`#${rowId}_gross_${valKey}_input`);
+  if(!cb || !valEl || !vatEl || !rowWrap || !grossEl) return;
+
+  const on = cb.checked;
+  [valEl, vatEl].forEach(el => {
+    el.readOnly = on;
+    el.style.background = on ? 'var(--gray-100)' : '';
+    el.style.color = on ? '#6b7280' : '';
+  });
+  rowWrap.style.display = on ? '' : 'none';
+
+  if(on){
+    // ตั้งค่าเริ่มต้นของ "ยอดเต็ม" จากมูลค่าสินค้า+VAT ปัจจุบัน (เผื่อโหลดข้อมูลเก่าที่มีค่าอยู่แล้ว
+    // มาก่อนติ๊ก) — ถ้ายอดเต็มมีค่าอยู่แล้ว (ติ๊กซ้ำ) ไม่ทับของเดิมที่พิมพ์ค้างไว้
+    if(!(parseFloat(grossEl.value)||0)){
+      const curVal = parseFloat(valEl.value) || 0;
+      const curVat = parseFloat(vatEl.value) || 0;
+      grossEl.value = (curVal + curVat).toFixed(2);
+    }
+    sumApplyGross(rowId, valKey, vatKey);
+  } else {
+    sumRecalcRow(rowId, valKey);
+  }
+}
+
+function sumApplyGross(rowId, valKey, vatKey){
+  const ps = smPS();
+  const grossEl = ps.querySelector(`#${rowId}_gross_${valKey}_input`);
+  const valEl   = ps.querySelector(`#${rowId}_${valKey}`);
+  const vatEl   = ps.querySelector(`#${rowId}_${vatKey}`);
+  if(!grossEl || !valEl || !vatEl) return;
+  const gross = parseFloat(grossEl.value) || 0;
+  const val   = Math.round((gross / 1.07) * 100) / 100;
+  const vat   = Math.round((gross - val) * 100) / 100;
+  valEl.value = val.toFixed(2);
+  vatEl.value = vat.toFixed(2);
+  sumRecalcRow(rowId, valKey);
+}
+
+// เลือกฟังก์ชันคำนวณ "จำนวนเงิน" ที่ถูกต้องตามว่าเป็นบิลปกติ (val/vat) หรือบิลรวม 3.1/3.2 (v31/v32)
+function sumRecalcRow(rowId, valKey){
+  if(valKey === 'v31' || valKey === 'v32') sumRowCalc312(rowId);
+  else sumRowCalc(rowId);
 }
 
 function sumRowCalc(id){
   const ps = smPS();
-  // ถ้าเป็นแถว 3_12 (combined) ให้ใช้ sumRowCalc312 แทนเพื่อหลีกเลี่ยง
+  // ถ้าเป็นแถว foodLunchSnack (combined, เดิม '3_12') ให้ใช้ sumRowCalc312 แทนเพื่อหลีกเลี่ยง
   // duplicate id ระหว่าง normal_4col (ซ่อน) กับ combined_3_12 (แสดง)
   const subEl = ps.querySelector(`#${id}_sub`);
-  if(subEl && subEl.value === '3_12'){
+  if(subEl && subEl.value === SchemaTH.SUB.FOOD_LUNCH_SNACK){
     sumRowCalc312(id);
     return;
   }
@@ -1137,6 +1290,12 @@ function sumCalc(){
 }
 
 function sumGoPreview(){
+  // ✅ ล็อกดูตัวอย่างรายงานถ้าลำดับหมวด/หมวดย่อยผิด (งาน 06 ข้อ 5) — แจ้งเตือนแล้วไม่สลับหน้าไปตาราง
+  // จนกว่าจะแก้ลำดับให้ถูก (การ์ดที่ผิดมีป้ายแดง "⚠️ ลำดับผิด" ชี้ไว้ให้แล้วจาก sumValidateOrder())
+  if(!sumValidateOrder()){
+    alert('⚠️ ลำดับรายการยังไม่ถูกต้อง กรุณาแก้ไขก่อนดูตัวอย่างรายงาน\n\nดูการ์ดที่มีป้าย "⚠️ ลำดับผิด" สีแดง แล้วเลื่อน ▲▼ หรือแก้หมวด/หมวดย่อยให้เรียงถูก');
+    return;
+  }
   sumBuildDoc();
   smPS().querySelector('#sv-form').classList.remove('sv-active');
   smPS().querySelector('#sv-preview').classList.add('sv-active');
@@ -1165,19 +1324,19 @@ function sumCollectState(){
     const row = {id};
     fields.forEach(f=>{ row[f] = ps.querySelector(`#${id}_${f}`)?.value||''; });
     // BUG FIX: ช่อง #${id}_staff เป็น <select> ที่มี option แรกเป็นค่า default เสมอ
-    // (แม้จะถูกซ่อนด้วย display:none) ทำให้ทุกแถวที่ไม่ใช่หมวด 4 (เจ้าหน้าที่)
-    // ได้ค่า staff ติดมาด้วยทั้งที่ผู้ใช้ไม่ได้กรอก/เลือก — เคลียร์ทิ้งถ้าไม่ใช่หมวด 4
-    if(row.sec !== '4') row.staff = '';          // หมวดอื่น: ไม่มี staff
-    if(row.sec === '4' && row.sub !== '4_3') row.name = '';   // 4_1: ใช้ staff ไม่ใช้ name
-    if(row.sec === '4' && row.sub === '4_3') row.staff = '';  // 4_3: ใช้ name ไม่ใช้ staff
+    // (แม้จะถูกซ่อนด้วย display:none) ทำให้ทุกแถวที่ไม่ใช่หมวดค่าเดินทางเจ้าหน้าที่
+    // ได้ค่า staff ติดมาด้วยทั้งที่ผู้ใช้ไม่ได้กรอก/เลือก — เคลียร์ทิ้งถ้าไม่ใช่หมวดนี้
+    if(row.sec !== SchemaTH.SEC.STAFF_TRAVEL) row.staff = '';          // หมวดอื่น: ไม่มี staff
+    if(row.sec === SchemaTH.SEC.STAFF_TRAVEL && row.sub !== SchemaTH.SUB.STAFF_TRANSPORT) row.name = '';   // ค่าเบี้ยเลี้ยง/ที่พัก: ใช้ staff ไม่ใช้ name
+    if(row.sec === SchemaTH.SEC.STAFF_TRAVEL && row.sub === SchemaTH.SUB.STAFF_TRANSPORT) row.staff = '';  // ค่าพาหนะ: ใช้ name ไม่ใช้ staff
     row.merge = ps.querySelector(`#${id}_merge`)?.checked || false;
     row.w119  = ps.querySelector(`#${id}_w119`)?.checked || false;
     row.remember    = ps.querySelector(`#${id}_remember`)?.checked || false;
     row.addressOnly = ps.querySelector(`#${id}_addressonly`)?.checked || false;
     row.vlabel       = ps.querySelector(`#${id}_vlabel`)?.value?.trim() || '';
     row.vcat         = ps.querySelector(`#${id}_vcat`)?.value || 'other';
-    // เก็บข้อมูล combined 3.1+3.2 ถ้ามี
-    if(row.sub === '3_12'){
+    // เก็บข้อมูล combined อาหารกลางวัน+อาหารว่าง (foodLunchSnack) ถ้ามี
+    if(row.sub === SchemaTH.SUB.FOOD_LUNCH_SNACK){
       row.v31   = parseFloat(ps.querySelector(`#${id}_v31`)?.value)||0;
       row.vat31 = parseFloat(ps.querySelector(`#${id}_vat31`)?.value)||0;
       row.v32   = parseFloat(ps.querySelector(`#${id}_v32`)?.value)||0;
@@ -1190,18 +1349,18 @@ function sumCollectState(){
   const actualBySection = {};
   rows.forEach(r => {
     const sec = r.sec || '';
-    const sub = r.sub || '';  // '1_1', '1_2', '3_12', '3_3', '4_3', หรือ ''
+    const sub = r.sub || '';  // SUB.OFFICE_STATIONERY/OFFICE_COPY/FOOD_LUNCH_SNACK/FOOD_SPEAKER_DINNER/STAFF_TRANSPORT ฯลฯ หรือ ''
     const total = parseFloat(r.total) || 0;
     if (!actualBySection[sec]) actualBySection[sec] = { total: 0, subs: {}, items: [] };
     actualBySection[sec].total += total;
-    if (sub === '3_12') {
-      // แยก 3_1 และ 3_2 ออกจาก combined row
+    if (sub === SchemaTH.SUB.FOOD_LUNCH_SNACK) {
+      // แยกอาหารกลางวัน (FOOD_LUNCH) และอาหารว่าง (FOOD_SNACK) ออกจาก combined row
       const t31 = (r.v31||0) + (r.vat31||0);
       const t32 = (r.v32||0) + (r.vat32||0);
-      if (!actualBySection[sec].subs['3_1']) actualBySection[sec].subs['3_1'] = 0;
-      if (!actualBySection[sec].subs['3_2']) actualBySection[sec].subs['3_2'] = 0;
-      actualBySection[sec].subs['3_1'] += t31;
-      actualBySection[sec].subs['3_2'] += t32;
+      if (!actualBySection[sec].subs[SchemaTH.SUB.FOOD_LUNCH]) actualBySection[sec].subs[SchemaTH.SUB.FOOD_LUNCH] = 0;
+      if (!actualBySection[sec].subs[SchemaTH.SUB.FOOD_SNACK]) actualBySection[sec].subs[SchemaTH.SUB.FOOD_SNACK] = 0;
+      actualBySection[sec].subs[SchemaTH.SUB.FOOD_LUNCH] += t31;
+      actualBySection[sec].subs[SchemaTH.SUB.FOOD_SNACK] += t32;
     } else if (sub) {
       // หมวดย่อยอื่นๆ
       if (!actualBySection[sec].subs[sub]) actualBySection[sec].subs[sub] = 0;
@@ -1209,7 +1368,7 @@ function sumCollectState(){
     }
     // เก็บชื่อผู้ขาย/วิทยากร (หมวดวิทยากรภายนอก/ภายใน)
     const name = r.name || r.staff || '';
-    if (name && (sec === 'ext' || sec === 'int')) {
+    if (name && (sec === SchemaTH.SEC.EXT || sec === SchemaTH.SEC.INT)) {
       actualBySection[sec].items.push({ name, val: parseFloat(r.val)||0, total });
     }
   });
@@ -1229,6 +1388,9 @@ async function sumSave(){
 
   showGsLoader('💾 กำลังบันทึกข้อมูล');
 
+  // ⚠️ gsApi ของ shared เป็นแบบ swallow-return-null (คืน null เมื่อผิดพลาด ไม่ throw) —
+  // เปลี่ยนจาก try/catch (ที่พึ่ง exception ซึ่งจะไม่มีวันเกิดขึ้นอีกต่อไป) เป็นเช็ค `if (!result)`
+  // ตรงๆ แบบเดียวกับไฟล์ 05/07 ไม่งั้น error จะเงียบหายไปเฉยๆ โดยไม่มี alert แจ้งผู้ใช้เลย
   try {
     // 1. บันทึก/อัปเดต courses (meta)
     const coursePayload = {
@@ -1242,9 +1404,15 @@ async function sumSave(){
     };
     // ใช้ updateCourseField (merge กับแถวเดิม) แทน saveCourse (overwrite ทั้งแถว)
     // เพื่อไม่ให้ลบ courseNum / year ที่บันทึกไว้จากหน้า training_courses
-    await gsApi('updateCourseField', coursePayload);
+    const saveCourseResult = await gsApi('updateCourseField', coursePayload);
     // 2. บันทึก actual06 (รายการใบเสร็จ)
-    await gsApi('saveActual06', buildGs06Payload(state));
+    const saveActual06Result = await gsApi('saveActual06', buildGs06Payload(state));
+
+    if (!saveCourseResult || !saveActual06Result) {
+      hideGsLoader();
+      showGsStatus('❌ บันทึกไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่', 'error');
+      return;
+    }
 
     // 3. บันทึกร้านค้า/ที่อยู่ที่ผู้ใช้ติ๊ก "จำรายการนี้ไว้" เข้ารายการที่ใช้ร่วมกันได้ทุกเครื่อง
     // (ไม่บล็อกการบันทึกหลักถ้าจุดนี้พลาด — ใช้ allSettled)
@@ -1285,7 +1453,7 @@ async function sumSave(){
         <div style="font-size:13px;color:#374151;margin-bottom:4px;">${course}</div>
         ${runno ? `<div style="font-size:12px;color:#9ca3af;margin-bottom:16px;">เลขที่: ${runno}</div>` : '<div style="margin-bottom:16px;"></div>'}
         <div style="display:flex;gap:10px;justify-content:center;">
-          <button onclick="document.getElementById('save06-done-overlay').remove();location.href='01.Main-Reports.html';"
+          <button onclick="document.getElementById('save06-done-overlay').remove();location.href='01_Main-Reports.html';"
             style="background:linear-gradient(135deg,#1a56db,#1241b0);color:#fff;border:none;border-radius:8px;
             padding:10px 24px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;
             box-shadow:0 3px 12px rgba(26,86,219,.3);">กลับหน้าหลัก</button>
@@ -1298,6 +1466,8 @@ async function sumSave(){
     document.body.appendChild(pop);
 
   } catch(err) {
+    // เหลือ try/catch ไว้เป็น safety net เผื่อโค้ดในบล็อกนี้ (เช่น buildGs06Payload,
+    // syncActualTo01) โยน exception ที่ไม่เกี่ยวกับ gsApi เอง
     hideGsLoader();
     alert('❌ บันทึกไม่สำเร็จ: ' + err.message + '\n\nกรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต');
   }
@@ -1307,7 +1477,7 @@ function buildGs06Payload(state){
   // totalVal/totalVat/totalWht/grandTotal ที่บันทึกลง Sheet = รวมเฉพาะหมวด "เงินยืม" เท่านั้น
   // (ค่าน้ำมันฯ/วัสดุสำนักงาน/วัสดุเบ็ดเตล็ด/จ้างเหมา/เช่าสถานที่/อาหารฯ/เดินทางเจ้าหน้าที่/วิทยากรภายนอก
   //  — ไม่รวมวิทยากรภายในที่จ่ายผ่าน Payroll เพราะไม่ใช่เงินที่ต้องเบิกยืมทดลองจ่าย)
-  const LOAN_SECTIONS = new Set(['fuel','1','2','lump','venue','3','4','ext']);
+  const LOAN_SECTIONS = SchemaTH.LOAN_SECTIONS;
   let totalVal = 0, totalVat = 0, totalWht = 0, grandTotalLoan = 0;
   (state.rows || []).forEach(r => {
     if (!LOAN_SECTIONS.has(r.sec)) return;
@@ -1319,46 +1489,48 @@ function buildGs06Payload(state){
   const bySec = state.actualBySection || {};
   const secTotal = k => bySec[k]?.total || 0;
   const sub      = (k,s) => bySec[k]?.subs?.[s] || 0;
+  const SEC = SchemaTH.SEC, SUB = SchemaTH.SUB;
 
-  const secExtTotal = secTotal('ext');
-  const secIntTotal = secTotal('int');
+  const secExtTotal = secTotal(SEC.EXT);
+  const secIntTotal = secTotal(SEC.INT);
 
   return {
     no:   state.meta.sm_runno || '',
-    secFuel: secTotal('fuel'),
-    sec1: secTotal('1'),
-    sec2: secTotal('2'),
+    secFuel: secTotal(SEC.FUEL),
+    sec1: secTotal(SEC.OFFICE),
+    sec2: secTotal(SEC.MISC),
 
-    secLump: secTotal('lump'),
+    secLump: secTotal(SEC.LUMP),
 
-    sec1_1: sub('1','1_1'),
-    sec1_2: sub('1','1_2'),
+    sec1_1: sub(SEC.OFFICE, SUB.OFFICE_STATIONERY),
+    sec1_2: sub(SEC.OFFICE, SUB.OFFICE_COPY),
 
-    secVenue:       secTotal('venue'),
-    secVenueMeeting:sub('venue','venue_meet'),
-    secVenueVip:    sub('venue','venue_vip'),
-    secVenueStaff:  sub('venue','venue_staff'),
+    secVenue:       secTotal(SEC.VENUE),
+    secVenueMeeting:sub(SEC.VENUE, SUB.VENUE_MEETING),
+    secVenueVip:    sub(SEC.VENUE, SUB.VENUE_VIP_LODGING),
+    secVenueStaff:  sub(SEC.VENUE, SUB.VENUE_STAFF_LODGING),
 
-    sec3_1:    sub('3','3_1'),
-    sec3_2:    sub('3','3_2'),
-    sec3Dinner:sub('3','3_dinner'),
-    sec3_3:    sub('3','3_3'),
-    sec3:      secTotal('3'),
+    sec3_1:    sub(SEC.FOOD, SUB.FOOD_LUNCH),
+    sec3_2:    sub(SEC.FOOD, SUB.FOOD_SNACK),
+    sec3Dinner:sub(SEC.FOOD, SUB.FOOD_DINNER),
+    sec3_3:    sub(SEC.FOOD, SUB.FOOD_SPEAKER_DINNER),
+    sec3:      secTotal(SEC.FOOD),
 
-    sec4_1: sub('4','4_1'),
-    sec4_2: sub('4','4_2'),
-    sec4_3: sub('4','4_3'),
-    sec4:   secTotal('4'),
+    sec4_1: sub(SEC.STAFF_TRAVEL, SUB.STAFF_ALLOWANCE),
+    sec4_2: sub(SEC.STAFF_TRAVEL, SUB.STAFF_LODGING),
+    sec4_3: sub(SEC.STAFF_TRAVEL, SUB.STAFF_TRANSPORT),
+    sec4:   secTotal(SEC.STAFF_TRAVEL),
 
-    secExtHonor:  sub('ext','ext_honor'),
-    secExtLodging:sub('ext','ext_lodging'),
-    secExtTravel: sub('ext','ext_travel'),
+    secExtHonor:  sub(SEC.EXT, SUB.EXT_HONORARIUM),
+    secExtLodging:sub(SEC.EXT, SUB.EXT_LODGING),
+    secExtTravel: sub(SEC.EXT, SUB.EXT_TRAVEL),
     secExt:  secExtTotal,
     sec5:    secExtTotal, // คงชื่อเดิมไว้เพื่อ backward-compat กับไฟล์ 07 ที่อ่าน sec5
 
-    secIntHonor:  sub('int','int_honor'),
-    secIntLodging:sub('int','int_lodging'),
-    secIntTravel: sub('int','int_travel'),
+    secIntHonor:  sub(SEC.INT, SUB.INT_HONORARIUM),
+    // secIntLodging/secIntTravel — ลบออกแล้ว (ledger bug #5 / บั๊กค้าง): ที่พัก/พาหนะวิทยากรภายใน
+    // เป็นเงินโอนหน่วยงานต้นสังกัด คีย์ที่ไฟล์ 05 ครั้งเดียวพอ ไม่ต้องผ่านไฟล์ 06 ซ้ำ และ
+    // ยืนยันแล้วว่าไฟล์ 07 ไม่อ่าน field นี้จาก actual06 เลย — ปลอดภัยที่จะลบ
     secInt:  secIntTotal,
 
     grandTotal: grandTotalLoan,
@@ -1369,37 +1541,11 @@ function buildGs06Payload(state){
 }
 
 /* ============================================================
-   GOOGLE SHEET API
+   GOOGLE SHEET API — gsApi/showGsLoader/hideGsLoader/showGsStatus
+   ย้ายไปรวมที่ js/gas-api.js แล้ว (shared กับทุกไฟล์)
+   ⚠️ gsApi ของ shared เป็นแบบ swallow-return-null (คืน null เมื่อผิดพลาด ไม่ throw)
+   ต่างจาก local เดิมที่ throw — จุดเรียกใช้ทั้งหมดด้านล่างต้องเช็ค `if (!result)` แทน try/catch
 ============================================================ */
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbySJROnBMkxFBNyPvET3DC5ihdCz03OPzvi2xXm6cMQpoPFsi2pAiTQAQIVSDUwQNVZ5w/exec';
-
-/* gsApi — ใช้ fetch() (GAS รองรับ CORS)
-   GET  → action + no param
-   POST → action + data (JSON body via URLSearchParams)
-   GAS ต้อง return JSON: { ok: true, data: {...} } หรือ { ok: false, error: '...' }
-*/
-async function gsApi(action, data, no) {
-  const GAS = GAS_URL;
-  try {
-    let res;
-    if (data) {
-      // POST — ส่งเป็น form data (GAS รับได้ทั้ง GET และ POST)
-      const params = new URLSearchParams({ action, data: JSON.stringify(data) });
-      if (no) params.append('no', no);
-      res = await fetch(GAS, { method: 'POST', body: params });
-    } else {
-      // GET
-      let url = GAS + '?action=' + encodeURIComponent(action);
-      if (no) url += '&no=' + encodeURIComponent(no);
-      res = await fetch(url);
-    }
-    const json = await res.json();
-    if (json.ok) return json.data;
-    throw new Error(json.error || 'API error');
-  } catch(e) {
-    throw e;
-  }
-}
 function syncActualTo01(state, draftName) {
   try {
     const TMS_KEY = 'tms_saved_slots';
@@ -1469,9 +1615,17 @@ async function autoLoadFromSheet(opts){
 
   showGsLoader('📥 กำลังโหลดข้อมูล');
 
+  // ⚠️ gsApi ของ shared คืน null เมื่อเชื่อมต่อ/เรียก API ไม่สำเร็จ (ไม่ throw แล้ว) — แยกเคสนี้ออกจาก
+  // "เชื่อมต่อสำเร็จแต่ยังไม่เคยมีข้อมูลของเลขที่นี้" ให้ข้อความไม่กำกวม (ล้อไฟล์ 05 _autoLoadGs05)
   try {
     // GAS action getByNo คืน { course, budget, actual06, actual07 }
     const result = await gsApi('getByNo', null, no);
+
+    if (result === null) {
+      hideGsLoader();
+      showGsStatus('❌ โหลดไม่สำเร็จ — ตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่', 'error');
+      return;
+    }
 
     const course   = result && result.course   ? result.course   : null;
     const actual06 = result && result.actual06 ? result.actual06 : null;
@@ -1543,81 +1697,52 @@ async function autoLoadFromSheet(opts){
     showGsStatus('✅ โหลดข้อมูลสำเร็จ' + rowMsg, 'ok');
 
   } catch(e) {
+    // เหลือไว้เป็น safety net เผื่อโค้ดในบล็อกนี้เอง (เช่น JSON.parse ของ spkJson/rowsJson) throw
+    // ไม่ใช่จาก gsApi (ซึ่งไม่ throw แล้ว)
     hideGsLoader();
     showGsStatus('❌ โหลดไม่สำเร็จ: ' + e.message, 'error');
     console.warn('autoLoadFromSheet error:', e);
   }
 }
 
-/* ── Loading overlay helpers ── */
-function showGsLoader(msg){
-  let el = document.getElementById('gs-loader-overlay');
-  if(!el){
-    el = document.createElement('div');
-    el.id = 'gs-loader-overlay';
-    el.style.cssText = [
-      'position:fixed','inset:0','background:rgba(15,39,68,.55)',
-      'z-index:9998','display:flex','align-items:center','justify-content:center'
-    ].join(';');
-    el.innerHTML = '<div id="gs-loader-box" style="background:transparent;padding:16px;min-width:200px;max-width:280px;width:90%;font-family:Sarabun,sans-serif;text-align:center;box-sizing:border-box;">' +
-        // ใส่ filter drop-shadow เป็นออร่าสีขาวฟุ้งๆ (rgba 255, 255, 255, 0.7) เพื่อดันให้ Spinner เด่นชัด
-        '<svg width="48" height="48" viewBox="0 0 48 48" style="display:block;margin:0 auto 14px;animation:gs-spin .9s linear infinite;transform-origin:center;filter:drop-shadow(0 0 6px rgba(255,255,255,0.7));">' +
-        // 1. เส้นฐานวงกลมเปลี่ยนเป็นสีขาวทึบ (#ffffff)
-        '<circle cx="24" cy="24" r="20" fill="none" stroke="#ffffff" stroke-width="4"/>' +
-        // 2. ตัวหมุนสีน้ำเงินเดิม (#1a56db) ปรับความหนาขึ้นเป็น 4.5 ให้ตัดกับเส้นสีขาวชัดๆ
-        '<circle cx="24" cy="24" r="20" fill="none" stroke="#1a56db" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="30 96"/>' +
-        '<\/svg>' +
-        // 3. ตัวหนังสือสีขาว พร้อมเงาสีดำหนุนด้านหลัง 2 ชั้น เพื่อให้อ่านง่ายบนทุกพื้นผิว
-        '<div id="gs-loader-msg" style="font-size:15px;color:#ffffff;font-weight:600;line-height:1.6;text-shadow:0 2px 4px rgba(0,0,0,0.6), 0 4px 12px rgba(0,0,0,0.3);"><\/div>' +
-      '<\/div>';
-    document.head.insertAdjacentHTML('beforeend','<style>@keyframes gs-spin{to{transform:rotate(360deg)}}<\/style>');
-    document.body.appendChild(el);
-  }
-  el.style.display = 'flex';
-  document.getElementById('gs-loader-msg').textContent = msg || 'กำลังโหลด...';
+/* showGsLoader/hideGsLoader/showGsStatus — ใช้ shared js/gas-api.js แล้ว (ลบ local ซ้ำออก) */
+/* ============================================================
+   LEGACY CODE MIGRATION — รองรับ actual06.rowsJson ที่บันทึกไว้ "ก่อน" การย้ายมาใช้
+   รหัสหมวด/หมวดย่อยแบบใหม่ของ SchemaTH (ยังเป็นตัวเลขล้วนแบบเดิม เช่น '1','2','3','4','4_3')
+   ไม่มี migration ระดับ Sheet ทำจริง — แปลง "ตอนโหลดเข้าฟอร์ม" เท่านั้น เพื่อให้เปิดรายการเก่า
+   มาแก้ไขต่อได้ปกติ (ถ้าไม่แปลง ค่าเก่าจะไม่ตรง <option> ใดเลยในดรอปดาวน์ที่เปลี่ยนไปใช้รหัสใหม่แล้ว)
+   ⚠️ int_lodging/int_travel ของเก่าไม่มีรหัสใหม่ให้ map (ตัดออกจาก schema แล้ว) — คงค่าเป็น sub ว่าง
+   ไว้แทน (ยอดเงินยังอยู่ครบ แต่ breakdown หมวดย่อยของรายการเก่านั้นจะหายไป ต้องเข้าไปเลือกหมวดย่อย
+   ใหม่เองถ้าต้องการแก้ไข)
+   ============================================================ */
+const LEGACY_SEC06_MAP = {
+  '1': SchemaTH.SEC.OFFICE, '2': SchemaTH.SEC.MISC, '3': SchemaTH.SEC.FOOD, '4': SchemaTH.SEC.STAFF_TRAVEL,
+};
+const LEGACY_SUB06_MAP = {
+  '1_1': SchemaTH.SUB.OFFICE_STATIONERY, '1_2': SchemaTH.SUB.OFFICE_COPY,
+  'venue_meet': SchemaTH.SUB.VENUE_MEETING, 'venue_vip': SchemaTH.SUB.VENUE_VIP_LODGING, 'venue_staff': SchemaTH.SUB.VENUE_STAFF_LODGING,
+  '3_12': SchemaTH.SUB.FOOD_LUNCH_SNACK, '3_dinner': SchemaTH.SUB.FOOD_DINNER, '3_3': SchemaTH.SUB.FOOD_SPEAKER_DINNER,
+  '4_1': SchemaTH.SUB.STAFF_ALLOWANCE, '4_2': SchemaTH.SUB.STAFF_LODGING, '4_3': SchemaTH.SUB.STAFF_TRANSPORT,
+  'ext_honor': SchemaTH.SUB.EXT_HONORARIUM, 'ext_lodging': SchemaTH.SUB.EXT_LODGING, 'ext_travel': SchemaTH.SUB.EXT_TRAVEL,
+  'int_honor': SchemaTH.SUB.INT_HONORARIUM,
+  'int_lodging': '', 'int_travel': '', // ตัดออกจาก schema แล้ว — ไม่มีปลายทางให้ map
+};
+function migrateLegacyRow06(r){
+  if (r && r.sec && LEGACY_SEC06_MAP[r.sec] !== undefined) r.sec = LEGACY_SEC06_MAP[r.sec];
+  if (r && r.sub && LEGACY_SUB06_MAP[r.sub] !== undefined) r.sub = LEGACY_SUB06_MAP[r.sub];
+  return r;
 }
 
-function hideGsLoader(){
-  const el = document.getElementById('gs-loader-overlay');
-  if(el) el.style.display = 'none';
-}
-
-function showGsStatus(msg, type){
-  const colors = {
-    ok:    ['#d1fae5','#065f46','#10b981'],
-    warn:  ['#fef3c7','#92400e','#f59e0b'],
-    error: ['#fee2e2','#991b1b','#ef4444']
-  };
-  const [bg, text, border] = colors[type] || colors.ok;
-  let el = document.getElementById('gs-status-bar');
-  if(!el){
-    el = document.createElement('div');
-    el.id = 'gs-status-bar';
-    el.style.cssText = [
-      'position:fixed','bottom:20px','left:50%','transform:translateX(-50%)',
-      'z-index:9999','padding:12px 24px','border-radius:10px',
-      'font-family:Sarabun,sans-serif','font-size:14px','font-weight:600',
-      'box-shadow:0 4px 20px rgba(0,0,0,.15)','white-space:nowrap','max-width:90vw'
-    ].join(';');
-    document.body.appendChild(el);
-  }
-  el.style.background   = bg;
-  el.style.color        = text;
-  el.style.border       = '1.5px solid ' + border;
-  el.textContent        = msg;
-  el.style.display      = 'block';
-  clearTimeout(el._t);
-  el._t = setTimeout(()=>{ el.style.display='none'; }, 4000);
-}
 function restoreRowsFromGs(rows){
   const ps = smPS();
-  for(const r of rows){
+  for(const r0 of rows){
+    const r = migrateLegacyRow06({...r0});
     sumAddRow();
     const newId = `smr${smCnt}`;
 
     // 1. set sec
     const secEl = ps.querySelector(`#${newId}_sec`);
-    if(secEl) secEl.value = r.sec||'1';
+    if(secEl) secEl.value = r.sec || SchemaTH.SEC.OFFICE;
     sumSecChange(newId);
 
     // 2. set sub → trigger logic (สร้าง fields ที่ขึ้นกับ sub)
@@ -1632,14 +1757,14 @@ function restoreRowsFromGs(rows){
       'date','acct','val','vat','wht','total'
     ];
     commonFields.forEach(f => {
-      if(f === 'staff' && !(r.sec === '4' && r.sub !== '4_3')) return;
-      if(f === 'name'  &&   r.sec === '4' && r.sub !== '4_3') return;
+      if(f === 'staff' && !(r.sec === SchemaTH.SEC.STAFF_TRAVEL && r.sub !== SchemaTH.SUB.STAFF_TRANSPORT)) return;
+      if(f === 'name'  &&   r.sec === SchemaTH.SEC.STAFF_TRAVEL && r.sub !== SchemaTH.SUB.STAFF_TRANSPORT) return;
       const el = ps.querySelector(`#${newId}_${f}`);
       if(el && r[f] !== undefined && r[f] !== '') el.value = r[f];
     });
 
-    // 4. สำหรับ 3_12 — restore ช่องแยก 3.1 / 3.2 ด้วย
-    if(r.sub === '3_12'){
+    // 4. สำหรับ foodLunchSnack (เดิม '3_12') — restore ช่องแยก 3.1 / 3.2 ด้วย
+    if(r.sub === SchemaTH.SUB.FOOD_LUNCH_SNACK){
       const fv31   = ps.querySelector(`#${newId}_v31`);
       const fvat31 = ps.querySelector(`#${newId}_vat31`);
       const fv32   = ps.querySelector(`#${newId}_v32`);
@@ -1651,8 +1776,7 @@ function restoreRowsFromGs(rows){
       sumRowCalc312(newId);
     }
 
-    // 5. merge checkbox
-    if(r.merge){ const cb = ps.querySelector(`#${newId}_merge`); if(cb) cb.checked = true; }
+    // 5. w119 checkbox
     if(r.w119) { const cb = ps.querySelector(`#${newId}_w119`);  if(cb) cb.checked = true; }
 
     sumRowCalc(newId);
@@ -1672,13 +1796,18 @@ function sumBuildDoc(){
   let seq = 0;
   ps.querySelectorAll('#sm_rows .sum-row-card').forEach((card,idx)=>{
     const id = card.id;
-    const secV = ps.querySelector(`#${id}_sec`)?.value||'2';
-    const subV = ps.querySelector(`#${id}_sub`)?.value||'';  // '1_1','1_2','' — เก็บไว้แต่ไม่แสดงในรายงาน
+    const secV = ps.querySelector(`#${id}_sec`)?.value||SchemaTH.SEC.MISC;
+    const subV = ps.querySelector(`#${id}_sub`)?.value||'';  // SUB.OFFICE_STATIONERY/OFFICE_COPY/'' — เก็บไว้แต่ไม่แสดงในรายงาน
+    // ✅ "รวมลำดับกับรายการก่อนหน้า" (checkbox #${id}_merge, เพิ่มมาใน sum-row-top) — แถวแรก
+    // (idx===0) ไม่มี checkbox นี้ให้ติ๊กอยู่แล้ว (ซ่อนไว้ใน sumRenumber) จึงไม่มีวัน merge ได้
+    // ถ้าติ๊กไว้ → ใช้ค่า seq เดิมของแถวก่อนหน้าแทนการเพิ่มเลขใหม่ ผลคือคอลัมน์ "ลำดับที่" ในตาราง
+    // รายงาน (ดู seqSpan/seqRendered ด้านล่าง) จะ rowspan รวมเป็นเลขเดียวกัน — ก่อนหน้านี้ค่า seq
+    // เพิ่มทุกแถวเสมอไม่ว่าจะติ๊ก merge หรือไม่ ทำให้ติ๊กแล้วไม่มีผลอะไรกับตัวอย่างรายงาน/PDF เลย
     const isMerged = idx > 0 && (ps.querySelector(`#${id}_merge`)?.checked || false);
     if(!isMerged) seq++;
-    const isStaff = secV === '4' && subV !== '4_3';
+    const isStaff = secV === SchemaTH.SEC.STAFF_TRAVEL && subV !== SchemaTH.SUB.STAFF_TRANSPORT;
     rows.push({
-      seq, isMerged, secV, subV,
+      seq, secV, subV,
       doc     : ps.querySelector(`#${id}_doc`)?.value||'',
       name    : isStaff
                   ? (ps.querySelector(`#${id}_staff`)?.value||'')
@@ -1706,39 +1835,40 @@ function sumBuildDoc(){
     const baseLabel = SEC_OPTS.find(s=>s.v===r.secV)?.l || '';
     r.secL = DYNAMIC_SEC_ORDER.includes(r.secV)
       ? `${majorNums[r.secV] || ''}. ${baseLabel}`
-      : baseLabel; // '1.'/'2.' ฝังเลขไว้ใน label อยู่แล้ว
+      : baseLabel; // '1.'/'2.' ฝังเลขไว้ใน label อยู่แล้ว (ไม่มีเลขหมวดย่อยอีกต่อไป — เอาออกแล้ว)
+
+    // ✅ หัวข้อย่อย (ไม่มีเลขนำหน้า) + ว.119 แยกตามใบเสร็จจริง — ใช้ตัดสินว่าแต่ละแถวควรอยู่
+    // ใน "กลุ่มย่อย" ไหน (MISC/OFFICE มีชื่อหมวดย่อยจริง ส่วนหมวดอื่นๆ ใช้ชื่อหมวดใหญ่เองแทน
+    // เพราะไม่มีหมวดย่อยให้แสดง) — subAlways=true คือหมวดที่ต้องขึ้นหัวข้อย่อยเสมอ (ทันทีหลัง
+    // หัวข้อหมวดใหญ่) แบบเดิม, subAlways=false คือหมวดที่ปกติไม่มีหัวข้อย่อย จะขึ้นบรรทัดซ้ำ
+    // ก็ต่อเมื่อสถานะ ว.119 เปลี่ยนกลางหมวดเท่านั้น (ดู segKey ตอน render)
+    if (r.secV === SchemaTH.SEC.MISC) {
+      r.subLabel = 'ค่าใช้จ่ายอื่นๆ';
+      r.subAlways = true;
+    } else if (r.secV === SchemaTH.SEC.OFFICE && r.subV) {
+      r.subLabel = r.subV === SchemaTH.SUB.OFFICE_STATIONERY ? 'ค่าเครื่องเขียนแบบพิมพ์'
+        : (r.subV === SchemaTH.SUB.OFFICE_COPY ? 'ค่าถ่ายเอกสารและเข้าเล่ม' : baseLabel);
+      r.subAlways = true;
+    } else {
+      r.subLabel = baseLabel;
+      r.subAlways = false;
+    }
+    r.segKey = `${r.secV}|${r.subLabel}|${r.w119}`;
   });
 
-  // หน้าแรกแสดงได้ 5 รายการ (มีหัวเอกสารกินพื้นที่ด้วย) หน้าที่ 2 เป็นต้นไปแสดงได้ 6 รายการ
-  // (ไม่มีหัวเอกสาร เหลือพื้นที่มากกว่า) เช่น หน้า 1: 1-5, หน้า 2: 6-11, หน้า 3: 12-17, ...
-  const FIRST_PAGE_SIZE = 5;
-  const REST_PAGE_SIZE = 6;
-  const pageBounds = [];
-  if (rows.length <= FIRST_PAGE_SIZE) {
-    pageBounds.push([0, rows.length]);
-  } else {
-    pageBounds.push([0, FIRST_PAGE_SIZE]);
-    let idx = FIRST_PAGE_SIZE;
-    while (idx < rows.length) {
-      const end = Math.min(idx + REST_PAGE_SIZE, rows.length);
-      pageBounds.push([idx, end]);
-      idx = end;
-    }
-  }
-  const totalPages = pageBounds.length;
-  let gVal=0,gVat=0,gWht=0,gTotal=0;
-  rows.forEach(r=>{gVal+=r.val;gVat+=r.vat;gWht+=r.wht;gTotal+=r.total;});
-
-  // ── รวมเงินยืมทั้งสิ้น: เฉพาะหมวด ค่าน้ำมันฯ/วัสดุสำนักงาน/วัสดุเบ็ดเตล็ด/จ้างเหมา/เช่าสถานที่/
-  // อาหารฯ/เดินทางเจ้าหน้าที่/วิทยากรภายนอก (ไม่รวมวิทยากรภายในที่จ่ายผ่าน Payroll)
-  const LOAN_SECTIONS = new Set(['fuel','1','2','lump','venue','3','4','ext']);
+  // ✅ แบ่งหน้าโดยวัดความสูงจริงที่ render ออกมา (ผ่าน PaginateTH.paginateByHeight ใน
+  // js/print-layout.js) แทนการนับจำนวนรายการคงที่ต่อหน้าแบบเดิม (5 หน้าแรก/6 หน้าถัดไป) ซึ่งทำให้
+  // บางหน้าล้น (มีหัวข้อหมวด/หมวดย่อยแทรกเยอะ หรือที่อยู่ยาวจนตัดบรรทัด) บางหน้าเหลือพื้นที่เยอะ
+  // (รายการสั้นๆ ไม่มีหัวข้อแทรกเลย) — ตอนนี้ลองเพิ่มทีละแถวจริง วัดความสูงจริงเทียบกับพื้นที่พิมพ์
+  // ได้จริงของ A4 (หัก margin ตาม @page ด้านบนของไฟล์นี้) แล้วค่อยตัดหน้าตรงจุดที่พอดี
+  const LOAN_SECTIONS = SchemaTH.LOAN_SECTIONS;
   const sumFields = (list) => list.reduce((a,r)=>({
     val:a.val+(r.val||0), vat:a.vat+(r.vat||0), wht:a.wht+(r.wht||0), total:a.total+(r.total||0)
   }), {val:0,vat:0,wht:0,total:0});
   const loanSum = sumFields(rows.filter(r => LOAN_SECTIONS.has(r.secV)));
-  const intStartIdx = rows.findIndex(r => r.secV === 'int');
+  const intStartIdx = rows.findIndex(r => r.secV === SchemaTH.SEC.INT);
   const hasInt = intStartIdx !== -1;
-  const intSum = hasInt ? sumFields(rows.filter(r => r.secV === 'int')) : {val:0,vat:0,wht:0,total:0};
+  const intSum = hasInt ? sumFields(rows.filter(r => r.secV === SchemaTH.SEC.INT)) : {val:0,vat:0,wht:0,total:0};
   const grandRowHtml = (label, s) =>
     `<tr class="sm-grand"><td class="sm-tc" colspan="3">${label}</td>
       <td class="sm-tr">${smFmt(s.val)}</td><td class="sm-tr">${smF2(s.vat)}</td>
@@ -1751,32 +1881,38 @@ function sumBuildDoc(){
     return sumFields(rows.slice(startIdx, endIdx));
   };
 
-  let html = '';
-  for(let p=0;p<totalPages;p++){
-    const [pStart, pEnd] = pageBounds[p];
+  // สร้าง HTML ของ "หนึ่งหน้า" จาก pStart..pEnd (ไม่รวม pEnd) — เรียกซ้ำได้ทั้งตอน "ลองแบ่งหน้าดู
+  // ว่าพอดีไหม" (ระหว่างวัดความสูง เรียกด้วย isLastGuess=false เผื่อพื้นที่ "ยกยอดไป" ไว้ก่อนเสมอ
+  // เพราะตอนนั้นยังไม่รู้ว่าจะเป็นหน้าสุดท้ายจริงไหม) กับตอน render จริงครั้งสุดท้าย (รู้ totalPages/
+  // isLast ที่ถูกต้องแล้ว) โดยไม่ต้องเขียนโค้ดเดิมซ้ำ 2 ที่ — เนื้อหาข้างในฟังก์ชันนี้เหมือนโค้ดเดิม
+  // ทุกประการ (ไม่ได้แก้ logic การแทรกหัวข้อ/ว.119 เลย) แค่ย้ายมาห่อเป็นฟังก์ชันแทนการวน for ตรงๆ
+  function renderPageHtml(pStart, pEnd, pageNum, totalPagesForLabel, isLast) {
     const pageRows = rows.slice(pStart, pEnd);
     const { val: carryVal, vat: carryVat, wht: carryWht, total: carryTotal } = cumulativeAsOf(pStart);
-    const isFirst = p===0, isLast = p===totalPages-1;
+    const isFirst = pStart === 0;
 
     let pg = `<div class="sm-page">`;
-    pg += `<div class="sm-pgnum">หน้า ${p+1}/${totalPages}</div>`;
+    pg += `<div class="sm-pgnum">หน้า ${pageNum+1}/${totalPagesForLabel}</div>`;
     if(isFirst){
+      // ✅ หัวเอกสาร 4 บรรทัด — เปลี่ยนจาก <input type="text"> (บรรทัดเดียวตายตัว ตัดคำไม่ได้ ข้อความยาว
+      // จะถูกครอบตัด) เป็น contenteditable div (ห่อบรรทัดอัตโนมัติเมื่อยาวเกิน ยังแก้ไขข้อความได้เหมือนเดิม
+      // ทุกประการ) — หน้าตา/ตำแหน่ง/ฟอนต์ทั้งหมดคงเดิม มีแค่ tag เปลี่ยนจาก input→div และ value=→เนื้อหาข้างใน
       pg += `<div class="sm-hdr">
          <div style="width: 100%; margin-bottom: 1px;">
-           <input class="rpt-edit" type="text" value="สรุปค่าใช้จ่ายการดำเนินการฝึกอบรม" 
-                  style="width: 100%; text-align: center; font-weight: bold; font-family: 'Sarabun', sans-serif; background: transparent; border: none; outline: none; padding: 2px 0 2px 0; line-height: 1.5;">
+           <div class="rpt-edit" contenteditable="true"
+                  style="width: 100%; text-align: center; font-weight: bold; font-family: 'Sarabun', sans-serif; background: transparent; border: none; outline: none; padding: 2px 0 2px 0; line-height: 1.5;">สรุปค่าใช้จ่ายการดำเนินการฝึกอบรม</div>
          </div>
          <div style="width: 100%; margin-bottom: 1px;">
-           <input class="rpt-edit" type="text" value="หลักสูตร ${thaiNum(title)} รุ่นที่ ${thaiNum(run)}" 
-                  style="width: 100%; text-align: center;font-weight: bold; font-family: 'Sarabun', sans-serif; background: transparent; border: none; outline: none; padding: 2px 0 2px 0; line-height: 1.5;">
+           <div class="rpt-edit" contenteditable="true"
+                  style="width: 100%; text-align: center;font-weight: bold; font-family: 'Sarabun', sans-serif; background: transparent; border: none; outline: none; padding: 2px 0 2px 0; line-height: 1.5;">หลักสูตร ${thaiNum(title)} รุ่นที่ ${thaiNum(run)}</div>
          </div>
          <div style="width: 100%; margin-bottom: 1px;">
-           <input class="rpt-edit" type="text" value="เลขที่รุ่นหลักสูตร ${thaiNum(runno)} ในวันที่ ${thaiNum(date)}" 
-                  style="width: 100%; text-align: center;font-weight: bold; font-family: 'Sarabun', sans-serif; background: transparent; border: none; outline: none; padding: 2px 0 2px 0; line-height: 1.5;">
+           <div class="rpt-edit" contenteditable="true"
+                  style="width: 100%; text-align: center;font-weight: bold; font-family: 'Sarabun', sans-serif; background: transparent; border: none; outline: none; padding: 2px 0 2px 0; line-height: 1.5;">เลขที่รุ่นหลักสูตร ${thaiNum(runno)} ในวันที่ ${thaiNum(date)}</div>
          </div>
          <div style="width: 100%; margin-bottom: 1px;">
-           <input class="rpt-edit" type="text" value="ณ ${thaiNum(place)}" 
-                  style="width: 100%; text-align: center;font-weight: bold; font-family: 'Sarabun', sans-serif; background: transparent; border: none; outline: none; padding: 2px 0 2px 0; line-height: 1.5;">
+           <div class="rpt-edit" contenteditable="true"
+                  style="width: 100%; text-align: center;font-weight: bold; font-family: 'Sarabun', sans-serif; background: transparent; border: none; outline: none; padding: 2px 0 2px 0; line-height: 1.5;">ณ ${thaiNum(place)}</div>
          </div>
        </div>`;
     }
@@ -1797,7 +1933,14 @@ function sumBuildDoc(){
       <td class="sm-tr">${smF2(carryWht)}</td><td class="sm-tr">${smFmt(carryTotal)}</td></tr>`;
 
     let lastSec = '';
-    let lastSecHasW119 = false;
+    // ✅ segKey = `${secV}|${subLabel}|${w119}` (คำนวณไว้แล้วต่อแถวใน r.segKey ด้านบน) — ใช้แทน
+    // ระบบเดิมที่ scan หา (ว.119) ล่วงหน้าทั้งหมวดแล้วแปะติดหัวข้อหมวดเดียว (บั๊ก: ติ๊กแค่บางใบ
+    // ในหมวดเดียวกัน แต่ทุกใบขึ้น (ว.119) หมด) — ตอนนี้ขึ้นหัวข้อย่อยใหม่ (ไม่มีเลขนำหน้า) ทุกครั้ง
+    // ที่ segKey เปลี่ยนกลางหมวด (ไม่ว่าจะเพราะเปลี่ยนหมวดย่อยจริง หรือสถานะ ว.119 สลับ) หมวดที่
+    // ไม่เคยมีหัวข้อย่อย (subAlways=false) จะไม่ขึ้นซ้ำถ้าทั้งหมวดสถานะเดียวกันหมด — reset ทุกหน้า
+    // (เหมือนเดิม — ถ้าหมวดต่อเนื่องข้ามหน้า หัวข้อจะขึ้นซ้ำอีกครั้งบนหน้าใหม่ ให้อ่านง่ายไม่ต้องเปิด
+    // ย้อนไปหน้าก่อน)
+    let currentSegKey = null;
     const seqSpan = {};
     pageRows.forEach(r => { seqSpan[r.seq] = (seqSpan[r.seq]||0) + 1; });
     const seqRendered = {};
@@ -1810,27 +1953,31 @@ function sumBuildDoc(){
         pg += `<tr class="sm-blank"><td colspan="7">&nbsp;</td></tr>`;
       }
 
-      // 1. ตรวจสอบการเปลี่ยนหมวดหมู่ (เพื่อใส่หัวข้อหมวดใหญ่ เช่น 2. ค่าวัสดุเบ็ดเตล็ด)
+      // 1. เปลี่ยนหมวดใหญ่ → ขึ้นหัวข้อหมวดใหญ่ (มีเลขนำหน้า เช่น "2. ค่าวัสดุเบ็ดเตล็ด") ต่อท้าย
+      // (ว.119) เฉพาะตอนหมวดนั้น "ไม่มีหัวข้อย่อยเลย" (subAlways=false เช่น ค่าน้ำมันฯ) และแถวแรก
+      // ของหมวดติ๊กไว้ — หมวดที่มีหัวข้อย่อยจริง (MISC/OFFICE, subAlways=true) ห้ามต่อท้าย (ว.119)
+      // ที่บรรทัดนี้เด็ดขาด เพราะหัวข้อย่อยข้อ 2 ด้านล่างเป็นคนแสดงแทนอยู่แล้ว — บั๊กเดิม: พอขึ้นหน้า
+      // ใหม่กลางหมวด (lastSec รีเซ็ตทุกหน้า) ถ้าแถวแรกที่โผล่บนหน้าใหม่บังเอิญเป็นแถวที่ติ๊ก ว.119
+      // หัวข้อหมวดใหญ่ที่ปริ๊นท์ซ้ำจะเผลอต่อท้าย (ว.119) ไปด้วยทั้งที่หมวดนั้นมีหัวข้อย่อยอยู่แล้ว
       if (r.secV !== lastSec) {
-        // ถ้ารายการใดในกลุ่มหมวดนี้ (แถวติดกันที่หมวดเดียวกัน) ติ๊ก "ค่าใช้จ่ายตาม ว.119" ไว้ → ใส่ (ว.119) ต่อท้ายหัวข้อหมวด
-        let hasW119 = false;
-        for (let j = ridx; j < pageRows.length && pageRows[j].secV === r.secV; j++) {
-          if (pageRows[j].w119) { hasW119 = true; break; }
-        }
-        pg += `<tr class="sm-grp"><td class="sm-ind1 sm-tl" colspan="7">${r.secL}${hasW119 ? ' (ว.119)' : ''}</td></tr>`;
+        const showMajorW119 = !r.subAlways && r.w119;
+        pg += `<tr class="sm-grp"><td class="sm-ind1 sm-tl" colspan="7">${r.secL}${showMajorW119 ? ' (ว.119)' : ''}</td></tr>`;
         lastSec = r.secV;
-        lastSecHasW119 = hasW119;
+        currentSegKey = null; // บังคับให้เช็คหัวข้อย่อยใหม่เสมอตอนเปลี่ยนหมวด (ข้อ 2)
       }
 
-      // 2. [จุดนี้!] แทรกบรรทัด x.1 หลังจากที่บรรทัดหัวข้อหมวด 2 (ค่าวัสดุเบ็ดเตล็ด) ถูกใส่ลงไปแล้ว
-      if (r.secV === '2' && !window.hasAddedOthers) {
+      // 2. เปลี่ยนกลุ่มย่อยจริง (subLabel เปลี่ยน) หรือสถานะ ว.119 สลับกลางหมวดเดียวกัน → ขึ้นหัวข้อ
+      // ย่อยใหม่ (ไม่มีเลขนำหน้า) หมวดที่มีหัวข้อย่อยจริง (MISC/OFFICE, subAlways=true) จะขึ้นทันที
+      // หลังหัวข้อหมวดใหญ่เสมอ ส่วนหมวดที่ไม่มีหัวข้อย่อย (subAlways=false) จะขึ้นก็ต่อเมื่อสถานะ
+      // ว.119 เปลี่ยนจริงๆ กลางหมวดเท่านั้น (ช่วงแรกอาศัยหัวข้อหมวดใหญ่ข้อ 1 แสดงแทนไปแล้ว)
+      if (r.segKey !== currentSegKey && (r.subAlways || currentSegKey !== null)) {
         pg += `<tr>
                  <td class="sm-tl" colspan="7" style="padding-left: 20px; font-weight: bold; font-style: normal;">
-                  &nbsp;&nbsp;&nbsp;${majorNums['2'] || ''}.1 ค่าใช้จ่ายอื่นๆ${lastSecHasW119 ? ' (ว.119)' : ''}
+                  &nbsp;&nbsp;&nbsp;${r.subLabel}${r.w119 ? ' (ว.119)' : ''}
                  </td>
                </tr>`;
-        window.hasAddedOthers = true; 
       }
+      currentSegKey = r.segKey;
 
       // 3. แสดงข้อมูลแถวรายการ (แสดงตามปกติ)
       const showSeq = !seqRendered[r.seq];
@@ -1892,8 +2039,6 @@ function sumBuildDoc(){
         pg += hasInt ? grandRowHtml('รวมค่าสมนาคุณเป็นเงิน', intSum) : grandRowHtml('รวมเงินยืมทั้งสิ้น', loanSum);
       }
     });
-    // Reset ตัวแปรหลังจบลูปหน้าปัจจุบัน
-    window.hasAddedOthers = false;
 
     if(!isLast){
       const { val: sv, vat: svat, wht: swht, total: st } = cumulativeAsOf(pEnd);
@@ -1905,8 +2050,31 @@ function sumBuildDoc(){
       pg += grandRowHtml('รวมเงินยืมทั้งสิ้น', loanSum);
     }
     pg += `</tbody></table></div>`;
-    html += pg;
+    return pg;
   }
+
+  // ── ลองแบ่งหน้าจริง: เพิ่มทีละแถว วัดความสูงจริงเทียบกับพื้นที่พิมพ์ได้จริงของ A4 (หัก margin
+  // ตาม @page ของไฟล์นี้: บน 10mm ล่าง 15mm ซ้ายขวา 5mm) ตอนลองยังไม่รู้ว่าหน้าไหนจะเป็นหน้าสุดท้าย
+  // จึงเผื่อพื้นที่แถว "ยกยอดไป" ไว้ก่อนเสมอ (isLast=false) — ถ้าพอดีทั้งหมดเป๊ะ หน้าสุดท้ายจริงจะมี
+  // เนื้อที่เหลือเล็กน้อยจากที่เผื่อไว้เกินจำเป็น ยอมรับได้ (ปลอดภัยไว้ก่อนดีกว่าเสี่ยงล้น)
+  const PAGE_W_PX = PaginateTH.mmToPx(200); // 210mm - 5mm - 5mm
+  const PAGE_H_PX = PaginateTH.mmToPx(272); // 297mm - 10mm - 15mm
+  // ✅ ต้องส่งค่า --row-pad-v ปัจจุบัน (ที่ผู้ใช้อาจปรับไว้ผ่านปุ่มระยะห่างบรรทัด) ไปกับ holder
+  // ตอนวัดความสูงด้วย ไม่งั้นวัดผิด (ดูคอมเมนต์ใน PaginateTH.measureHeight ของ js/print-layout.js)
+  const rowPadV = ps.querySelector('.sum-print-wrap')?.style.getPropertyValue('--row-pad-v') || '5px';
+  const measure = (pgHtml) => PaginateTH.measureHeight(pgHtml, PAGE_W_PX, `--row-pad-v:${rowPadV};`);
+  const chunks = PaginateTH.paginateByHeight({
+    totalItems: rows.length,
+    renderChunk: (s, e, pageNum) => renderPageHtml(s, e, pageNum, 999, false),
+    measure,
+    budgetPx: PAGE_H_PX,
+  });
+  const totalPages = chunks.length;
+
+  let html = '';
+  chunks.forEach((c, p) => {
+    html += renderPageHtml(c.start, c.end, p, totalPages, p === totalPages - 1);
+  });
   ps.querySelector('#sm_doc').innerHTML = html;
 }
 
@@ -1927,7 +2095,7 @@ function confirmBack06() {
           style="background:linear-gradient(135deg,#1a56db,#1241b0);color:#fff;border:none;border-radius:8px;
           padding:10px 28px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;
           box-shadow:0 3px 12px rgba(26,86,219,.3);">💾 บันทึก</button>
-        <button onclick="document.getElementById('back-confirm-overlay-06').remove();location.href='01.Main-Reports.html';"
+        <button onclick="document.getElementById('back-confirm-overlay-06').remove();location.href='01_Main-Reports.html';"
           style="background:#f3f4f6;color:#374151;border:1.5px solid #d1d5db;border-radius:8px;
           padding:10px 24px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">
           ไม่บันทึก</button>
@@ -1935,39 +2103,15 @@ function confirmBack06() {
     </div>`;
   document.body.appendChild(pop);
 }
-/* ── SAVE PDF ── */
-// URL ของ Puppeteer PDF server ที่ deploy ไว้บน Render (จุดเดียวกับที่ไฟล์ 05 ใช้)
-const PDF_SERVER_URL = 'https://trainfin.onrender.com/generate-pdf';
-
-// ===== Supabase (สำหรับอัปโหลด PDF ที่สร้างเสร็จแล้วขึ้นเก็บถาวร) =====
-const SUPABASE_URL = 'https://dcaydbxyjisegqzzildq.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjYXlkYnh5amlzZWdxenppbGRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2OTk5NDgsImV4cCI6MjEwMDI3NTk0OH0.cEk8k90NeTTnkZV0Sny7nuN8UbW15_eW8S_HTQSBwwA';
-const supabaseClient = (typeof window.supabase !== 'undefined')
-  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : null;
-
-// อัปโหลด PDF ขึ้น Supabase Storage (bucket: pdfs) — คืนค่า public URL หรือ null ถ้าไม่สำเร็จ
-async function uploadPdfToSupabase06(pdfBlob, fname){
-  if(!supabaseClient){ console.warn('Supabase client ยังไม่พร้อม (โหลด SDK ไม่สำเร็จ)'); return null; }
-  try {
-    const asciiSafe = fname
-      .replace(/[^\w.\-]+/g, '_')
-      .replace(/_+/g, '_')
-      .replace(/^_|_$/g, '') || 'report';
-    const fileName = `${asciiSafe}-${Date.now()}.pdf`;
-    const pdfFile  = new File([pdfBlob], fileName, { type: 'application/pdf' });
-    const { error: uploadError } = await supabaseClient
-      .storage.from('pdfs')
-      .upload(fileName, pdfFile, { cacheControl: '3600', upsert: true });
-    if(uploadError) throw uploadError;
-    const { data } = supabaseClient.storage.from('pdfs').getPublicUrl(fileName);
-    return data.publicUrl;
-  } catch(err){
-    console.error('uploadPdfToSupabase06 error:', err);
-    return null;
-  }
-}
-
+/* ── SAVE PDF ──
+   PDF_SERVER_URL / Supabase client / อัปโหลด PDF — ย้ายไปรวมที่ js/gas-api.js แล้ว
+   (ใช้ saveReportPdf(courseNo, 'pdf06', blob) ซึ่งอัปโหลดแบบ versioning
+   (pdf06-v1.pdf, pdf06-v2.pdf, ... แยกโฟลเดอร์ตาม courseNo ไม่ทับของเก่า) และเขียนลิงก์
+   ล่าสุดกลับ Sheet คอลัมน์ pdf06/pdf06SavedAt ให้อัตโนมัติในตัว — แก้บั๊กเดิม (ledger #10)
+   ที่อัปโหลดสำเร็จแต่ไม่เคยเขียนลิงก์กลับ Sheet เลย และเปลี่ยน path จาก flat bucket root
+   (ชื่อไฟล์ต่อท้ายด้วย timestamp, upsert:true) เป็นโฟลเดอร์ต่อ courseNo แบบ versioning
+   ⚠️ ไฟล์ PDF เก่าที่เคยอัปโหลดไว้ในโครงสร้าง path เดิมจะไม่ถูกย้าย/ลบ แต่จะไม่มีลิงก์ผูกกับ Sheet
+   เหมือนที่ผ่านมา (เพราะ Sheet ไม่เคยมีลิงก์เก่าอยู่แล้ว) */
 async function savePdf06(btn){
   const el = document.getElementById('sm_doc');
   if(!el || !el.innerHTML.trim()){ alert('กรุณาดูสรุปเอกสารก่อน'); return; }
@@ -1980,8 +2124,15 @@ async function savePdf06(btn){
   try {
     const clone = el.cloneNode(true);
 
-    // แปลง input ที่แก้ไขได้ (หัวกระดาษบนหน้าแรก) ให้เป็นข้อความนิ่งๆ ก่อนส่งไป render
-    // (เก็บ inline style เดิมไว้ทั้งหมด เพราะแต่ละช่องตั้ง text-align/font-weight/width มาให้แล้ว)
+    // ✅ หัวเอกสาร (4 บรรทัด) ตอนนี้เป็น <div contenteditable> แล้ว (ไม่ใช่ <input> อีกต่อไป — ดู sumBuildDoc)
+    // แค่ถอด attribute contenteditable ออกก่อนส่ง render พอ ไม่ต้องแปลง tag ใดๆ เพิ่ม
+    // (เนื้อหาที่ผู้ใช้แก้ไขระหว่างดูตัวอย่างจะอยู่ใน DOM ของ el อยู่แล้วเพราะเป็น contenteditable
+    // จริงบน element เดียวกัน ไม่ใช่ .value ของ input ที่ต้องอ่านแยก)
+    clone.querySelectorAll('[contenteditable]').forEach(el2 => {
+      el2.removeAttribute('contenteditable');
+      el2.style.outline = 'none';
+    });
+    // เผื่อมี input.rpt-edit หลงเหลืออยู่จากจุดอื่นในอนาคต — แปลงเป็นข้อความนิ่งๆ เหมือนเดิม
     clone.querySelectorAll('input.rpt-edit').forEach(inp => {
       const d = document.createElement('div');
       d.style.cssText = inp.getAttribute('style') || '';
@@ -2020,7 +2171,7 @@ ${originalStyles}
 <body>${clone.outerHTML}</body>
 </html>`;
 
-    const res = await fetch(PDF_SERVER_URL, {
+    const res = await fetch(APP_CONFIG.PDF_SERVER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -2032,7 +2183,7 @@ ${originalStyles}
         pdfOptions: {
           format: 'A4',
           landscape: false,
-          scale: 1,
+          scale: PaginateTH.getPdfScale('pdf_scale_06', 100), // ✅ อ่านจาก dropdown ที่เพิ่งเพิ่ม (ค่าเริ่มต้น 100%)
           margin: { top: '10mm', right: '5mm', bottom: '15mm', left: '5mm' },
           preferCSSPageSize: true,
           printBackground: true, // ⚠️ ต้องเปิดไว้ ไม่งั้นพื้นหลังสีเทาของแถวสรุป (รวมเงินยืมทั้งสิ้น ฯลฯ) จะหายไปจาก PDF ทั้งที่ CSS ตั้งไว้ถูกแล้ว
@@ -2051,25 +2202,23 @@ ${originalStyles}
     document.body.appendChild(a); a.click(); a.remove();
     URL.revokeObjectURL(url);
 
-    // อัปโหลดขึ้น Supabase เก็บถาวรด้วย (ไม่บล็อกการดาวน์โหลดในเครื่อง ถ้าอัปโหลดไม่สำเร็จ
-    // ผู้ใช้ก็ยังได้ไฟล์ในเครื่องตามปกติ แค่ไม่มีลิงก์ถาวรเก็บไว้)
-    const publicUrl = await uploadPdfToSupabase06(blob, fname);
-    if (publicUrl) {
-      console.log('อัปโหลด PDF ขึ้น Supabase สำเร็จ:', publicUrl);
-      const courseNo = shGet('sm_runno') || shGet('sh_runno') || '';
-        if (courseNo) {
-          try {
-            await gsApi('updatePdfUrl', {
-              no: courseNo, pdf06: publicUrl,
-              pdf06SavedAt: new Date().toISOString(), sheetName: 'courses'
-            });
-          } catch(e) { console.warn('บันทึกลิงก์ PDF 06 ไม่สำเร็จ:', e); }
-        }
+    // อัปโหลดขึ้น Supabase Storage แบบ versioning ผ่าน saveReportPdf() (js/gas-api.js) —
+    // เก็บทุกเวอร์ชันไว้ (pdf06-v1.pdf, pdf06-v2.pdf, ...) ไม่ทับของเก่า และเขียนลิงก์ล่าสุด
+    // กลับ Sheet คอลัมน์ pdf06/pdf06SavedAt ให้เองในตัว (ไม่ต้องเรียก updateCourseField ซ้ำ)
+    btn.textContent = '⏳ กำลังอัปโหลด...';
+    const courseNo = shGet('sm_runno');
+    const uploadResult = courseNo ? await saveReportPdf(courseNo, 'pdf06', blob) : null;
+    if (uploadResult) {
+      console.log('อัปโหลด PDF ขึ้น Supabase และบันทึกลิงก์กลับ Sheet สำเร็จ:', uploadResult.publicUrl, '(v' + uploadResult.version + ')');
+    } else if (!courseNo) {
+      showGsStatus('✅ ดาวน์โหลด PDF สำเร็จ (⚠️ ไม่พบเลขที่หลักสูตร จึงไม่ได้อัปโหลดขึ้น Supabase)', 'warn');
+    } else {
+      showGsStatus('⚠️ ดาวน์โหลด PDF สำเร็จ แต่อัปโหลดเก็บถาวรไม่สำเร็จ', 'warn');
     }
 
   } catch(err){
     console.error('savePdf06 error:', err);
-    alert('สร้าง PDF ไม่สำเร็จ: ' + err.message + '\n\nตรวจสอบว่าตั้งค่า PDF_SERVER_URL ถูกต้อง และเซิร์ฟเวอร์ Puppeteer เปิดใช้งานอยู่');
+    alert('สร้าง PDF ไม่สำเร็จ: ' + err.message + '\n\nตรวจสอบว่าเซิร์ฟเวอร์ Puppeteer เปิดใช้งานอยู่');
   } finally {
     btn.disabled = false; btn.textContent = '💾 บันทึก PDF';
   }
