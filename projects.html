@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>โครงการ | PWA Academy</title>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+<!-- ── Shared modules (ต้องเรียงลำดับนี้เสมอ: config -> supabase SDK -> auth/date/gas-api) ── -->
+<script src="js/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/auth.js"></script>
+<script src="js/date-th.js"></script>
+<script src="js/gas-api.js"></script>
+<script src="js/sidebar.js"></script>
+<script>checkAuth();</script>
+
+<style>
+:root{
+  --navy:#092c4c;--navy-mid:#0d547f;--blue:#0b6aab;--blue-light:#2589c5;
+  --accent:#bf7800;--accent-light:#d99a2b;
+  --gray-50:#f3f6f8;--gray-100:#eef0f4;--gray-200:#dde1e9;
+  --gray-400:#8f97a8;--text:#1b2a38;--text-soft:#627587;
+  --border:#dce5ec;--info-bg:#eaf4fb;--info:#0b6aab;
+  --green:#197a5d;--green-bg:#eafaf5;
+  --amber-bg:#fff6e8;--amber:#bf7800;
+  --red:#c0364f;--red-bg:#fdeeea;
+  --purple:#7865c8;--purple-bg:#f1edfc;
+  --line:#dce5ec;--sky:#eaf4fb
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Prompt',sans-serif;background:var(--gray-50);color:var(--text);font-size:14px;line-height:1.6}
+
+/* ===== Shared layout (sidebar + main) — identical pattern to training_courses_gfr1.html / annual-plan.html ===== */
+.layout{display:flex;min-height:100vh}
+.sidebar{position:sticky;top:0;align-self:flex-start;height:100vh;width:260px;flex:0 0 260px;background:var(--navy);color:#dce8f2;padding:20px 16px;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;transition:width .22s ease,flex-basis .22s ease,padding .22s ease}
+.sidebar::-webkit-scrollbar{width:5px}
+.sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:99px}
+.sidebar-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:0 6px 20px;border-bottom:1px solid rgba(255,255,255,.15)}
+.brand{display:flex;align-items:center;gap:11px;min-width:0;overflow:hidden}
+.mark{height:37px;width:37px;flex:0 0 37px;border-radius:10px;object-fit:cover;background:#fff}
+.brand-text{min-width:0}
+.brand b{display:block;color:#fff;font-size:15px;white-space:nowrap}
+.brand span{font-size:10.5px;color:#a9c3d6;white-space:normal;line-height:1.3;display:block}
+.nav{padding-top:20px}
+.nav-label{font-size:11px;letter-spacing:.08em;color:#82a4bd;padding:0 12px 10px;white-space:nowrap;overflow:hidden}
+.nav a{display:flex;align-items:center;gap:12px;text-decoration:none;color:#c9dae7;padding:12px;border-radius:8px;margin:3px 0;transition:.15s;white-space:nowrap;overflow:hidden}
+.nav a:hover{background:rgba(255,255,255,.08)}
+.nav a.active{background:#1275b4;color:#fff;font-weight:700;box-shadow:inset 3px 0 #91d8ff}
+.nav svg{width:19px;height:19px;flex:0 0 19px;fill:none;stroke:currentColor;stroke-width:1.8}
+.user{margin-top:auto;background:rgba(255,255,255,.07);padding:13px;border-radius:9px;font-size:12px;overflow:hidden;white-space:nowrap;flex:0 0 auto}
+.user b{color:#fff;display:block;margin-bottom:3px}
+.user span{color:#a9c3d6}
+.sidebar-toggle{flex:0 0 26px;width:26px;height:26px;background:transparent;border:0;color:#cfe0ee;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;margin-top:2px;padding:0}
+.sidebar-toggle:hover{color:#fff}
+.sidebar-toggle svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.2;transition:transform .22s ease}
+.sidebar-toggle.collapsed svg{transform:rotate(180deg)}
+.sidebar.collapsed{width:76px;flex-basis:76px;padding-left:12px;padding-right:12px}
+.sidebar.collapsed .sidebar-head{flex-direction:column;align-items:center;gap:12px;padding-left:0;padding-right:0}
+.sidebar.collapsed .brand{justify-content:center}
+.sidebar.collapsed .brand-text,.sidebar.collapsed .nav-label,.sidebar.collapsed .user{display:none}
+.sidebar.collapsed .nav a{justify-content:center;padding-left:8px;padding-right:8px}
+.sidebar.collapsed .nav a span{display:none}
+
+.main{width:calc(100% - 260px);max-width:calc(100% - 260px);padding:30px 34px 60px;min-width:0;transition:width .22s ease,max-width .22s ease;overflow-x:hidden}
+.main.wide{width:calc(100% - 76px);max-width:calc(100% - 76px)}
+
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:22px}
+.crumb{font-size:12px;color:var(--text-soft);margin-bottom:5px}
+.topbar h1{font-size:25px;margin:0;color:var(--navy);letter-spacing:-.4px;font-weight:700}
+
+.year-dd{position:relative}
+.year-btn{background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px 13px;font-weight:700;color:var(--navy);cursor:pointer;font:inherit;display:flex;align-items:center;gap:6px;transition:.15s}
+.year-btn:hover{border-color:#b9cddb;background:#fbfdfe}
+.year-menu{position:absolute;top:calc(100% + 6px);right:0;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 10px 28px rgba(19,47,68,.14);min-width:180px;padding:6px;display:none;z-index:250}
+.year-menu.show{display:block}
+.year-menu button{width:100%;text-align:left;background:transparent;border:0;padding:9px 11px;border-radius:7px;font:inherit;font-size:13px;color:#384b5a;cursor:pointer;display:flex;align-items:center;justify-content:space-between}
+.year-menu button:hover{background:#f2f6f8}
+.year-menu button.active{color:var(--blue);font-weight:700;background:#eaf4fb}
+.year-menu button .chk{opacity:0;color:var(--blue)}
+.year-menu button.active .chk{opacity:1}
+
+.page{width:100%}
+
+/* ===== Panel / card system (shared look) ===== */
+.panel{background:#fff;border:1px solid #e0e8ed;border-radius:11px;overflow:hidden;margin-bottom:20px}
+.panel-head{padding:19px 20px 15px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.panel-head h2{font-size:16px;color:var(--navy);margin:0 0 4px;font-weight:700}
+.panel-head p{margin:0;color:var(--text-soft);font-size:12px}
+.count-chip{background:var(--sky);color:#0a5c8c;border:1px solid #cfe4f0;border-radius:999px;padding:6px 13px;font-size:12px;font-weight:700;white-space:nowrap}
+
+.search-wrap{padding:14px 20px;border-bottom:1px solid var(--line)}
+.search-input{width:100%;max-width:420px;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font:inherit;font-size:13px;color:var(--text)}
+.search-input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(11,106,171,.1)}
+
+/* ===== Project picker cards ===== */
+.project-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;padding:18px 20px}
+.project-card{text-align:left;background:#fff;border:1.5px solid #e5ebef;border-radius:12px;padding:14px 16px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;gap:8px;font:inherit;color:inherit}
+.project-card:hover{border-color:#b9cddb;transform:translateY(-2px);box-shadow:0 8px 20px -10px rgba(19,47,68,.25)}
+.project-card.selected{border-color:var(--blue);box-shadow:0 0 0 3px rgba(11,106,171,.15);background:#f7fbfe}
+.pc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.pc-name{font-size:13px;font-weight:700;color:var(--navy);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pc-meta{font-size:11.5px;color:var(--text-soft);display:flex;flex-direction:column;gap:2px}
+.pc-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px}
+.pc-budget{font-size:12.5px;font-weight:700;color:var(--navy)}
+.status-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;font-size:10.5px;font-weight:700;white-space:nowrap}
+.status-pill .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.status-progress{background:var(--info-bg);color:var(--blue)}
+.status-done{background:var(--green-bg);color:var(--green)}
+.status-pending{background:var(--amber-bg);color:var(--amber)}
+.empty-note{grid-column:1/-1;text-align:center;padding:40px;color:var(--text-soft);font-size:13px}
+
+/* ===== Empty state (no project selected) ===== */
+.empty-state{text-align:center;padding:70px 20px;color:var(--gray-400)}
+.empty-state .es-icon{font-size:46px;margin-bottom:12px}
+.empty-state h3{font-size:15px;font-weight:600;color:var(--text-soft);margin-bottom:6px}
+.empty-state p{font-size:12.5px}
+
+/* ===== Detail: course info header ===== */
+.detail-head{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:16px;padding:22px}
+.detail-title-wrap{min-width:0;flex:1 1 380px}
+.detail-tag{display:inline-flex;align-items:center;gap:6px;background:var(--sky);color:#0a5c8c;border:1px solid #cfe4f0;border-radius:999px;padding:5px 12px;font-size:11.5px;font-weight:600;margin-bottom:8px}
+.detail-tag .dot{width:6px;height:6px;border-radius:50%;background:#0b6aab}
+.detail-title-wrap h2{font-size:20px;color:var(--navy);line-height:1.45;font-weight:700;margin-bottom:6px}
+.detail-meta-line{font-size:12.5px;color:var(--text-soft);margin-bottom:2px}
+.detail-meta-line.strong{color:#1c3547;font-weight:600;font-size:13px}
+.detail-status{flex:0 0 auto}
+
+/* ===== KPI summary cards ===== */
+.summary{display:grid;grid-template-columns:repeat(6,minmax(150px,1fr));gap:12px;padding:0 20px 20px}
+.card{background:#fff;border:1px solid #e5ebef;border-radius:10px;padding:14px 15px;box-shadow:0 2px 8px rgba(19,47,68,.035)}
+.card .top-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.card label{font-size:11px;color:var(--text-soft)}
+.card .ic{width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex:0 0 24px}
+.card .ic svg{width:13px;height:13px;stroke-width:2.2}
+.card strong{font-size:16px;color:var(--navy);line-height:1.3;display:block}
+.card .sub{font-size:10.5px;margin-top:4px;color:var(--text-soft)}
+.card .empty-val{color:#9aa9b4;font-size:12.5px;font-weight:500}
+
+/* ===== Charts row ===== */
+.dashboard-grid-2col{display:grid;grid-template-columns:1.3fr 1fr;gap:18px;padding:0 20px 20px}
+.chart-card{background:#fff;border:1px solid #e0e8ed;border-radius:11px;padding:18px}
+.chart-card .chart-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;gap:8px}
+.chart-card h3{margin:0;color:var(--navy);font-size:14.5px}
+.chart-card .chart-note{font-size:10.5px;color:var(--text-soft)}
+.chart-container{position:relative;height:280px;width:100%}
+
+/* ===== Breakdown table ===== */
+.tbl-wrap{padding:0 20px 20px}
+table.brk{width:100%;border-collapse:collapse;font-size:12.5px}
+table.brk thead th{background:var(--navy);color:#fff;padding:9px 12px;font-weight:500;text-align:center;border-radius:0}
+table.brk thead th.left{text-align:left}
+table.brk td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+table.brk td.left{text-align:left;font-weight:600;color:#1c3547}
+table.brk td.money{text-align:right;white-space:nowrap}
+table.brk tbody tr:last-child td{border-bottom:none}
+table.brk tbody tr.grand td{background:var(--gray-100);font-weight:700;color:var(--navy);border-top:2px solid var(--blue)}
+.bar-cell{display:flex;align-items:center;gap:8px;min-width:120px}
+.bar-track{flex:1;height:7px;background:#e8eef1;border-radius:99px;overflow:hidden}
+.bar-fill{display:block;height:100%;border-radius:99px;background:var(--blue)}
+.bar-fill.over{background:var(--red)}
+.bar-pct{font-size:11px;color:var(--text-soft);width:38px;text-align:right;flex:0 0 38px}
+.neg{color:var(--red)}
+.pos{color:var(--green)}
+
+/* ===== Speakers ===== */
+.spk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;padding:0 20px 20px}
+.spk-card-mini{background:var(--gray-50);border:1px solid var(--border);border-radius:9px;padding:11px 13px}
+.spk-card-mini .spk-name{font-size:12.5px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.spk-card-mini .spk-row{display:flex;justify-content:space-between;font-size:11.5px;color:var(--text-soft);margin-top:2px}
+.spk-card-mini .spk-row b{color:#1c3547;font-weight:600}
+.spk-int-note{grid-column:1/-1;font-size:12px;color:var(--purple);background:var(--purple-bg);border:1px solid #ded6f5;border-radius:8px;padding:9px 13px}
+
+/* ===== PDF status chips ===== */
+.pdf-chip-row{display:flex;flex-wrap:wrap;gap:8px;padding:0 20px 22px}
+.pdf-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;font-size:11.5px;font-weight:600;text-decoration:none;border:1px solid transparent}
+.pdf-chip.has{background:var(--green-bg);color:var(--green);border-color:#c9ecdc}
+.pdf-chip.no{background:var(--gray-100);color:var(--gray-400);border-color:var(--border);cursor:default}
+
+@media(max-width:1400px){.summary{grid-template-columns:repeat(3,1fr)}.dashboard-grid-2col{grid-template-columns:1fr}}
+@media(max-width:1050px){.main{padding:22px}.sidebar{width:215px;flex-basis:215px}.main{width:calc(100% - 215px);max-width:calc(100% - 215px)}}
+@media(max-width:720px){.sidebar{display:none}.main{width:100%;max-width:100%;padding:18px}.summary{grid-template-columns:repeat(2,1fr)}.topbar{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <div id="sidebarRoot"></div>
+  <script>renderSidebar('projects');</script>
+
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <div class="crumb">โครงการ / กองฝึกอบรมภูมิภาค 1</div>
+        <h1>โครงการ</h1>
+      </div>
+      <div class="year-dd" id="yearDD">
+        <button class="year-btn" type="button" onclick="toggleYearMenu(event)">
+          <span>ปีงบประมาณ <span id="yearLabel">2570</span></span> ▾
+        </button>
+        <div class="year-menu" id="yearMenu">
+          <button type="button" class="active" data-y="2570" onclick="selectYear('2570')"><span>ปีงบประมาณ 2570</span><span class="chk">✓</span></button>
+          <button type="button" data-y="2569" onclick="selectYear('2569')"><span>ปีงบประมาณ 2569</span><span class="chk">✓</span></button>
+        </div>
+      </div>
+    </header>
+
+    <div class="page">
+
+      <!-- ===== Project picker ===== -->
+      <section class="panel">
+        <div class="panel-head">
+          <div><h2>เลือกโครงการ / หลักสูตร</h2><p>แสดงเฉพาะหลักสูตรที่เริ่มจัดอบรมไปแล้วหรืออยู่ระหว่างดำเนินการ (ไม่รวมหลักสูตรที่ยังไม่ถึงวันจัด)</p></div>
+          <span class="count-chip" id="projCount">— รายการ</span>
+        </div>
+        <div class="search-wrap">
+          <input type="text" id="projSearch" class="search-input" placeholder="ค้นหาชื่อหลักสูตร / รุ่น / เลขที่หลักสูตร..." oninput="renderProjectList()">
+        </div>
+        <div class="project-grid" id="projectGrid"><div class="empty-note">กำลังโหลด...</div></div>
+      </section>
+
+      <!-- ===== Detail (shown after a project is selected) ===== -->
+      <section class="panel" id="detailPanel" style="display:none;">
+        <div class="detail-head">
+          <div class="detail-title-wrap">
+            <div class="detail-tag"><span class="dot"></span>กองฝึกอบรมภูมิภาค 1</div>
+            <h2 id="d_course_name">—</h2>
+            <div class="detail-meta-line strong" id="d_meta1"></div>
+            <div class="detail-meta-line" id="d_meta2"></div>
+            <div class="detail-meta-line" id="d_meta3"></div>
+          </div>
+          <div class="detail-status" id="d_status"></div>
+        </div>
+
+        <div class="summary" id="d_kpi"></div>
+
+        <div class="dashboard-grid-2col">
+          <article class="chart-card">
+            <div class="chart-head"><h3>งบประมาณ vs ใช้จริง รายหมวด</h3><span class="chart-note">หน่วย : บาท</span></div>
+            <div class="chart-container"><canvas id="chartBar"></canvas></div>
+          </article>
+          <article class="chart-card">
+            <div class="chart-head"><h3>สัดส่วนค่าใช้จ่ายจริง</h3><span class="chart-note">แยกตามหมวด</span></div>
+            <div class="chart-container"><canvas id="chartDonut"></canvas></div>
+          </article>
+        </div>
+
+        <div class="tbl-wrap">
+          <table class="brk">
+            <thead><tr>
+              <th class="left" style="width:32%">หมวดรายการ</th>
+              <th style="width:16%">งบประมาณ (บาท)</th>
+              <th style="width:16%">ใช้จริง (บาท)</th>
+              <th style="width:18%">% เบิกจ่าย</th>
+              <th style="width:18%">คงเหลือ (บาท)</th>
+            </tr></thead>
+            <tbody id="d_table_body"></tbody>
+          </table>
+        </div>
+
+        <div class="panel-head" style="border-top:1px solid var(--line);border-bottom:none;">
+          <div><h2 style="font-size:14px;">วิทยากร</h2></div>
+        </div>
+        <div class="spk-grid" id="d_speakers"></div>
+
+        <div class="panel-head" style="border-top:1px solid var(--line);border-bottom:none;">
+          <div><h2 style="font-size:14px;">รายงาน PDF ที่บันทึกไว้</h2></div>
+        </div>
+        <div class="pdf-chip-row" id="d_pdf"></div>
+      </section>
+
+      <div class="empty-state" id="emptyState">
+        <div class="es-icon">📂</div>
+        <h3>ยังไม่ได้เลือกโครงการ</h3>
+        <p>เลือกหลักสูตรจากรายการด้านบนเพื่อดูรายละเอียดงบประมาณและค่าใช้จ่าย</p>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+/* ============================================================
+   STATE
+   ============================================================ */
+let currentYear = '2570';
+let allCourses = [], budgetByNo = {}, actual06ByNo = {}, actual07ByNo = {};
+let currentProjects = [];   // filtered+sorted list for the active year
+let selectedNo = null;
+let barChartInstance = null, donutChartInstance = null;
+
+const fmt  = n => Math.round(n||0).toLocaleString('th-TH');
+const fmt2 = n => (n||0).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+function numify(v){ const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+
+/* normalize ปีจาก Sheet (อาจเป็น number/string/"'2569"/Date) — เหมือน training_courses_gfr1.html */
+function normYear(v){
+  if(!v && v !== 0) return '';
+  if(v instanceof Date) return String(v.getFullYear() + 543);
+  const s = String(v).replace(/^'+/, '').trim();
+  if(/^\d{4}$/.test(s)) return s;
+  const m = s.match(/^(\d{4})-/);
+  if(m) return String(parseInt(m[1]) + 543);
+  return s;
+}
+
+/* ============================================================
+   CATEGORY DEFINITIONS — งบประมาณ (budget.*) vs ใช้จริง (actual07.*)
+   อ้างอิงชื่อคอลัมน์จาก Code.gs COL_BUDGET / COL_ACTUAL07 ตรงๆ
+   ============================================================ */
+function extActualFromSpk(a07){
+  if(!a07 || !a07.spkActualJson) return 0;
+  let sp = {};
+  try{ sp = typeof a07.spkActualJson === 'string' ? JSON.parse(a07.spkActualJson) : a07.spkActualJson; }catch(e){ return 0; }
+  const list = Array.isArray(sp.EXT) ? sp.EXT : [];
+  return list.reduce((s,x)=> s + (numify(x.aHotel)+numify(x.aTravel)+numify(x.aAmt)), 0);
+}
+
+const CATS = [
+  { key:'fuel',        label:'ก. ค่าน้ำมันเชื้อเพลิงและหล่อลื่น',              b:b=>numify(b.secFuel),   a:(a)=>numify(a && a.a_fuel) },
+  { key:'office',      label:'ก. ค่าวัสดุสำนักงาน',                            b:b=>numify(b.sec1),      a:(a)=>a ? numify(a.a_1_1)+numify(a.a_1_2) : 0 },
+  { key:'misc',        label:'ก. ค่าวัสดุเบ็ดเตล็ด',                           b:b=>numify(b.sec2),      a:(a)=>numify(a && a.a_2_1) },
+  { key:'lump',        label:'ก. ค่าจ้างเหมา',                                 b:b=>numify(b.secLump),   a:(a)=>numify(a && a.a_lump) },
+  { key:'venue',       label:'ก. ค่าเช่าสถานที่',                              b:b=>numify(b.secVenue),  a:(a)=>a ? numify(a.a_venue_meet)+numify(a.a_venue_vip)+numify(a.a_venue_staff) : 0 },
+  { key:'food',        label:'ก. ค่าอาหารและเครื่องดื่ม',                      b:b=>numify(b.sec3),      a:(a)=>a ? numify(a.a_3_1)+numify(a.a_food_dinner)+numify(a.a_3_2)+numify(a.a_3_3) : 0 },
+  { key:'stafftravel', label:'ก. ค่าเดินทางเจ้าหน้าที่ดำเนินการ',              b:b=>numify(b.sec4),      a:(a)=>a ? numify(a.a_4_1)+numify(a.a_4_2)+numify(a.a_4_3) : 0 },
+  { key:'ext',         label:'ก. ค่าสมนาคุณวิทยากรภายนอก',                     b:b=>numify(b.sec5)+numify(b.sec6), a:(a)=>extActualFromSpk(a) },
+  { key:'internal',    label:'ค่าสมนาคุณวิทยากรภายใน',                         b:b=>numify(b.secInternal), a:(a)=>a ? numify(a.a_in_1)+numify(a.a_in_2)+numify(a.a_in_3)+numify(a.a_in_payroll) : 0 },
+  { key:'pres',        label:'ค่าเดินทางประธานในพิธี',                         b:b=>numify(b.secPres),   a:(a)=>a ? numify(a.a_pres_1)+numify(a.a_pres_2)+numify(a.a_pres_3) : 0 },
+  { key:'kor',         label:'ข. ค่าเดินทางผู้เข้ารับการฝึกอบรม',              b:b=>numify(b.bb1)+numify(b.bb2)+numify(b.bb3), a:(a)=>a ? numify(a.a_b1)+numify(a.a_b2)+numify(a.a_b3) : 0 },
+];
+
+const PDF_REPORTS = [
+  { key:'pdf05', name:'ประมาณการค่าใช้จ่าย' },
+  { key:'pdf06', name:'สรุปค่าใช้จ่ายจริง' },
+  { key:'pdf07', name:'สรุปฯ (ใบปะหน้า)' },
+  { key:'pdf08', name:'ใบหักล้างยืมเงิน' },
+  { key:'pdf09', name:'ค่าวัสดุเบ็ดเตล็ด' },
+];
+
+/* ============================================================
+   LOAD — ดึงทุกชีตในคำขอเดียว (action getAll) แล้ว index ด้วย no
+   ============================================================ */
+async function loadAllData(){
+  showGsLoader('📥 กำลังโหลดข้อมูลโครงการ');
+  const result = await gsApi('getAll');
+  hideGsLoader();
+
+  if(result === null){
+    document.getElementById('projectGrid').innerHTML =
+      '<div class="empty-note">⚠️ เชื่อมต่อไม่สำเร็จ <button onclick="loadAllData()" style="border:0;background:transparent;color:#0b6aab;text-decoration:underline;cursor:pointer;font:inherit">ลองใหม่</button></div>';
+    return;
+  }
+
+  allCourses = result.courses || [];
+  budgetByNo = {}; actual06ByNo = {}; actual07ByNo = {};
+  (result.budget||[]).forEach(b=>{ const no=String(b.no||'').trim(); if(no) budgetByNo[no]=b; });
+  (result.actual06||[]).forEach(a=>{ const no=String(a.no||'').trim(); if(no) actual06ByNo[no]=a; });
+  (result.actual07||[]).forEach(a=>{ const no=String(a.no||'').trim(); if(no) actual07ByNo[no]=a; });
+
+  buildProjectsForYear(currentYear);
+}
+
+/* ============================================================
+   FILTER + SORT — เฉพาะหลักสูตรที่ "เริ่มจัดแล้ว" (dateStart <= วันนี้)
+   ============================================================ */
+function projectStatus(course){
+  const a07 = actual07ByNo[course.no];
+  const ds = DateTH.normalize(course.dateStart);
+  const de = DateTH.normalize(course.dateEnd) || ds;
+  if(!ds) return null; // ไม่มีวันที่ — ไม่นับว่า "จัดแล้ว/กำลังจัด"
+
+  const now = new Date();
+  const start = new Date(ds + 'T00:00:00');
+  const end   = new Date(de + 'T23:59:59');
+  if(now < start) return null; // ยังไม่ถึงวันจัด — ไม่แสดงในรายการนี้
+
+  if(now <= end) return { code:'progress', label:'กำลังดำเนินการ', cls:'status-progress' };
+  if(a07 && numify(a07.grandTotal) > 0) return { code:'done', label:'เสร็จสิ้น', cls:'status-done' };
+  return { code:'pending', label:'รอสรุปค่าใช้จ่าย', cls:'status-pending' };
+}
+
+function buildProjectsForYear(year){
+  const list = [];
+  allCourses.forEach(cr=>{
+    if(!cr.no) return;
+    const crYear = normYear(cr.year);
+    const belongsToYear = crYear ? (crYear === year) : false;
+    if(!belongsToYear) return;
+    const status = projectStatus(cr);
+    if(!status) return; // ยังไม่เริ่ม — คัดออก
+    list.push({ course: cr, status });
+  });
+  list.sort((x,y)=> String(y.course.dateStart||'').localeCompare(String(x.course.dateStart||'')));
+  currentProjects = list;
+  renderProjectList();
+}
+
+/* ============================================================
+   RENDER — project picker
+   ============================================================ */
+function renderProjectList(){
+  const term = (document.getElementById('projSearch').value||'').toLowerCase();
+  const grid = document.getElementById('projectGrid');
+  const filtered = currentProjects.filter(p=>{
+    if(!term) return true;
+    const hay = [p.course.course, p.course.batch, p.course.no, p.course.location].join(' ').toLowerCase();
+    return hay.includes(term);
+  });
+
+  document.getElementById('projCount').textContent = filtered.length + ' รายการ';
+
+  if(!filtered.length){
+    grid.innerHTML = '<div class="empty-note">ไม่พบหลักสูตรที่เริ่มจัดอบรมแล้วในปีงบนี้ (หรือไม่ตรงกับคำค้นหา)</div>';
+    return;
+  }
+
+  grid.innerHTML = filtered.map(p=>{
+    const cr = p.course;
+    const b = budgetByNo[cr.no];
+    const dateTxt = DateTH.formatRange(cr.dateStart, cr.dateEnd, {month:'short'});
+    const budgetTxt = b ? fmt(b.grandTotal||b.budgetTotal||0)+' บาท' : '—';
+    const sel = cr.no === selectedNo ? ' selected' : '';
+    return `<button type="button" class="project-card${sel}" onclick="selectProject('${cr.no}')">
+      <div class="pc-top">
+        <div class="pc-name">${cr.course || '(ไม่มีชื่อหลักสูตร)'}</div>
+      </div>
+      <div class="pc-meta">
+        <span>${cr.batch ? 'รุ่นที่ '+cr.batch+' · ' : ''}เลขที่ ${cr.no}</span>
+        <span>${dateTxt || 'ไม่ระบุวันที่'}</span>
+        <span>${cr.location || '—'}</span>
+      </div>
+      <div class="pc-foot">
+        <span class="pc-budget">${budgetTxt}</span>
+        <span class="status-pill ${p.status.cls}"><span class="dot"></span>${p.status.label}</span>
+      </div>
+    </button>`;
+  }).join('');
+}
+
+/* ============================================================
+   SELECT PROJECT — render detail panel
+   ============================================================ */
+function selectProject(no){
+  selectedNo = no;
+  renderProjectList();
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('detailPanel').style.display = 'block';
+
+  const cr = allCourses.find(c=>c.no===no) || { no };
+  const b  = budgetByNo[no] || {};
+  const a6 = actual06ByNo[no] || null;
+  const a7 = actual07ByNo[no] || null;
+  const status = projectStatus(cr) || { label:'—', cls:'status-progress' };
+
+  renderDetailHead(cr, status);
+  renderDetailKPI(cr, b, a6, a7);
+  renderDetailTable(b, a7);
+  renderDetailCharts(b, a7);
+  renderSpeakers(b, a7);
+  renderPdfChips(cr);
+
+  document.getElementById('detailPanel').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function renderDetailHead(cr, status){
+  document.getElementById('d_course_name').textContent = cr.course || '(ไม่มีชื่อหลักสูตร)';
+  const line1 = [];
+  if(cr.batch) line1.push('รุ่นที่ '+cr.batch);
+  if(cr.no) line1.push('เลขที่หลักสูตร '+cr.no);
+  document.getElementById('d_meta1').textContent = line1.join(' · ');
+  const dateTxt = DateTH.formatRange(cr.dateStart, cr.dateEnd);
+  document.getElementById('d_meta2').textContent = dateTxt ? 'วันที่ '+dateTxt : '';
+  document.getElementById('d_meta3').textContent = cr.location ? 'ณ '+cr.location : '';
+  document.getElementById('d_status').innerHTML =
+    `<span class="status-pill ${status.cls}" style="font-size:12.5px;padding:7px 14px;"><span class="dot"></span>${status.label}</span>`;
+}
+
+function cardHTML(iconSvg, bg, fg, label, valueHtml, subHtml){
+  return `<div class="card">
+    <div class="top-row"><label>${label}</label><div class="ic" style="background:${bg};color:${fg}">${iconSvg}</div></div>
+    <div>${valueHtml}</div>
+    ${subHtml ? `<div class="sub">${subHtml}</div>` : ''}
+  </div>`;
+}
+const ICONS = {
+  coins:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18M7 6h1v4M16.71 13.88l.7.71-2.82 2.82"/></svg>',
+  wallet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v3M3 7v10a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1h-4a2 2 0 1 0 0 4h5"/></svg>',
+  receipt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>',
+  chart:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>',
+  refund: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4v6h6M4.5 14a8 8 0 1 0 2-9.5L4 10"/></svg>',
+  users:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.5 2.8-6 6.5-6s6.5 2.5 6.5 6M16.5 8.3a3 3 0 1 1 3.3 4.6M20 20c0-2.7-1.6-4.9-4-5.7"/></svg>',
+};
+
+function renderDetailKPI(cr, b, a6, a7){
+  const noData = '<span class="empty-val">ยังไม่มีข้อมูล</span>';
+  const hasBudget = numify(b.grandTotal || b.budgetTotal) > 0;
+  const budgetTotal = numify(b.grandTotal || b.budgetTotal);
+  const borrowAmt = numify(b.gorTotal); // ก. เฉพาะเงินยืม ตามที่ Code.gs คำนวณไว้
+
+  let actualTotal = null;
+  if(a6 && numify(a6.grandTotal) > 0) actualTotal = numify(a6.grandTotal);
+  if(a7 && numify(a7.grandTotal) > 0) actualTotal = numify(a7.grandTotal);
+
+  let actualGorA = null;
+  if(a7){
+    const v = k => numify(a7[k]);
+    actualGorA = v('a_fuel') + v('a_1_1')+v('a_1_2') + v('a_2_1') + v('a_lump')
+               + v('a_venue_meet')+v('a_venue_vip')+v('a_venue_staff')
+               + v('a_3_1')+v('a_food_dinner')+v('a_3_2')+v('a_3_3')
+               + v('a_4_1')+v('a_4_2')+v('a_4_3') + extActualFromSpk(a7);
+  } else if(a6){
+    actualGorA = numify(a6.grandTotal);
+  }
+  const refund = (actualGorA !== null && borrowAmt > 0) ? (borrowAmt - actualGorA) : null;
+
+  const traineesTxt = a7 && (numify(a7.trainees_approved) || numify(a7.trainees_actual))
+    ? `${fmt(a7.trainees_approved)} / ${fmt(a7.trainees_actual)} คน`
+    : null;
+
+  document.getElementById('d_kpi').innerHTML =
+    cardHTML(ICONS.coins, '#eaf4fb', '#0b6aab', 'งบประมาณอนุมัติ',
+      hasBudget ? `<strong>${fmt(budgetTotal)}</strong>` : noData, 'บาท') +
+    cardHTML(ICONS.wallet, '#fff6e8', '#bf7800', 'เงินยืมทดลองจ่าย (ก.)',
+      hasBudget ? `<strong>${fmt(borrowAmt)}</strong>` : noData, 'บาท') +
+    cardHTML(ICONS.receipt, '#eafaf5', '#0f8a73', 'ใช้จริงทั้งหมด',
+      actualTotal !== null ? `<strong>${fmt(actualTotal)}</strong>` : noData, 'บาท') +
+    cardHTML(ICONS.chart, '#fdeeea', '#c4562f', 'ก. เงินยืม (ใช้จริง)',
+      actualGorA !== null ? `<strong>${fmt(actualGorA)}</strong>` : noData, 'บาท') +
+    cardHTML(ICONS.refund, '#eef2f5', '#556577', 'เงินคืน (คงเหลือ ก.)',
+      refund !== null ? `<strong style="color:${refund>=0?'#197a5d':'#c0364f'}">${fmt(refund)}</strong>` : noData, 'บาท') +
+    cardHTML(ICONS.users, '#f1edfc', '#7865c8', 'ผู้เข้าอบรม (แผน/จริง)',
+      traineesTxt ? `<strong style="font-size:13px;">${traineesTxt}</strong>` : noData, '');
+}
+
+/* ============================================================
+   BREAKDOWN TABLE
+   ============================================================ */
+function renderDetailTable(b, a7){
+  let rows = '';
+  let sumB = 0, sumA = 0;
+  CATS.forEach(c=>{
+    const bAmt = c.b(b);
+    const aAmt = c.a(a7);
+    if(bAmt === 0 && aAmt === 0) return; // ซ่อนหมวดที่ไม่มีข้อมูลเลย
+    sumB += bAmt; sumA += aAmt;
+    const pct = bAmt > 0 ? Math.min(999, (aAmt/bAmt)*100) : (aAmt>0 ? 100 : 0);
+    const remain = bAmt - aAmt;
+    const over = aAmt > bAmt && bAmt > 0;
+    rows += `<tr>
+      <td class="left">${c.label}</td>
+      <td class="money">${fmt(bAmt)}</td>
+      <td class="money">${aAmt ? fmt(aAmt) : '—'}</td>
+      <td><div class="bar-cell"><div class="bar-track"><span class="bar-fill${over?' over':''}" style="width:${Math.min(100,pct)}%"></span></div><span class="bar-pct">${bAmt>0? pct.toFixed(0)+'%':'—'}</span></div></td>
+      <td class="money ${remain<0?'neg':'pos'}">${bAmt>0 ? fmt(remain) : '—'}</td>
+    </tr>`;
+  });
+  if(!rows){
+    rows = '<tr><td colspan="5" style="text-align:center;color:var(--text-soft);padding:20px;">ยังไม่มีข้อมูลงบประมาณ/ค่าใช้จ่ายสำหรับหลักสูตรนี้</td></tr>';
+  } else {
+    const remainSum = sumB - sumA;
+    rows += `<tr class="grand">
+      <td class="left">รวมทั้งหมด</td>
+      <td class="money">${fmt(sumB)}</td>
+      <td class="money">${sumA?fmt(sumA):'—'}</td>
+      <td>${sumB>0? Math.min(999,(sumA/sumB)*100).toFixed(0)+'%':'—'}</td>
+      <td class="money ${remainSum<0?'neg':'pos'}">${sumB>0?fmt(remainSum):'—'}</td>
+    </tr>`;
+  }
+  document.getElementById('d_table_body').innerHTML = rows;
+}
+
+/* ============================================================
+   CHARTS
+   ============================================================ */
+function renderDetailCharts(b, a7){
+  if(typeof Chart === 'undefined') return;
+  try{ if(typeof ChartDataLabels !== 'undefined') Chart.register(ChartDataLabels); }catch(e){}
+
+  const active = CATS.map(c=>({ label:c.label.replace(/^[กข]\.\s*/,''), b:c.b(b), a:c.a(a7) }))
+                      .filter(c=> c.b>0 || c.a>0);
+
+  const dlBase = { anchor:'end', align:'top', offset:2, color:'#4a6072', font:{family:'Prompt',weight:'600',size:9}, formatter:v=>v?fmt(v):'' };
+
+  if(barChartInstance) barChartInstance.destroy();
+  barChartInstance = new Chart(document.getElementById('chartBar'), {
+    type:'bar',
+    data:{ labels: active.map(c=>c.label), datasets:[
+      { label:'งบประมาณ', data: active.map(c=>c.b), backgroundColor:'#9fc6e0', borderRadius:4, barPercentage:.9, categoryPercentage:.8, datalabels:dlBase },
+      { label:'ใช้จริง',   data: active.map(c=>c.a), backgroundColor:'#0b6aab', borderRadius:4, barPercentage:.9, categoryPercentage:.8, datalabels:dlBase },
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false, layout:{padding:{top:18}},
+      plugins:{ legend:{ position:'top', align:'end', labels:{ boxWidth:10, boxHeight:10, usePointStyle:true, pointStyle:'circle', font:{family:'Prompt',size:10.5} } } },
+      scales:{
+        x:{ grid:{display:false}, ticks:{ font:{family:'Prompt',size:9.5}, maxRotation:35, minRotation:0 } },
+        y:{ beginAtZero:true, grid:{color:'#eef2f5'}, ticks:{ font:{family:'Prompt',size:10}, callback:v=>fmt(v) } }
+      }
+    }
+  });
+
+  const donutData = active.filter(c=>c.a>0);
+  const palette = ['#0b6aab','#bf7800','#197a5d','#7865c8','#c4562f','#2589c5','#0f8a83','#c0364f','#82a4bd','#d99a2b','#5948a4'];
+  const donutTotal = donutData.reduce((s,c)=>s+c.a,0);
+  if(donutChartInstance) donutChartInstance.destroy();
+  donutChartInstance = new Chart(document.getElementById('chartDonut'), {
+    type:'doughnut',
+    data:{ labels: donutData.map(c=>c.label), datasets:[{ data: donutData.map(c=>c.a), backgroundColor: palette, borderColor:'#fff', borderWidth:3, hoverOffset:8 }] },
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'60%',
+      plugins:{
+        legend:{ position:'bottom', labels:{ padding:10, usePointStyle:true, pointStyle:'circle', boxWidth:9, boxHeight:9, font:{family:'Prompt',size:10.5} } },
+        tooltip:{ callbacks:{ label:c=>` ${c.label}: ${fmt(c.raw)} บาท (${donutTotal?((c.raw/donutTotal)*100).toFixed(1):0}%)` } },
+        datalabels:{ color:'#fff', font:{family:'Prompt',weight:'700',size:10}, formatter:v=> v && donutTotal ? ((v/donutTotal)*100).toFixed(0)+'%' : '' }
+      }
+    },
+    plugins: donutData.length ? [donutCenterPlugin(donutTotal)] : []
+  });
+
+  if(!donutData.length){
+    const ctx = document.getElementById('chartDonut').getContext('2d');
+    ctx.save(); ctx.textAlign='center'; ctx.fillStyle='#8f97a8'; ctx.font='500 12px Prompt';
+    ctx.fillText('ยังไม่มีข้อมูลค่าใช้จ่ายจริง', 140, 140); ctx.restore();
+  }
+}
+
+function donutCenterPlugin(total){
+  return { id:'donutCenter', afterDraw(chart){
+    const area=chart.chartArea, ctx=chart.ctx, x=(area.left+area.right)/2, y=(area.top+area.bottom)/2;
+    ctx.save(); ctx.textAlign='center';
+    ctx.fillStyle='#092c4c'; ctx.font='700 17px Prompt'; ctx.fillText((total/1e6).toFixed(3), x, y-3);
+    ctx.fillStyle='#627587'; ctx.font='500 9.5px Prompt'; ctx.fillText('ล้านบาท', x, y+14);
+    ctx.restore();
+  }};
+}
+
+/* ============================================================
+   SPEAKERS
+   ============================================================ */
+function renderSpeakers(b, a7){
+  const el = document.getElementById('d_speakers');
+  let speakers = null;
+  if(b.spkJson){
+    try{ speakers = typeof b.spkJson === 'string' ? JSON.parse(b.spkJson) : b.spkJson; }catch(e){ speakers = null; }
+  }
+  const list = (speakers && Array.isArray(speakers.EXT)) ? speakers.EXT : [];
+  const isLump = speakers && speakers.payType === 'lump';
+
+  let actualByName = {};
+  if(a7 && a7.spkActualJson){
+    try{
+      const sp = typeof a7.spkActualJson === 'string' ? JSON.parse(a7.spkActualJson) : a7.spkActualJson;
+      (sp.EXT||[]).forEach(s=>{ actualByName[s.name] = numify(s.aHotel)+numify(s.aTravel)+numify(s.aAmt); });
+    }catch(e){}
+  }
+
+  let html = '';
+  list.forEach(s=>{
+    const budgetAmt = isLump ? numify(s.amt) : numify(s.rate)*numify(s.hours);
+    const actualAmt = actualByName[s.name];
+    html += `<div class="spk-card-mini">
+      <div class="spk-name">👤 ${s.name || '(ไม่ระบุชื่อ)'}</div>
+      <div class="spk-row"><span>รูปแบบจ่าย</span><b>${isLump?'เหมาจ่าย':'รายชั่วโมง'}</b></div>
+      <div class="spk-row"><span>งบประมาณ</span><b>${fmt(budgetAmt)} บาท</b></div>
+      <div class="spk-row"><span>ใช้จริง</span><b>${actualAmt!==undefined? fmt(actualAmt)+' บาท' : '—'}</b></div>
+    </div>`;
+  });
+
+  const hasInternal = !!(speakers && speakers.hasInternal) || numify(b.secInternal) > 0;
+  if(hasInternal){
+    html += `<div class="spk-int-note">🏢 หลักสูตรนี้มีวิทยากรภายใน (จ่ายผ่านหน่วยงานต้นสังกัด/Payroll) งบประมาณรวม ${fmt(numify(b.secInternal))} บาท</div>`;
+  }
+
+  el.innerHTML = html || '<div class="empty-note" style="grid-column:1/-1;">ยังไม่มีข้อมูลวิทยากร</div>';
+}
+
+/* ============================================================
+   PDF STATUS CHIPS
+   ============================================================ */
+function renderPdfChips(cr){
+  const el = document.getElementById('d_pdf');
+  el.innerHTML = PDF_REPORTS.map(r=>{
+    const url = cr[r.key] ? String(cr[r.key]).trim() : '';
+    return url
+      ? `<a class="pdf-chip has" href="${url}" target="_blank" rel="noopener">✅ ${r.name}</a>`
+      : `<span class="pdf-chip no">— ${r.name}</span>`;
+  }).join('');
+}
+
+/* ============================================================
+   YEAR DROPDOWN
+   ============================================================ */
+function toggleYearMenu(e){
+  e.stopPropagation();
+  document.getElementById('yearMenu').classList.toggle('show');
+}
+document.addEventListener('click', ()=>document.getElementById('yearMenu')?.classList.remove('show'));
+function selectYear(y){
+  currentYear = y;
+  document.getElementById('yearLabel').textContent = y;
+  document.getElementById('yearMenu').classList.remove('show');
+  document.querySelectorAll('#yearMenu button').forEach(b=>b.classList.toggle('active', b.dataset.y === y));
+  selectedNo = null;
+  document.getElementById('detailPanel').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'block';
+  buildProjectsForYear(y);
+}
+
+/* toggleSidebar() มาจาก js/sidebar.js แล้ว (โมดูลกลาง) — ไม่ต้องประกาศซ้ำในไฟล์นี้อีก */
+
+/* ============================================================
+   INIT
+   ============================================================ */
+loadAllData();
+loadCurrentUser();
+</script>
+</body>
+</html>

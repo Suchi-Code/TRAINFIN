@@ -1,0 +1,847 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ขอหักล้างเงินยืมทดรองจ่าย</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="js/config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/date-th.js"></script>
+  <script src="js/gas-api.js"></script>
+  <script>checkAuth();</script>
+
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      color: #000;
+      background: #fff;
+      font-family: "TH SarabunIT๙", "TH Sarabun New", Tahoma, sans-serif;
+      font-size: 16pt;
+      font-weight: normal;
+      line-height: 1.1;
+    }
+
+    .page {
+      position: relative;
+      width: 210mm;
+      height: 297mm; /* บังคับขนาด A4 แนวตั้งเท่ากันทั้งหน้าจอและสั่งพิมพ์ */
+      padding: 0.59in 0.79in 0.89in 0.98in;
+      background: #fff;
+      margin: 0 auto;
+      overflow: hidden; /* ป้องกันเนื้อหาดันขอบ A4 หลุดไปหน้า 2 ในโหมดพิมพ์ */
+    }
+
+    /* ---------- หัวกระดาษ ---------- */
+
+    .document-header {
+      position: relative;
+      min-height: 0.75in;
+      margin: 0;
+    }
+
+    .header-logo {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 0.82in;
+      height: auto;
+      object-fit: contain;
+    }
+
+    .document-title {
+      margin: 0;
+      padding-top: 0.12in;
+      text-align: center;
+      font-size: 30pt;
+      font-weight: bold;
+      line-height: 1;
+    }
+
+    /* ---------- ข้อมูลส่วนต้น ---------- */
+
+    .document-info {
+      width: 100%;
+      margin-top: 0.12in;
+    }
+
+    .info-row {
+      display: flex;
+      align-items: baseline;
+      width: 100%;
+    }
+
+    .unit-row {
+      margin-bottom: 0.01in;
+    }
+
+    .field-label {
+      flex: 0 0 auto;
+      width: auto;
+      font-size: 18pt;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .field-value {
+      font-size: 16pt;
+      font-weight: normal;
+    }
+
+    .field-line {
+      display: inline-block;
+      height: 0.18in;
+      border-bottom: 1pt dotted #000;
+      vertical-align: baseline;
+    }
+
+    .line-number {
+      flex: none;
+      min-width: 0;
+      margin-right: 0;
+      width: 3.0in;
+    }
+
+    .date-label {
+      margin-left: 0;
+    }
+
+    .line-date {
+      width: 2.5in;
+      flex: 1;
+    }
+
+    .line-unit {
+      flex: 1;
+      min-width: 0;
+      border-bottom: 1pt dotted #000;
+      line-height: 1.1;
+    }
+
+    .unit-row .field-value {
+      display: inline-block;
+      border-bottom: 1pt dotted #000;
+      line-height: 0.4;
+    }
+
+    .subject-row {
+      display: flex;
+      align-items: baseline;
+      width: 100%;
+      margin-top: 0.01in;
+    }
+
+    .line-subject {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .recipient {
+      margin-top: 0.08in;
+      font-size: 16pt;
+    }
+
+    .recipient-label {
+      font-size: 16pt;
+      font-weight: normal;
+    }
+
+    /* ---------- เนื้อหา ---------- */
+
+    .content {
+      margin-top: 0.20in;
+      font-size: 16pt;
+      text-align: justify;
+      text-justify: inter-word; /* ปรับการกระจายคำให้สม่ำเสมอ */
+      /* ปรับแก้เรื่องการตัดคำภาษาไทย */
+      word-break: keep-all;      /* ไม่ให้ตัดคำแปลกๆ กลางคำ */
+      line-break: strict;       /* ตัดคำตามหลักภาษาอย่างเคร่งครัด */
+      overflow-wrap: break-word; /* ป้องกันข้อความยาวเกินขอบกระดาษ */
+    }
+
+    .content p {
+      margin: 0 0 0.2in;
+      text-indent: 1.0in;
+    }
+
+    /* ---------- ลายมือชื่อผู้ขอหักล้าง ---------- */
+
+    .requester-signature {
+      width: 3.10in;
+      margin-top: 0.02in;
+      margin-left: auto;
+      font-size: 16pt;
+      text-align: center;
+    }
+
+    .signature-space {
+      height: 0.75in;
+    }
+
+    .requester-signature p {
+      margin: 0 !important;
+      line-height: 1.2 !important;
+    }
+
+    /* ---------- ส่วนตรวจสอบและอนุมัติ ---------- */
+
+    .review-approval-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      width: 100%;
+      margin-top: 0.5in;
+    }
+
+    .review-box {
+      width: 3.2in !important;
+      font-size: 16pt;
+      line-height: 1.05;
+      text-align: left;
+    }
+
+    .review-box p {
+      margin: 0 !important;
+      text-align: left;
+    }
+
+    .review-indent {
+      text-indent: 0.40in !important;
+    }
+
+    .reviewer-signature {
+      width: 100%;
+      margin-top: 0.03in;
+      font-size: 16pt;
+    }
+
+    .reviewer-signature p {
+      margin: 0 !important;
+      line-height: 1.2 !important;
+      text-align: center !important;
+      text-indent: 0 !important;
+    }
+
+    .approval-box {
+      width: 3.10in;
+      font-size: 16pt;
+      line-height: 1.8;
+    }
+
+    .approval-heading {
+      margin: 0 !important;
+      font-size: 16pt;
+      font-weight: normal;
+      margin-top: 2.2em !important;
+      text-align: center;
+    }
+
+    .approval-signature {
+      width: 100%;
+      margin-top: 0.08in;
+      font-size: 16pt;
+    }
+
+    .approval-signature p {
+      margin: 0 !important;
+      line-height: 1.2 !important;
+      text-align: center !important;
+      text-indent: 0 !important;
+    }
+
+    /* ---------- โลโก้ท้ายกระดาษ ---------- */
+
+    .footer-logo {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 0.2in; /* ปรับระยะห่างให้อยู่ติดขอบล่างตามมาตรฐานกระดาษ A4 พิมพ์ */
+      width: 3.07in;
+      height: 0.68in;
+      object-fit: contain;
+    }
+
+    /* ---------- การแสดงผลบนหน้าจอ ---------- */
+
+    @media screen {
+      body {
+        padding: 20px;
+        background: #e6e6e6;
+      }
+
+      .page {
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.20);
+      }
+    }
+
+    /* ---------- การสั่งพิมพ์ ---------- */
+
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 0; /* ยึดตามขนาด .page 100% โดยไม่อิง margin ของเบราว์เซอร์ */
+      }
+
+      html, body {
+        width: 210mm;
+        height: 297mm;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff;
+      }
+
+      .page {
+        box-shadow: none;
+        page-break-after: avoid;
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+
+  <style>
+    /* ============================================================
+       ส่วนเสริมที่ไม่ได้อยู่ในต้นฉบับ .docx — site-header / input-panel / fillspan
+       ============================================================ */
+    .site-header{background:#0f2744;color:#fff;position:sticky;top:0;z-index:200;box-shadow:0 2px 12px rgba(0,0,0,.25);font-family:'Sarabun',sans-serif}
+    .header-inner{max-width:1000px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+    .header-title{display:flex;align-items:center;gap:12px}
+    .header-icon{width:38px;height:38px;background:#e8a020;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+    .header-text h1{font-size:15px;font-weight:600;margin:0}
+    .header-text p{font-size:11px;color:rgba(255,255,255,.55);margin:2px 0 0}
+    .btn-back{padding:6px 14px;border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.8);background:transparent;border-radius:6px;font-family:'Sarabun',sans-serif;font-size:12px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+    .btn-back:hover{background:rgba(255,255,255,.1)}
+    .btn-print-hdr{padding:6px 16px;background:#e8a020;color:#0f2744;border:none;border-radius:6px;font-family:'Sarabun',sans-serif;font-size:12px;font-weight:600;cursor:pointer}
+    .btn-print-hdr:hover{background:#f5c842}
+    .btn-save-pdf{background:#1a7a4a;color:#fff;border:none;border-radius:6px;padding:7px 20px;cursor:pointer;font-size:13px;font-weight:700;font-family:'Sarabun',sans-serif}
+    .btn-save-pdf:hover{background:#22a05e}
+
+    #input-panel{font-family:'Sarabun',sans-serif;background:#f0f4f8;border:2px solid #1d5fa8;border-radius:12px;padding:18px 22px;margin:20px auto;max-width:1000px}
+    #input-panel h3{margin:0 0 14px;font-size:15px;color:#0f2744;border-bottom:1px solid #c0d0e0;padding-bottom:8px}
+    .ip-sec-title{font-size:12.5px;font-weight:700;color:#0f2744;margin:16px 0 8px;border-left:3px solid #1d5fa8;padding-left:8px}
+    .ip-sec-title:first-of-type{margin-top:0}
+    .ip-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px 18px}
+    .ip-field{display:flex;flex-direction:column;gap:3px}
+    .ip-field.wide{grid-column:span 2}
+    .ip-field.full{grid-column:span 3}
+    .ip-field label{font-size:11px;font-weight:700;color:#4a5568;text-transform:uppercase;letter-spacing:.04em}
+    .ip-field input{padding:6px 10px;border:1.5px solid #c0d0e0;border-radius:6px;font-family:'Sarabun',sans-serif;font-size:14px;background:#fff;color:#1e2533}
+    .ip-field input:focus{outline:none;border-color:#1d5fa8}
+    .ip-field input[readonly]{background:#eef1f5;color:#5a6a7a;cursor:not-allowed}
+    .ip-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:6px}
+    .ip-sum-card{background:#fff;border:1px solid #dde2ea;border-radius:8px;padding:10px 12px}
+    .ip-sum-card label{display:block;font-size:10.5px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:3px}
+    .ip-sum-card strong{font-size:16px;color:#0f2744}
+    .ip-sum-card.refund strong{color:#1a7a4a}
+    .ip-sum-card.refund.neg strong{color:#b03030}
+    #loadStatus{margin-top:10px;font-size:12px;color:#6b7280;font-family:'Sarabun',sans-serif}
+
+    .fillspan {
+      display: inline;
+      padding: 0 3pt;
+      text-align: left;              /* จัดข้อความชิดซ้าย */
+      width: auto;                   /* ปรับความกว้างตามเนื้อหาข้อความ */
+    }
+
+    .screen-wrap{max-width:1000px;margin:0 auto}
+
+    @media print{
+      .site-header, #input-panel{display:none !important}
+    }
+  </style>
+</head>
+
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-title">
+      <div class="header-icon">📄</div>
+      <div class="header-text">
+        <h1>บันทึกข้อความ — ขอหักล้างเงินยืมทดรองจ่าย</h1>
+        <p>การประปาส่วนภูมิภาค (กปภ.) · กองฝึกอบรมภูมิภาค 1</p>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <a class="btn-back" href="01_Main-Reports.html">← ย้อนกลับ</a>
+      <button class="btn-print-hdr" onclick="window.print()">🖨 พิมพ์แบบฟอร์ม</button>
+      <button class="btn-save-pdf" onclick="savePdf11(this)">💾 บันทึก PDF</button>
+    </div>
+  </div>
+</header>
+
+<div id="input-panel">
+  <h3>📝 ข้อมูลสำหรับออกบันทึกข้อความ</h3>
+
+  <div class="ip-sec-title">ข้อมูลหลักสูตร (ดึงอัตโนมัติจาก Google Sheet)</div>
+  <div class="ip-grid">
+    <div class="ip-field full">
+      <label>ชื่อหลักสูตร</label>
+      <input type="text" id="f_course" readonly>
+    </div>
+    <div class="ip-field">
+      <label>รุ่นที่</label>
+      <input type="text" id="f_batch" readonly>
+    </div>
+    <div class="ip-field">
+      <label>เลขที่รุ่นหลักสูตร</label>
+      <input type="text" id="f_no" readonly>
+    </div>
+    <div class="ip-field">
+      <label>วันที่จัดอบรม</label>
+      <input type="text" id="f_date" readonly>
+    </div>
+    <div class="ip-field full">
+      <label>สถานที่จัดอบรม</label>
+      <input type="text" id="f_location" readonly>
+    </div>
+  </div>
+
+  <div class="ip-sec-title">ข้อมูลหนังสือ (กรอกเอง)</div>
+  <div class="ip-grid">
+    <div class="ip-field">
+      <label>เลขที่หนังสือ (ที่)</label>
+      <input type="text" id="f_docno" placeholder="เช่น มท 5528.1/-" oninput="renderMemo()">
+    </div>
+    <div class="ip-field wide">
+      <label>วันที่ออกหนังสือ</label>
+      <input type="date" id="f_docdate" oninput="renderMemo()" onchange="renderMemo()">
+    </div>
+  </div>
+
+  <div class="ip-sec-title">ผู้ยืมเงินทดรองจ่าย (กรอกเอง)</div>
+  <div class="ip-grid">
+    <div class="ip-field wide">
+      <label>ชื่อ-นามสกุล (พร้อมคำนำหน้า)</label>
+      <input type="text" id="f_borrower_name" placeholder="เช่น นายปิยังกูร วงศ์ไพบูลย์สุข" oninput="renderMemo()">
+    </div>
+    <div class="ip-field">
+      <label>ตำแหน่ง</label>
+      <input type="text" id="f_borrower_pos" placeholder="เช่น วิทยากรฝึกอบรม 6" oninput="renderMemo()">
+    </div>
+  </div>
+
+  <div class="ip-sec-title">ผู้ตรวจสอบ (กรอกเอง)</div>
+  <div class="ip-grid">
+    <div class="ip-field wide">
+      <label>ชื่อ-นามสกุลผู้ตรวจสอบ</label>
+      <input type="text" id="f_reviewer_name" placeholder="เช่น นายเจนณรงค์ ถานา" oninput="renderMemo()">
+    </div>
+    <div class="ip-field wide">
+      <label>ตำแหน่งผู้ตรวจสอบ</label>
+      <input type="text" id="f_reviewer_pos" placeholder="เช่น หัวหน้างาน 8 งานฝึกอบรมภูมิภาค" oninput="renderMemo()">
+    </div>
+  </div>
+
+  <div class="ip-sec-title">ผู้เห็นชอบ (กรอกเอง)</div>
+  <div class="ip-grid">
+    <div class="ip-field wide">
+      <label>ชื่อ-นามสกุลผู้เห็นชอบ</label>
+      <input type="text" id="f_approver_name" placeholder="เช่น นายคมกฤช รัตนธรรม" oninput="renderMemo()">
+    </div>
+    <div class="ip-field wide">
+      <label>ตำแหน่งผู้เห็นชอบ</label>
+      <input type="text" id="f_approver_pos" placeholder="เช่น ผู้อำนวยการกองฝึกอบรมภูมิภาค 1" oninput="renderMemo()">
+    </div>
+  </div>
+
+  <div class="ip-sec-title">สรุปยอดเงิน (คำนวณอัตโนมัติจากไฟล์ 05/06)</div>
+  <div class="ip-summary">
+    <div class="ip-sum-card">
+      <label>เงินยืมทดรองจ่าย</label>
+      <strong id="s_gor">0.00 บาท</strong>
+    </div>
+    <div class="ip-sum-card">
+      <label>ค่าใช้จ่ายรวมทั้งสิ้น</label>
+      <strong id="s_actual">0.00 บาท</strong>
+    </div>
+    <div class="ip-sum-card refund" id="s_refund_card">
+      <label id="s_refund_label">เงินเหลือจ่ายส่งคืน</label>
+      <strong id="s_refund">0.00 บาท</strong>
+    </div>
+  </div>
+  <div id="loadStatus"></div>
+</div>
+
+<div class="screen-wrap">
+  <main class="page" id="doc-display">
+    <header class="document-header">
+      <img
+        class="header-logo"
+        src="https://www.pwa.co.th/images/pwalogo.gif"
+        alt="โลโก้การประปาส่วนภูมิภาค"
+      >
+
+      <h1 class="document-title">บันทึกข้อความ</h1>
+    </header>
+
+    <section class="document-info">
+      <div class="info-row unit-row">
+        <span class="field-label">หน่วยงาน</span>
+        <span class="field-value">
+          &nbsp;&nbsp;กองฝึกอบรมภูมิภาค 1 งานฝึกอบรมภูมิภาค โทร.06 1813 9808&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        </span>
+      </div>
+
+      <div class="info-row">
+        <span class="field-label">ที่</span>
+        <span class="field-line line-number" id="v_docno"></span>
+        <span class="field-label date-label">วันที่</span>
+        <span class="field-line line-date" id="v_docdate"></span>
+      </div>
+    </section>
+
+    <div class="info-row unit-row">
+      <span class="field-label">เรื่อง</span>
+      <span class="field-value">
+        &nbsp;&nbsp;ขอหักล้างเงินยืมทดรองจ่ายค่าใช้จ่ายในการดำเนินการฝึกอบรม&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </span>
+    </div>
+
+    <div class="recipient">
+      <span class="recipient-label">เรียน</span>&nbsp;&nbsp;หัวหน้างานฝึกอบรมภูมิภาค
+    </div>
+
+    <section class="content">
+      <p>
+        ตามที่กองฝึกอบรมภูมิภาค ๑ (กฝภ.๑) ได้จัดการฝึกอบรมหลักสูตร
+        “<span id="v_course"></span>”
+        รุ่นที่ <span id="v_batch"></span> เลขที่รุ่นหลักสูตร <span id="v_no"></span> ในวันที่ <span id="v_daterange"></span>
+        ณ <span id="v_location"></span>
+        โดยข้าพเจ้า <span id="v_borrower_name_1" class="fillspan"></span> ตำแหน่ง <span style="white-space: nowrap;"><span id="v_borrower_pos_1" class="fillspan"></span></span>
+        งานฝึกอบรมภูมิภาค ได้รับมอบหมายให้เป็นผู้ยืมเงินทดรองจ่าย
+        ค่าใช้จ่ายในการดำเนินการฝึกอบรม เป็นเงิน <span id="v_gor"></span> บาท
+        (<span id="v_gor_text"></span>) นั้น
+      </p>
+
+      <p>
+        บัดนี้ การจัดฝึกอบรมหลักสูตรดังกล่าวได้เสร็จสิ้นแล้ว
+        และข้าพเจ้าได้จัดทำบันทึกรายการค่าใช้จ่ายในการดำเนินการฝึกอบรม
+        โดยมีค่าใช้จ่ายรวมทั้งสิ้นเป็นเงิน <span id="v_actual"></span> บาท
+        (<span id="v_actual_text"></span>)
+        <span id="v_refund_phrase"></span>
+      </p>
+
+      <p>
+        จึงเรียนมาเพื่อโปรดพิจารณาตรวจสอบความถูกต้องต่อไปด้วย จะขอบคุณยิ่ง
+      </p>
+    </section>
+
+    <section class="requester-signature">
+      <div class="signature-space"></div>
+      <p>(<span id="v_borrower_name_sig" class="fillspan"></span>)</p>
+      <p><span id="v_borrower_pos_sig" class="fillspan"></span></p>
+    </section>
+
+    <div class="review-approval-container">
+      <div class="review-box">
+        <p>เรียน ผอ.กฝภ.1</p>
+        <p class="review-indent">งานฝึกอบรมภูมิภาค ตรวจสอบความถูกต้องแล้ว เห็นควรให้หักล้างเงินยืมฯ ดังกล่าวได้</p>
+        <p class="review-indent">จึงเรียนมาเพื่อโปรดพิจารณา</p>
+
+        <div class="reviewer-signature">
+          <div class="signature-space"></div>
+          <p>(<span id="v_reviewer_name" class="fillspan"></span>)</p>
+          <p><span id="v_reviewer_pos" class="fillspan"></span></p>
+        </div>
+      </div>
+
+      <div class="approval-box">
+        <p class="approval-heading">เห็นชอบ</p>
+
+        <div class="approval-signature">
+          <div class="signature-space"></div>
+          <p>(<span id="v_approver_name" class="fillspan"></span>)</p>
+          <p><span id="v_approver_pos" class="fillspan"></span></p>
+        </div>
+      </div>
+    </div>
+
+    <img
+      class="footer-logo"
+      src="https://res.cloudinary.com/daytjjgll/image/upload/v1789616480/cd5ix1msmwzocl6nwbse.png"
+      alt="โลโก้ท้ายกระดาษ"
+    >
+  </main>
+</div>
+
+<script>
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function fmtSmart(n){
+  n = Math.round((n||0)*100)/100;
+  const isWhole = Math.abs(n - Math.round(n)) < 0.005;
+  return isWhole
+    ? Math.round(n).toLocaleString('th-TH')
+    : n.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function ThaiBaht(n) {
+  n = Math.round(n * 100) / 100;
+  let textNum = ['ศูนย์', 'หนึ่ง', 'สอง', 'สาม', 'สี่', 'ห้า', 'หก', 'เจ็ด', 'แปด', 'เก้า', 'สิบ'];
+  let textUnit = ['', 'สิบ', 'ร้อย', 'พัน', 'หมื่น', 'แสน', 'ล้าน'];
+  let s = String(n).split('.');
+  let baht = s[0];
+  let satang = s[1] || '00';
+  if (satang.length === 1) satang += '0';
+
+  function convert(str) {
+    if (str === '0' || str === '') return '';
+    let res = '';
+    for (let i = 0; i < str.length; i++) {
+      let num = parseInt(str.charAt(i));
+      let pos = str.length - i - 1;
+      if (num === 0) continue;
+      if (num === 1 && pos === 0 && str.length > 1) res += 'เอ็ด';
+      else if (num === 2 && pos === 1) res += 'ยี่';
+      else if (num === 1 && pos === 1) res += '';
+      else res += textNum[num];
+      res += textUnit[pos];
+    }
+    return res;
+  }
+
+  let bahtText = convert(baht);
+  let satangText = convert(satang);
+
+  if (bahtText === '' && satangText === '') return 'ศูนย์บาทถ้วน';
+  if (bahtText !== '') bahtText += 'บาท';
+  if (satangText === '') satangText = 'ถ้วน';
+  else satangText += 'สตางค์';
+
+  return bahtText + satangText;
+}
+
+function setText(id, val){
+  const el = document.getElementById(id);
+  if (el) el.textContent = val || '';
+}
+
+function fmtDocDate(iso){
+  return iso ? DateTH.format(iso) : '';
+}
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let COURSE = null, BUDGET = null, ACTUAL06 = null;
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function renderMemo(){
+  const courseName = (COURSE && COURSE.course) || '';
+  const batch       = (COURSE && COURSE.batch) || '';
+  const no          = (COURSE && COURSE.no) || document.getElementById('f_no').value || '';
+  const location    = (COURSE && COURSE.location) || '';
+  const dateRangeTxt = (COURSE && COURSE.dateStart)
+    ? DateTH.formatRange(COURSE.dateStart, COURSE.dateEnd || '')
+    : '';
+
+  const gorTotal = (BUDGET && parseFloat(BUDGET.gorTotal)) || 0;
+  const grandTotal06 = (ACTUAL06 && parseFloat(ACTUAL06.grandTotal)) || 0;
+  const refund = gorTotal - grandTotal06;
+
+  document.getElementById('s_gor').textContent = fmtSmart(gorTotal) + ' บาท';
+  document.getElementById('s_actual').textContent = fmtSmart(grandTotal06) + ' บาท';
+  document.getElementById('s_refund').textContent = fmtSmart(Math.abs(refund)) + ' บาท';
+  document.getElementById('s_refund_label').textContent = refund >= 0 ? 'เงินเหลือจ่ายส่งคืน' : 'ขอเบิกจ่ายเงินเพิ่ม (จ่ายเกิน)';
+  document.getElementById('s_refund_card').classList.toggle('neg', refund < 0);
+
+  const docNo   = document.getElementById('f_docno').value.trim();
+  const docDate = document.getElementById('f_docdate').value;
+  const borrowerName = document.getElementById('f_borrower_name').value.trim();
+  const borrowerPos  = document.getElementById('f_borrower_pos').value.trim();
+  const reviewerName = document.getElementById('f_reviewer_name').value.trim();
+  const reviewerPos  = document.getElementById('f_reviewer_pos').value.trim();
+  const approverName = document.getElementById('f_approver_name').value.trim();
+  const approverPos  = document.getElementById('f_approver_pos').value.trim();
+
+  setText('v_docno', docNo);
+  setText('v_docdate', fmtDocDate(docDate));
+
+  setText('v_course', courseName);
+  setText('v_batch', batch);
+  setText('v_no', no);
+  setText('v_daterange', dateRangeTxt);
+  setText('v_location', location);
+
+  setText('v_borrower_name_1', borrowerName);
+  setText('v_borrower_pos_1', borrowerPos);
+  setText('v_borrower_name_sig', borrowerName);
+  setText('v_borrower_pos_sig', borrowerPos);
+
+  setText('v_gor', fmtSmart(gorTotal));
+  setText('v_gor_text', 'เงิน' + ThaiBaht(gorTotal));
+  setText('v_actual', fmtSmart(grandTotal06));
+  setText('v_actual_text', 'เงิน' + ThaiBaht(grandTotal06));
+
+  const refundPhrase = refund >= 0
+    ? `มีจำนวนเงินเหลือจ่ายส่งคืนเป็นเงิน ${fmtSmart(refund)} บาท (เงิน${ThaiBaht(Math.abs(refund))})`
+    : `ข้าพเจ้าขออนุมัติเบิกจ่ายเงินเพิ่มเป็นค่าใช้จ่ายอีกเป็นเงิน ${fmtSmart(Math.abs(refund))} บาท (เงิน${ThaiBaht(Math.abs(refund))})`;
+  setText('v_refund_phrase', refundPhrase);
+
+  setText('v_reviewer_name', reviewerName);
+  setText('v_reviewer_pos', reviewerPos);
+  setText('v_approver_name', approverName);
+  setText('v_approver_pos', approverPos);
+}
+
+/* ============================================================
+   LOAD DATA
+   ============================================================ */
+function _prefillMeta11(cd){
+  const sf = (id, val) => { const e = document.getElementById(id); if (e && val) e.value = val; };
+  sf('f_course', cd.course);
+  sf('f_batch', cd.batch);
+  sf('f_no', cd.no || cd.courseNo || '');
+  sf('f_location', cd.location);
+  const ds = cd.dateStart || (cd.date && !cd.date.includes('_') ? cd.date : (cd.date ? cd.date.split('_')[0] : ''));
+  const de = cd.dateEnd || (cd.date && cd.date.includes('_') ? cd.date.split('_')[1] : ds);
+  const disp = DateTH.formatRange(ds, de);
+  if (disp) document.getElementById('f_date').value = disp;
+}
+
+async function _autoLoadGs11(no){
+  const statusEl = document.getElementById('loadStatus');
+  statusEl.textContent = 'กำลังโหลดข้อมูล...';
+  showGsLoader('📥 กำลังโหลดข้อมูล');
+
+  const result = await gsApi('getByNo', null, no);
+
+  if (result === null){
+    hideGsLoader();
+    statusEl.textContent = '❌ เชื่อมต่อไม่สำเร็จ — ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่ (รีเฟรชหน้า)';
+    return;
+  }
+  if (!result.course && !result.budget && !result.actual06){
+    hideGsLoader();
+    statusEl.textContent = '⚠️ ไม่พบข้อมูลของเลขที่ ' + no;
+    return;
+  }
+
+  COURSE   = result.course   || null;
+  BUDGET   = result.budget   || null;
+  ACTUAL06 = result.actual06 || null;
+
+  if (COURSE){
+    document.getElementById('f_course').value = COURSE.course || '';
+    document.getElementById('f_batch').value = COURSE.batch || '';
+    document.getElementById('f_no').value = COURSE.no || no;
+    document.getElementById('f_location').value = COURSE.location || '';
+    if (COURSE.dateStart){
+      document.getElementById('f_date').value = DateTH.formatRange(COURSE.dateStart, COURSE.dateEnd || '');
+    }
+  }
+
+  hideGsLoader();
+  statusEl.textContent = '✅ โหลดข้อมูลสำเร็จ';
+  renderMemo();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  let cd = null;
+  try { cd = JSON.parse(sessionStorage.getItem('courseData') || 'null'); } catch(e){}
+
+  let no = (cd && cd.no) ? String(cd.no).trim() : '';
+  if (!no){
+    const params = new URLSearchParams(window.location.search);
+    no = params.get('no') || params.get('run') || '';
+  }
+
+  if (no){
+    if (cd) _prefillMeta11(cd);
+    _autoLoadGs11(no);
+  } else {
+    document.getElementById('loadStatus').textContent = 'ℹ️ ไม่พบเลขที่หลักสูตร — กรุณาเข้าหน้านี้ผ่านปุ่ม "รายละเอียด" จากหน้าหลักสูตรการฝึกอบรม หรือเพิ่ม ?no=เลขที่หลักสูตร ต่อท้าย URL เพื่อทดสอบ';
+    renderMemo();
+  }
+});
+</script>
+
+<script>
+async function savePdf11(btn){
+  const el = document.getElementById('doc-display');
+  if(!el){ alert('ไม่พบข้อมูลเอกสาร'); return; }
+
+  const no    = document.getElementById('f_no').value || '';
+  const safe  = s => s.replace(/[/\\:*?"<>|]/g,'_').trim();
+  const fname = safe(`บันทึกขอหักล้างเงินยืม_${document.getElementById('f_course').value||''}_${no}`) || 'memo11';
+
+  btn.disabled = true; btn.textContent = '⏳ กำลังสร้าง...';
+
+  try {
+    const clone = el.cloneNode(true);
+
+    const originalStyles = Array.from(document.querySelectorAll('style'))
+      .map(s => s.innerHTML).join('\n');
+
+    const fullHtml = `<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+${originalStyles}
+</style>
+</head>
+<body>${clone.outerHTML}</body>
+</html>`;
+
+    const res = await fetch(APP_CONFIG.PDF_SERVER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        html: fullHtml,
+        filename: fname,
+        pdfOptions: {
+          format: 'A4',
+          landscape: false,
+          margin: { top: '0mm', right: '0mm', bottom: '0mm', left: '0mm' },
+          preferCSSPageSize: true,
+          printBackground: true,
+        },
+      })
+    });
+    if(!res.ok){
+      const errText = await res.text().catch(()=>res.statusText);
+      throw new Error(`เซิร์ฟเวอร์สร้าง PDF ผิดพลาด (${res.status}): ${errText}`);
+    }
+
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = fname + '.pdf';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+
+    btn.textContent = '⏳ กำลังอัปโหลด...';
+    const uploadResult = no ? await saveReportPdf(no, 'pdf11', blob) : null;
+    if (uploadResult) {
+      console.log('อัปโหลด PDF สำเร็จ:', uploadResult.publicUrl, '(v' + uploadResult.version + ')');
+      showGsStatus('✅ บันทึก PDF และอัปโหลดเรียบร้อยแล้ว', 'ok');
+    } else if (!no) {
+      showGsStatus('✅ ดาวน์โหลด PDF สำเร็จ (⚠️ ไม่พบเลขที่หลักสูตร จึงไม่ได้อัปโหลดขึ้น Supabase)', 'warn');
+    } else {
+      showGsStatus('⚠️ ดาวน์โหลด PDF สำเร็จ แต่อัปโหลดเก็บถาวรไม่สำเร็จ', 'warn');
+    }
+
+  } catch(err){
+    console.error('savePdf11 error:', err);
+    alert('สร้าง PDF ไม่สำเร็จ: ' + err.message + '\n\nตรวจสอบว่าเซิร์ฟเวอร์ Puppeteer เปิดใช้งานอยู่');
+  } finally {
+    btn.disabled = false; btn.textContent = '💾 บันทึก PDF';
+  }
+}
+</script>
+
+</body>
+</html>
