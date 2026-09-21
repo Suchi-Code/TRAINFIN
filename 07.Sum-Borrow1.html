@@ -200,27 +200,17 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:1px solid #000;verti
   background-clip: padding-box; 
 }
 </style>
+<!-- ── Shared modules (ต้องเรียงลำดับนี้เสมอ: config -> supabase SDK -> auth/date/gas-api/schema) ──
+     ย้ายมาจากบล็อก SUPABASE_URL/ANON_KEY/supabaseClient/checkAuth() inline เดิม (ก็อปวางซ้ำกับไฟล์อื่น
+     ทั้งระบบ) — ตกหล่นตอนย้ายไฟล์อื่นเข้า shared js/ ไปแล้วแต่ลืมสลับไฟล์นี้ ตอนนี้ sync ให้ตรงกับ
+     05/06/08/09 ครบแล้ว (config -> supabase SDK -> auth -> date-th -> gas-api -> schema) ── -->
+<script src="js/config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<!-- ═══ ตรวจสอบสิทธิ์การเข้าใช้งาน (Supabase Auth Route Guard) ═══
-     เช็กก่อนแสดงผลหน้าเว็บ ถ้ายังไม่ได้ล็อกอินจะเด้งกลับไปหน้า index.html ทันที
-     (ประกาศ SUPABASE_URL/ANON_KEY/supabaseClient ไว้ที่นี่แบบ global — โค้ดอัปโหลด PDF
-      ด้านล่างของไฟล์เรียกใช้ supabaseClient ตัวเดียวกันนี้ซ้ำ ไม่ได้ประกาศซ้ำอีก) -->
-<script>
-  const SUPABASE_URL      = 'https://dcaydbxyjisegqzzildq.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjYXlkYnh5amlzZWdxenppbGRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2OTk5NDgsImV4cCI6MjEwMDI3NTk0OH0.cEk8k90NeTTnkZV0Sny7nuN8UbW15_eW8S_HTQSBwwA';
-  const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-
-  async function checkAuth() {
-    if (!supabaseClient) { console.warn('Supabase SDK โหลดไม่สำเร็จ — ข้ามการตรวจสิทธิ์'); return; }
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (!session) {
-      alert("⚠️ กรุณาเข้าสู่ระบบก่อนใช้งาน");
-      window.location.href = 'index.html';
-    }
-  }
-  checkAuth();
-</script>
+<script src="js/auth.js"></script>
+<script src="js/date-th.js"></script>
+<script src="js/gas-api.js"></script>
+<script src="js/schema.js"></script>
+<script>checkAuth();</script>
 </head>
 <body>
 
@@ -483,8 +473,9 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:1px solid #000;verti
   </div></div>
 </div>
 
-<!-- หมวด ข -->
-<div class="form-section">
+<!-- หมวด ข — ไม่มี checkbox ในไฟล์นี้เอง ควบคุมการแสดง/ซ่อนด้วย TOGGLES07.kor ที่อ่านมาจาก
+     toggle ของไฟล์ 05 (spkJson.toggles.kor) เหมือนกับ sec_pres_wrap ด้านบน -->
+<div class="form-section" id="sec_kor_wrap">
   <div class="form-section-header">ข. ค่าใช้จ่ายในการเดินทางของผู้เข้ารับการฝึกอบรม</div>
   <div class="form-section-body"><div class="sub-items" id="b_sub_items">
     <div class="sub-item-row"><label>1. ค่าเบี้ยเลี้ยง</label>
@@ -587,7 +578,7 @@ let TOGGLES07 = {
   venueMeeting:false, venueVip:false, venueStaff:false,
   food:true, dinner:false, stafftravel:true,
   external:true, hasLodging:false, hasTravel:false, payType:'hourly',
-  internal:false, pres:false
+  internal:false, pres:false, kor:true
 };
 
 /* ── GLOBAL HELPERS ── */
@@ -604,44 +595,15 @@ function normSpeakerName(s){
   return t.replace(/[^\u0E00-\u0E7Fa-zA-Z0-9]/g,'').toLowerCase();
 }
 
-const _mo=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
-// ✅ ป้องกันบั๊ก timezone shift: ถ้า Google Apps Script ส่ง dateStart/dateEnd มาเป็น ISO
-// datetime ที่มี time ต่อท้าย (เช่น "2026-05-27T17:00:00.000Z" ซึ่งจริงๆ คือเที่ยงคืนวันที่ 28
-// ตามเวลาไทย GMT+7) ต้องชดเชย +7 ชั่วโมงก่อนตัดเอาวันที่ ไม่งั้นจะได้วันที่ก่อนหน้า 1 วันเสมอ
-// (การตัด string ตรงๆ ด้วย regex แบบเดิมไม่ได้ชดเชยอะไรเลย จึงเพี้ยนไป 1 วันแบบเงียบๆ)
-function _normThaiDate07(v) {
-  if (!v) return '';
-  const s = String(v);
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s; // date-only อยู่แล้ว ไม่ต้องแก้
-  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):/);
-  if (m) {
-    const hh = parseInt(m[4], 10);
-    if (hh >= 17) {
-      const d = new Date(s);
-      d.setUTCHours(d.getUTCHours() + 7);
-      const yy = d.getUTCFullYear(), mm = String(d.getUTCMonth()+1).padStart(2,'0'), dd = String(d.getUTCDate()).padStart(2,'0');
-      return `${yy}-${mm}-${dd}`;
-    }
-    return `${m[1]}-${m[2]}-${m[3]}`;
-  }
-  return s;
-}
+// วันที่ไทย — logic ย้ายไปรวมที่ js/date-th.js แล้ว (DateTH.normalize/format/formatRange ใช้
+// getUTCHours()/getUTCFullYear() เท่านั้น ชดเชย timezone +7 ให้ถูกต้องเสมอ ไม่ขึ้นกับ timezone
+// ของเครื่อง/เบราว์เซอร์ผู้ใช้) — เก็บชื่อฟังก์ชันเดิม (isoTh/isoThRange) ไว้เป็น wrapper บางๆ
+// กันไม่ต้องแก้จุดเรียกใช้ทั้งไฟล์ (_normThaiDate07/_mo ท้องถิ่นเดิมลบทิ้งแล้ว)
 function isoTh(iso){
-  const clean = _normThaiDate07(iso);
-  if(!clean) return '';
-  const m = clean.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if(!m) return clean;
-  const y = parseInt(m[1]), mo = parseInt(m[2]), d = parseInt(m[3]);
-  return `${d} ${_mo[mo-1]} ${y+543}`;
+  return DateTH.format(iso);
 }
 function isoThRange(ds,de){
-  ds = _normThaiDate07(ds); de = _normThaiDate07(de);
-  if(!ds) return '';
-  if(!de||de===ds) return isoTh(ds);
-  const ps=ds.split('-'),pe=de.split('-');
-  if(ps[0]===pe[0]&&ps[1]===pe[1]) return `${parseInt(ps[2])} – ${parseInt(pe[2])} ${_mo[parseInt(ps[1])-1]} ${parseInt(ps[0])+543}`;
-  if(ps[0]===pe[0]) return `${parseInt(ps[2])} ${_mo[parseInt(ps[1])-1]} – ${parseInt(pe[2])} ${_mo[parseInt(pe[1])-1]} ${parseInt(ps[0])+543}`;
-  return isoTh(ds)+' – '+isoTh(de);
+  return DateTH.formatRange(ds,de);
 }
 
 /* ── toggle helpers (ล้อจากไฟล์ 05 — อ่านจาก TOGGLES07 แทน checkbox สด) ── */
@@ -666,6 +628,7 @@ function hasSpkTravel(){ return !!TOGGLES07.hasTravel; }
 function isLumpPay(){ return TOGGLES07.payType === 'lump'; }
 function hasInternal(){ return !!TOGGLES07.internal; }
 function hasPres(){ return !!TOGGLES07.pres; }
+function hasKor(){ return TOGGLES07.kor !== false; }
 
 function hotelAmtOf(s){ return (s.hotelRate||0)*(s.hotelRooms||1)*(s.hotelNights||0); }
 function travelAmtOf(s){ return (s.travel||0)*(s.travelDays||1); }
@@ -748,6 +711,7 @@ function applySectionVisibility07(){
   show('sec_spk_wrap', hasExternal());
   show('sec_internal_wrap', hasInternal());
   show('sec_pres_wrap', hasPres());
+  show('sec_kor_wrap', hasKor());
   updateSectionNumberLabels07();
 }
 
@@ -819,26 +783,58 @@ function onCondChange07(){
 
 /* ── LOAD SLOT — fill all fields from saved slot ── */
 
-/* คำนวณ bySection จาก rowsJson ของ actual06 (client-side) — robust กว่าพึ่ง bySection ที่ไม่ได้ถูกบันทึกลง Sheet จริง */
+/* ============================================================
+   LEGACY CODE MIGRATION — ก่อนหน้านี้ไฟล์นี้ยังอ่าน sec/sub จาก actual06.rowsJson ด้วยรหัสเก่า
+   ('1','2','3','4','5','ext_honor','venue_meet' ฯลฯ) ทั้งที่ 06 refactor ไปใช้ SchemaTH.SEC/SUB
+   ('office','misc','food','staffTravel','extHonorarium','venueMeeting' ฯลฯ) ไปแล้ว ทำให้ค่า "ใช้จริง"
+   ของหมวดวัสดุสำนักงาน/วัสดุเบ็ดเตล็ด/อาหาร/เดินทางเจ้าหน้าที่/วิทยากรภายนอก (แยกที่พัก/พาหนะ/สมนาคุณ)
+   คำนวณผิดอย่างเงียบๆ สำหรับทุกคอร์สที่ 06 บันทึกด้วยรหัสใหม่แล้ว — sync ให้ตรงกับ 06/09 ทั้งหมด
+   ครอบคลุม 3 จุดหลักที่ประมวลผล rows06 โดยตรง: computeBySectionFromRows(), _autoLoadGs07(),
+   applyActuals07() (มิเกรตแบบ lazy ตอนอ่านเข้าหน่วยความจำเท่านั้น ไม่ batch-migrate ข้อมูลใน Sheet จริง —
+   ล้อ migrateLegacyRow06/09 ที่มีอยู่แล้ว)
+   ============================================================ */
+const LEGACY_SEC07_MAP = {
+  '1': SchemaTH.SEC.OFFICE, '2': SchemaTH.SEC.MISC, '3': SchemaTH.SEC.FOOD, '4': SchemaTH.SEC.STAFF_TRAVEL,
+};
+const LEGACY_SUB07_MAP = {
+  '1_1': SchemaTH.SUB.OFFICE_STATIONERY, '1_2': SchemaTH.SUB.OFFICE_COPY,
+  'venue_meet': SchemaTH.SUB.VENUE_MEETING, 'venue_vip': SchemaTH.SUB.VENUE_VIP_LODGING, 'venue_staff': SchemaTH.SUB.VENUE_STAFF_LODGING,
+  '3_12': SchemaTH.SUB.FOOD_LUNCH_SNACK, '3_dinner': SchemaTH.SUB.FOOD_DINNER, '3_3': SchemaTH.SUB.FOOD_SPEAKER_DINNER,
+  '4_1': SchemaTH.SUB.STAFF_ALLOWANCE, '4_2': SchemaTH.SUB.STAFF_LODGING, '4_3': SchemaTH.SUB.STAFF_TRANSPORT,
+  'ext_honor': SchemaTH.SUB.EXT_HONORARIUM, 'ext_lodging': SchemaTH.SUB.EXT_LODGING, 'ext_travel': SchemaTH.SUB.EXT_TRAVEL,
+  'int_honor': SchemaTH.SUB.INT_HONORARIUM,
+  'int_lodging': '', 'int_travel': '', // ตัดออกจาก schema แล้ว — ไม่มีปลายทางให้ map
+};
+function migrateLegacyRow07(r){
+  if (r && r.sec && LEGACY_SEC07_MAP[r.sec] !== undefined) r.sec = LEGACY_SEC07_MAP[r.sec];
+  if (r && r.sub && LEGACY_SUB07_MAP[r.sub] !== undefined) r.sub = LEGACY_SUB07_MAP[r.sub];
+  return r;
+}
+
+/* คำนวณ bySection จาก rowsJson ของ actual06 (client-side) — robust กว่าพึ่ง bySection ที่ไม่ได้ถูกบันทึกลง Sheet จริง
+   ⚠️ ใช้ SchemaTH.SEC/SUB ตรงกับที่ 06 เขียนจริงหลัง refactor (ไม่ใช่ '1'/'2'/'3'/'4'/'3_12'/'ext' ตัวเลขล้วนแบบเดิม
+   fuel/lump/venue/ext ค่าเดิมไม่เปลี่ยนอยู่แล้วจึงไม่ต้อง map ผ่าน LEGACY_SEC07_MAP) — migrate legacy row ก่อนเสมอ
+   เผื่อ rows ที่ส่งเข้ามายังไม่เคยผ่านการ migrate มาก่อน (idempotent, migrate ซ้ำได้ไม่เสียหาย) */
 function computeBySectionFromRows(rows){
   const by = {};
-  (rows||[]).forEach(r => {
+  (rows||[]).forEach(r0 => {
+    const r = migrateLegacyRow07({...r0});
     const sec = r.sec || r.secV || '';
     const sub = r.sub || '';
     const total = parseFloat(r.total) || 0;
     if (!sec) return;
     if (!by[sec]) by[sec] = { total: 0, subs: {}, items: [] };
     by[sec].total += total;
-    if (sub === '3_12') {
+    if (sub === SchemaTH.SUB.FOOD_LUNCH_SNACK) {
       const t31 = (parseFloat(r.v31)||0) + (parseFloat(r.vat31)||0);
       const t32 = (parseFloat(r.v32)||0) + (parseFloat(r.vat32)||0);
-      by[sec].subs['3_1'] = (by[sec].subs['3_1']||0) + t31;
-      by[sec].subs['3_2'] = (by[sec].subs['3_2']||0) + t32;
+      by[sec].subs[SchemaTH.SUB.FOOD_LUNCH] = (by[sec].subs[SchemaTH.SUB.FOOD_LUNCH]||0) + t31;
+      by[sec].subs[SchemaTH.SUB.FOOD_SNACK] = (by[sec].subs[SchemaTH.SUB.FOOD_SNACK]||0) + t32;
     } else if (sub) {
       by[sec].subs[sub] = (by[sec].subs[sub]||0) + total;
     }
     const name = r.name || r.staff || '';
-    if (name && sec === 'ext') {
+    if (name && sec === SchemaTH.SEC.EXT) {
       by[sec].items.push({ name, val: parseFloat(r.val)||0, total });
     }
   });
@@ -914,27 +910,28 @@ function applySlot07(slot){
   const hasActualSub = (sec,sub) => !!(by06Pre[sec] && by06Pre[sec].subs && by06Pre[sec].subs[sub] > 0);
 
   TOGGLES07 = {
-    fuel: !!(sp.fuel && sp.fuel.on) || hasActualSec('fuel'),
+    fuel: !!(sp.fuel && sp.fuel.on) || hasActualSec(SchemaTH.SEC.FUEL),
     office: t.office !== false,
-    office_1_1: (t.office_1_1 !== undefined ? !!t.office_1_1 : true) || hasActualSub('1','1_1'),
-    office_1_2: (t.office_1_2 !== undefined ? !!t.office_1_2 : (b.s12 > 0)) || hasActualSub('1','1_2'),
+    office_1_1: (t.office_1_1 !== undefined ? !!t.office_1_1 : true) || hasActualSub(SchemaTH.SEC.OFFICE, SchemaTH.SUB.OFFICE_STATIONERY),
+    office_1_2: (t.office_1_2 !== undefined ? !!t.office_1_2 : (b.s12 > 0)) || hasActualSub(SchemaTH.SEC.OFFICE, SchemaTH.SUB.OFFICE_COPY),
     misc: t.misc !== false,
-    lump: !!(sp.lump && sp.lump.on) || hasActualSec('lump'),
-    venue: !!(sp.venue && sp.venue.on) || hasActualSec('venue'),
-    venueMeeting: !!(sp.venue && sp.venue.meetingOn) || hasActualSub('venue','venue_meet'),
-    venueVip: !!(sp.venue && sp.venue.vipOn) || hasActualSub('venue','venue_vip'),
-    venueStaff: !!(sp.venue && sp.venue.staffOn) || hasActualSub('venue','venue_staff'),
+    lump: !!(sp.lump && sp.lump.on) || hasActualSec(SchemaTH.SEC.LUMP),
+    venue: !!(sp.venue && sp.venue.on) || hasActualSec(SchemaTH.SEC.VENUE),
+    venueMeeting: !!(sp.venue && sp.venue.meetingOn) || hasActualSub(SchemaTH.SEC.VENUE, SchemaTH.SUB.VENUE_MEETING),
+    venueVip: !!(sp.venue && sp.venue.vipOn) || hasActualSub(SchemaTH.SEC.VENUE, SchemaTH.SUB.VENUE_VIP_LODGING),
+    venueStaff: !!(sp.venue && sp.venue.staffOn) || hasActualSub(SchemaTH.SEC.VENUE, SchemaTH.SUB.VENUE_STAFF_LODGING),
     food: t.food !== false,
-    food_lunch: (t.food_lunch !== undefined ? !!t.food_lunch : true) || hasActualSub('3','3_1'),
-    food_coffee: (t.food_coffee !== undefined ? !!t.food_coffee : true) || hasActualSub('3','3_2'),
-    dinner: !!(sp.foodDinner && sp.foodDinner.on) || hasActualSub('3','3_dinner'),
+    food_lunch: (t.food_lunch !== undefined ? !!t.food_lunch : true) || hasActualSub(SchemaTH.SEC.FOOD, SchemaTH.SUB.FOOD_LUNCH),
+    food_coffee: (t.food_coffee !== undefined ? !!t.food_coffee : true) || hasActualSub(SchemaTH.SEC.FOOD, SchemaTH.SUB.FOOD_SNACK),
+    dinner: !!(sp.foodDinner && sp.foodDinner.on) || hasActualSub(SchemaTH.SEC.FOOD, SchemaTH.SUB.FOOD_DINNER),
     stafftravel: t.stafftravel !== false,
     external: (sp.hasExternal !== undefined) ? !!sp.hasExternal : true,
     hasLodging: !!sp.hasLodging,
     hasTravel: !!sp.hasTravel,
     payType: sp.payType || 'hourly',
     internal: !!sp.hasInternal || (b.secInternal > 0),
-    pres: !!(sp.pres && sp.pres.on)
+    pres: !!(sp.pres && sp.pres.on),
+    kor: t.kor !== false
   };
 
   sfV('f_fuel', b.secFuel||0);
@@ -1011,12 +1008,15 @@ function applyActuals07(slot){
       catch(e) { rows06 = []; }
     }
   }
+  // migrate รหัส sec/sub เก่า→ใหม่ก่อนใช้งานเสมอ (idempotent — แถวที่ migrate แล้วจาก _autoLoadGs07
+  // จะไม่โดนแก้ซ้ำ เพราะรหัสใหม่ไม่ตรงกับ LEGACY_SEC07_MAP/LEGACY_SUB07_MAP อยู่แล้ว)
+  rows06 = rows06.map(r => migrateLegacyRow07({...r}));
   const by06 = (act06 && act06.bySection && Object.keys(act06.bySection).length)
     ? act06.bySection
     : computeBySectionFromRows(rows06);
 
-  const sFuel=by06['fuel']||{}, s1=by06['1']||{}, s2=by06['2']||{}, sLump=by06['lump']||{},
-        sVenue=by06['venue']||{}, s3=by06['3']||{}, s4=by06['4']||{}, sExt=by06['ext']||{};
+  const sFuel=by06[SchemaTH.SEC.FUEL]||{}, s1=by06[SchemaTH.SEC.OFFICE]||{}, s2=by06[SchemaTH.SEC.MISC]||{}, sLump=by06[SchemaTH.SEC.LUMP]||{},
+        sVenue=by06[SchemaTH.SEC.VENUE]||{}, s3=by06[SchemaTH.SEC.FOOD]||{}, s4=by06[SchemaTH.SEC.STAFF_TRAVEL]||{}, sExt=by06[SchemaTH.SEC.EXT]||{};
 
   // helper: ใช้คอลัมน์แบนที่บันทึกจริงในชีทก่อนเสมอ (ตรงกับสิ่งที่เห็นในชีทเป๊ะ)
   // fallback ไปคำนวณจาก rowsJson เฉพาะกรณีคอลัมน์นั้นไม่มีค่าเลย (ข้อมูลเก่าก่อนเพิ่มคอลัมน์นี้)
@@ -1026,29 +1026,29 @@ function applyActuals07(slot){
   sfV('a_fuel', flat('secFuel', sFuel.total||0));
 
   // ── หมวด 1 (แยก 1.1/1.2 จากคอลัมน์ sec1_1/sec1_2 ที่บันทึกจริง) ──
-  sfV('a_1_1', flat('sec1_1', (s1.subs&&s1.subs['1_1']) || (s1.subs&&Object.keys(s1.subs).length ? 0 : s1.total) || 0));
-  sfV('a_1_2', flat('sec1_2', (s1.subs&&s1.subs['1_2']) || 0));
+  sfV('a_1_1', flat('sec1_1', (s1.subs&&s1.subs[SchemaTH.SUB.OFFICE_STATIONERY]) || (s1.subs&&Object.keys(s1.subs).length ? 0 : s1.total) || 0));
+  sfV('a_1_2', flat('sec1_2', (s1.subs&&s1.subs[SchemaTH.SUB.OFFICE_COPY]) || 0));
 
   // ── หมวด 2 ──
   sfV('a_2_1', flat('sec2', s2.total||0));
 
   // ── ค่าจ้างเหมา / ค่าเช่าสถานที่ ──
   sfV('a_lump', flat('secLump', sLump.total||0));
-  sfV('a_venue_meet',  flat('secVenueMeeting', (sVenue.subs&&sVenue.subs['venue_meet'])  || 0));
-  sfV('a_venue_vip',   flat('secVenueVip',     (sVenue.subs&&sVenue.subs['venue_vip'])   || 0));
-  sfV('a_venue_staff', flat('secVenueStaff',   (sVenue.subs&&sVenue.subs['venue_staff']) || 0));
+  sfV('a_venue_meet',  flat('secVenueMeeting', (sVenue.subs&&sVenue.subs[SchemaTH.SUB.VENUE_MEETING])      || 0));
+  sfV('a_venue_vip',   flat('secVenueVip',     (sVenue.subs&&sVenue.subs[SchemaTH.SUB.VENUE_VIP_LODGING])   || 0));
+  sfV('a_venue_staff', flat('secVenueStaff',   (sVenue.subs&&sVenue.subs[SchemaTH.SUB.VENUE_STAFF_LODGING]) || 0));
 
   // ── หมวด 3 (อาหาร) ──
-  const has3subs = s3.subs && (s3.subs['3_1']||s3.subs['3_2']||s3.subs['3_dinner']||s3.subs['3_3']);
-  sfV('a_3_1', flat('sec3_1', has3subs ? (s3.subs['3_1']||0) : (s3.total||0)));
-  sfV('a_food_dinner', flat('sec3Dinner', has3subs ? (s3.subs['3_dinner']||0) : 0));
-  sfV('a_3_2', flat('sec3_2', has3subs ? (s3.subs['3_2']||0) : 0));
-  sfV('a_3_3', flat('sec3_3', has3subs ? (s3.subs['3_3']||0) : 0));
+  const has3subs = s3.subs && (s3.subs[SchemaTH.SUB.FOOD_LUNCH]||s3.subs[SchemaTH.SUB.FOOD_SNACK]||s3.subs[SchemaTH.SUB.FOOD_DINNER]||s3.subs[SchemaTH.SUB.FOOD_SPEAKER_DINNER]);
+  sfV('a_3_1', flat('sec3_1', has3subs ? (s3.subs[SchemaTH.SUB.FOOD_LUNCH]||0) : (s3.total||0)));
+  sfV('a_food_dinner', flat('sec3Dinner', has3subs ? (s3.subs[SchemaTH.SUB.FOOD_DINNER]||0) : 0));
+  sfV('a_3_2', flat('sec3_2', has3subs ? (s3.subs[SchemaTH.SUB.FOOD_SNACK]||0) : 0));
+  sfV('a_3_3', flat('sec3_3', has3subs ? (s3.subs[SchemaTH.SUB.FOOD_SPEAKER_DINNER]||0) : 0));
 
   // ── หมวด 4: 4.1/4.2 = งบประมาณ, 4.3 = actual06 ──
   sfV('a_4_1', b.s41||0);
   sfV('a_4_2', b.s42||0);
-  sfV('a_4_3', flat('sec4_3', (s4.subs&&s4.subs['4_3']) ? s4.subs['4_3'] : 0));
+  sfV('a_4_3', flat('sec4_3', (s4.subs&&s4.subs[SchemaTH.SUB.STAFF_TRANSPORT]) ? s4.subs[SchemaTH.SUB.STAFF_TRANSPORT] : 0));
 
   // ── หมวด ข = งบประมาณ ──
   sfV('a_b1', b.bb1||0);
@@ -1067,7 +1067,7 @@ function applyActuals07(slot){
   if(a07.trainees_actual   !== undefined) sfV('f_trainees_actual',   parseInt(a07.trainees_actual)||0);
 
   const norm = normSpeakerName;
-  const extRows = (rows06||[]).filter(r => (r.sec||r.secV) === 'ext');
+  const extRows = (rows06||[]).filter(r => (r.sec||r.secV) === SchemaTH.SEC.EXT);
 
   const byNameComp = {};
   extRows.forEach(r => {
@@ -1076,9 +1076,9 @@ function applyActuals07(slot){
     if(!key) return;
     if(!byNameComp[key]) byNameComp[key] = { raw: rawName, honor:0, lodging:0, travel:0, other:0 };
     const total = parseFloat(r.total)||0;
-    if(r.sub === 'ext_honor') byNameComp[key].honor += total;
-    else if(r.sub === 'ext_lodging') byNameComp[key].lodging += total;
-    else if(r.sub === 'ext_travel') byNameComp[key].travel += total;
+    if(r.sub === SchemaTH.SUB.EXT_HONORARIUM) byNameComp[key].honor += total;
+    else if(r.sub === SchemaTH.SUB.EXT_LODGING) byNameComp[key].lodging += total;
+    else if(r.sub === SchemaTH.SUB.EXT_TRAVEL) byNameComp[key].travel += total;
     else byNameComp[key].other += total;
   });
   const byNameKeys = Object.keys(byNameComp);
@@ -1109,7 +1109,7 @@ function applyActuals07(slot){
   if(unmatched.length)    warnParts.push('ไม่พบคู่ในไฟล์ 05: '+unmatched.join(', '));
   if(warnParts.length){
     console.warn('⚠️ การจับคู่วิทยากร 06↔05:', warnParts);
-    _showStatus07 && _showStatus07('⚠️ '+warnParts.join(' / '), 'warn');
+    showGsStatus('⚠️ '+warnParts.join(' / '), 'warn');
   }
   renderSpk07();
 }
@@ -1161,10 +1161,11 @@ function computeActual07Grand(){
   if(hasInternal()){ aspInt=v('a_in_1')+v('a_in_2')+v('a_in_3')+v('a_in_payroll'); }
   if(hasPres()){ aspPres=v('a_pres_1')+v('a_pres_2')+v('a_pres_3'); }
   const gorA=aFuel+(a11+a12)+a21+aLump+aVenue+(a31+aDinner+a32+a33)+(a41+a42+a43)+aspExt1+aspExt2+aspInt+aspPres;
-  return gorA + v('a_b1')+v('a_b2')+v('a_b3');
+  const korA = hasKor() ? (v('a_b1')+v('a_b2')+v('a_b3')) : 0;
+  return gorA + korA;
 }
 
-function saveActual07(){
+async function saveActual07(){
   const course = document.getElementById('f_courseName')?.value||'';
   const batch  = document.getElementById('f_batch')?.value||'';
   const no     = document.getElementById('f_courseNo')?.value||'';
@@ -1214,16 +1215,23 @@ function saveActual07(){
   updateSyncBanner(_currentSlot);
 
   // ── sync Google Sheet ──
+  // ⚠️ เดิมเรียก gsApi(...).then(...) แบบ fire-and-forget ไม่ await แล้วต่อด้วย setTimeout(popup,400)
+  // เดามั่ว ทำให้ถ้าเน็ตช้ากว่า 400ms ผู้ใช้กด "ใช่ กลับหน้าหลัก" ก่อนบันทึกเสร็จจริง หรือแม้แต่
+  // เบราว์เซอร์อาจยกเลิก request ที่ยังค้างอยู่ถ้ามีการ redirect ตามมาเร็วเกินไป — เปลี่ยนเป็น
+  // async/await ให้บันทึกเสร็จก่อนเสมอ ค่อยแสดง toast และ popup ถามกลับหน้าหลัก (ล้อ pattern
+  // เดียวกับ saveBudgetSlot() ในไฟล์ 05 และ sumSave() ในไฟล์ 06)
+  showGsLoader('💾 กำลังบันทึก...');
   const gsData07 = { no, ...actual07, spkActualJson: JSON.stringify(actual07.spkActual||{}) };
   delete gsData07.spkActual;
-  gsApi('saveActual07', gsData07).then(r => {
-    if(r) showToast07('✅ บันทึกและซิงก์ Google Sheet แล้ว (เลขที่: '+(no||course)+')');
-    else  showToast07('✅ บันทึกเรียบร้อย (⚠️ Google Sheet ออฟไลน์)');
-  });
-  showToast07('⏳ กำลังบันทึก...');
+  const saveResult = await gsApi('saveActual07', gsData07);
+  hideGsLoader();
 
-  // แสดง popup ถามกลับหน้าหลักหรือไม่
-  setTimeout(() => showBackConfirmPopup(), 400);
+  if(saveResult) showToast07('✅ บันทึกและซิงก์ Google Sheet แล้ว (เลขที่: '+(no||course)+')');
+  else            showToast07('❌ บันทึกไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่', 'error');
+
+  // แสดง popup ถามกลับหน้าหลักหรือไม่ — เฉพาะตอนบันทึกสำเร็จเท่านั้น (ถ้าไม่สำเร็จ ให้ผู้ใช้แก้ไข/ลองใหม่
+  // อยู่ในหน้านี้ต่อ ไม่ควรชวนออกจากหน้าไปทั้งที่ข้อมูลยังไม่ถูกบันทึกจริง)
+  if(saveResult) showBackConfirmPopup();
 }
 
 /* ── TOAST ── */
@@ -1237,25 +1245,11 @@ function showToast07(msg){
 
 /* ── STORAGE KEY ── */
 
-/* ── GOOGLE SHEET API ── */
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbySJROnBMkxFBNyPvET3DC5ihdCz03OPzvi2xXm6cMQpoPFsi2pAiTQAQIVSDUwQNVZ5w/exec';
-
-async function gsApi(action, data, no) {
-  try {
-    let url = GAS_URL + '?action=' + action;
-    if (no) url += '&no=' + encodeURIComponent(no);
-    const opts = data
-      ? { method: 'POST', body: new URLSearchParams({ action, data: JSON.stringify(data) }) }
-      : { method: 'GET' };
-    const res = await fetch(url, opts);
-    const json = await res.json();
-    if (!json.ok) throw new Error(json.error || 'API error');
-    return json.data;
-  } catch(e) {
-    console.warn('gsApi error:', e);
-    return null;
-  }
-}
+/* GAS_URL / gsApi() — ย้ายไปรวมที่ js/gas-api.js แล้ว (shared กับทุกไฟล์)
+   ⚠️ gsApi ของ shared เป็นแบบ swallow-return-null (คืน null เมื่อผิดพลาด ไม่ throw) — ต่างจาก
+   local เดิมที่ throw ข้างในแล้ว catch คืน null เหมือนกัน ผลลัพธ์เข้ากันได้พอดี ไม่ต้องแก้จุดเรียกใช้
+   ทั้งไฟล์ (ทุกจุดเดิมเช็ค `if (!result)`/`.then(r=>...)` อยู่แล้ว) นอกจากนี้ shared gsApi ยังแก้บั๊ก
+   เดิมที่ local เวอร์ชันนี้มี: กรณีส่ง data (POST) ไม่เคยแนบ `no` เข้าไปด้วยเลย */
 
 /* ── HELPERS ── */
 function fmt(n){ return Number(n).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2}); }
@@ -1590,29 +1584,34 @@ function buildTable(){
   }
 
   // ── รวม ก. ──
+  const korOn = hasKor();
   const gorTotal  = secFuel+sec1+sec2+secLump+secVenue+sec3+sec4+sec5+sec6+secInternal+secPres;
   const aGorTotal = asecFuel+asec1+asec2+asecLump+asecVenue+asec3+asec4+asec5+asec6+asecInternal+asecPres;
   const lastSec = presOn ? nums.pres : (useInternal ? nums.intPayroll : preInternalLast);
-  rows.push(`<tr class="bb3">${td(`รวมเงินข้อ ก. (1. - ${lastSec}.) เป็นเงิน`,'tc tw bgray bt2')+td('','bgray bt2')+td(fmt(gorTotal),'tr tw bgray bt2')+td('','bgray bt2')+td(fmt(aGorTotal),'tr tw bgray bt2')+td(fmt(gorTotal-aGorTotal),'tr tw bgray bt2')}</tr>`);
+  // ถ้าปิดข้อ ข. ไว้ (ไม่มีค่าเดินทางผู้เข้าอบรม) แถว "รวม ก." นี้คือแถวสุดท้ายของทั้งตาราง
+  // → ใส่ double-bottom ปิดท้ายตรงนี้แทน ไม่ต้องมีแถว "รวม ก.และข." ซ้ำซ้อนด้านล่างอีก
+  rows.push(`<tr class="${korOn ? 'bb3' : 'bb3 double-bottom'}">${td(`รวมเงินข้อ ก. (1. - ${lastSec}.) เป็นเงิน`,'tc tw bgray bt2')+td('','bgray bt2')+td(fmt(gorTotal),'tr tw bgray bt2')+td('','bgray bt2')+td(fmt(aGorTotal),'tr tw bgray bt2')+td(fmt(gorTotal-aGorTotal),'tr tw bgray bt2')}</tr>`);
 
-  // ── ข. ──
-  const bb1=v('f_b1'),bb2=v('f_b2'),bb3=v('f_b3');
-  const ab1=v('a_b1'),ab2=v('a_b2'),ab3=v('a_b3');
+  // ── ข. — แสดงเฉพาะตอนไฟล์ 05 ติ๊กเปิดไว้เท่านั้น (TOGGLES07.kor) ──
+  const bb1=korOn?v('f_b1'):0, bb2=korOn?v('f_b2'):0, bb3=korOn?v('f_b3'):0;
+  const ab1=korOn?v('a_b1'):0, ab2=korOn?v('a_b2'):0, ab3=korOn?v('a_b3'):0;
   const korTotal=bb1+bb2+bb3;
   const aKorTotal=ab1+ab2+ab3;
-  rows.push(r5('ข. ค่าใช้จ่ายในการเดินทางของผู้เข้ารับการฝึกอบรม','tl tw nb', '','nb', fmt(korTotal),'tr tw nb', '','nb', fmt(aKorTotal),'tr tw nb', fmt(korTotal-aKorTotal),'tr tw nb'));
-  rows.push(...renderTriad07('', [
-    {label:'ค่าเบี้ยเลี้ยง', budgetAmt:bb1, actualAmt:ab1},
-    {label:'ค่าที่พัก', budgetAmt:bb2, actualAmt:ab2},
-    {label:'ค่าพาหนะ', budgetAmt:bb3, actualAmt:ab3},
-  ]));
-  const bVisible = [bb1||ab1, bb2||ab2, bb3||ab3].filter(Boolean).length;
-  rows.push(`<tr class="bb3">${td(`รวมเงินข้อ ข. (1. - ${bVisible}.) เป็นเงิน`,'tc tw bt2')+td('','bt2')+td(fmt(korTotal),'tr tw bt2')+td('','bt2')+td(fmt(aKorTotal),'tr tw bt2')+td(fmt(korTotal-aKorTotal),'tr tw bt2')}</tr>`);
+  if(korOn){
+    rows.push(r5('ข. ค่าใช้จ่ายในการเดินทางของผู้เข้ารับการฝึกอบรม','tl tw nb', '','nb', fmt(korTotal),'tr tw nb', '','nb', fmt(aKorTotal),'tr tw nb', fmt(korTotal-aKorTotal),'tr tw nb'));
+    rows.push(...renderTriad07('', [
+      {label:'ค่าเบี้ยเลี้ยง', budgetAmt:bb1, actualAmt:ab1},
+      {label:'ค่าที่พัก', budgetAmt:bb2, actualAmt:ab2},
+      {label:'ค่าพาหนะ', budgetAmt:bb3, actualAmt:ab3},
+    ]));
+    const bVisible = [bb1||ab1, bb2||ab2, bb3||ab3].filter(Boolean).length;
+    rows.push(`<tr class="bb3">${td(`รวมเงินข้อ ข. (1. - ${bVisible}.) เป็นเงิน`,'tc tw bt2')+td('','bt2')+td(fmt(korTotal),'tr tw bt2')+td('','bt2')+td(fmt(aKorTotal),'tr tw bt2')+td(fmt(korTotal-aKorTotal),'tr tw bt2')}</tr>`);
 
-  // ── รวมทั้งสิ้น ──
-  const grandTotal=gorTotal+korTotal;
-  const aGrandTotal=aGorTotal+aKorTotal;
-  rows.push(`<tr class="bb2">${td('รวมเงินข้อ ก. และ ข. เป็นเงิน ทั้งสิ้น','tc tw bgray bt2 double-bottom')+td('','bgray bt2 double-bottom')+td(fmt(grandTotal),'tr tw bgray bt2 double-bottom')+td('','bgray bt2 double-bottom')+td(fmt(aGrandTotal),'tr tw bgray bt2 double-bottom')+td(fmt(grandTotal-aGrandTotal),'tr tw bgray bt2 double-bottom')}</tr>`);
+    // ── รวมทั้งสิ้น — มีเฉพาะตอนมีข้อ ข. เท่านั้น (ไม่งั้นซ้ำกับแถว "รวม ก." ที่ปิดท้ายไปแล้วด้านบน) ──
+    const grandTotal=gorTotal+korTotal;
+    const aGrandTotal=aGorTotal+aKorTotal;
+    rows.push(`<tr class="bb2">${td('รวมเงินข้อ ก. และ ข. เป็นเงิน ทั้งสิ้น','tc tw bgray bt2 double-bottom')+td('','bgray bt2 double-bottom')+td(fmt(grandTotal),'tr tw bgray bt2 double-bottom')+td('','bgray bt2 double-bottom')+td(fmt(aGrandTotal),'tr tw bgray bt2 double-bottom')+td(fmt(grandTotal-aGrandTotal),'tr tw bgray bt2 double-bottom')}</tr>`);
+  }
 
   const extTotalNote = extTotal;
   const baseNote = preInternalLast;
@@ -1671,7 +1670,7 @@ function showReport(doPrint){
   document.getElementById('r_hdr3').value=`ณ ${document.getElementById('f_location').value}`;
   document.getElementById('rpt_wrap').innerHTML=buildTable();
 
-  /* ── บันทึกค่างบประมาณลง sessionStorage ให้ 01.Main-Reports.html ดึงใช้ ── */
+  /* ── บันทึกค่างบประมาณลง sessionStorage ให้ 01_Main-Reports.html ดึงใช้ ── */
   try {
     const nums = calcSectionNumbers07();
     const has12 = hasOfficeItem2();
@@ -1682,7 +1681,7 @@ function showReport(doPrint){
     const r32=v('f_3_2_rate'),p32=v('f_3_2_ppl'),m32=v('f_3_2_times')||1,d32=v('f_3_2_days');
     const s31=r31*p31*m31*d31, s32=r32*p32*m32*d32, s33=has33?v('f_3_3'):0;
     const s41=v('f_4_1'),s42=v('f_4_2'),s43=v('f_4_3');
-    const bb1=v('f_b1'),bb2=v('f_b2'),bb3=v('f_b3');
+    const bb1=hasKor()?v('f_b1'):0, bb2=hasKor()?v('f_b2'):0, bb3=hasKor()?v('f_b3'):0;
     const useInternal=hasInternal(), L=hasSpkLodging(), T=hasSpkTravel();
     let sec5=0,sec6=0,secInternal=0;
     const list = spk.EXT||[];
@@ -1819,7 +1818,7 @@ document.addEventListener('DOMContentLoaded', () => {
   _prefillMeta07(cd);
 
   // แสดง loading overlay แล้วดึงข้อมูลจาก GAS
-  _showLoader07('🔍 ค้นหาเลขที่หลักสูตร ' + no + ' ใน Google Sheets...');
+  showGsLoader('🔍 ค้นหาเลขที่หลักสูตร ' + no + ' ใน Google Sheets...');
   _autoLoadGs07(no);
 });
 
@@ -1836,13 +1835,13 @@ function _prefillMeta07(cd) {
 /* ── โหลดจาก Google Sheet โดยใช้ getByNo ── */
 async function _autoLoadGs07(no) {
   try {
-    _showLoader07('📥 กำลังโหลดข้อมูล');
+    showGsLoader('📥 กำลังโหลดข้อมูล');
     const result = await gsApi('getByNo', null, no);
     console.log('07 getByNo:', result);
 
     if (!result || (!result.course && !result.budget && !result.actual06 && !result.actual07)) {
-      _hideLoader07();
-      _showStatus07('⚠️ ไม่พบข้อมูลเลขที่ ' + no + ' ใน Google Sheets', 'warn');
+      hideGsLoader();
+      showGsStatus('⚠️ ไม่พบข้อมูลเลขที่ ' + no + ' ใน Google Sheets', 'warn');
       updateSyncBanner(null);
       return;
     }
@@ -1867,34 +1866,20 @@ async function _autoLoadGs07(no) {
       : false;
     if (budgetRaw) budgetRaw = { ...budgetRaw, hasExternal };
 
-    // ── สร้าง actual06 + bySection จาก COL_ACTUAL06 fields ──
+    // ── สร้าง actual06 + bySection จาก actual06.rowsJson ──
+    // เดิมสร้าง bySection มือด้วยคีย์ตัวเลขล้วนแบบเก่า ('1','2','3','4','5' — '5' ไม่เคยตรงกับค่า sec
+    // ของแถวใดเลยเพราะ 'sec5' เป็นแค่ชื่อคอลัมน์ยอดรวมวิทยากรภายนอกใน Sheet ไม่ใช่ค่า sec ที่ติดแท็กไว้
+    // ในแถว — ทำให้ items ของวิทยากรภายนอกว่างเปล่ามาตลอด) และไม่ตรงกับรหัส SchemaTH.SEC/SUB ที่ 06
+    // เขียนจริงหลัง refactor เลย (office/misc/food/staffTravel/ext ฯลฯ) ทำให้ค่า "ใช้จริง" ของแทบทุก
+    // หมวดใน applyActuals07()/TOGGLES07 คำนวณผิดอย่างเงียบๆ — เปลี่ยนมาใช้ computeBySectionFromRows()
+    // ตัวเดียวกับที่ applyActuals07()/applySlot07() เรียกอยู่แล้ว (มี legacy-migration shim ในตัว)
+    // เพื่อให้ทุกจุดที่ประมวลผล rows06 ในไฟล์นี้ใช้ตรรกะเดียวกันเป๊ะ ไม่มีจุดไหนหลุด sync
     let actual06 = result.actual06 || null;
     if (actual06) {
       let rows06 = [];
       try { rows06 = actual06.rowsJson ? (typeof actual06.rowsJson === 'string' ? JSON.parse(actual06.rowsJson) : actual06.rowsJson) : []; } catch(e){}
-
-      const bySection = {
-        '1': { total: parseFloat(actual06.sec1)||0, subs: {}, items: [] },
-        '2': { total: parseFloat(actual06.sec2)||0, subs: {}, items: [] },
-        '3': { total: parseFloat(actual06.sec3)||0, subs: {
-          '3_1': parseFloat(actual06.sec3_1)||0,
-          '3_2': parseFloat(actual06.sec3_2)||0,
-          '3_3': 0,
-        }, items: [] },
-        '4': { total: parseFloat(actual06.sec4)||0, subs: { '4_3': 0 }, items: [] },
-        '5': { total: parseFloat(actual06.sec5)||0, subs: {}, items: [] },
-      };
-
-      rows06.forEach(r => {
-        const sec   = String(r.sec||'');
-        const sub   = String(r.sub||'');
-        const total = parseFloat(r.total)||0;
-        const val   = parseFloat(r.val)||0;
-        if (sec==='3' && sub==='3_3') bySection['3'].subs['3_3'] = (bySection['3'].subs['3_3']||0) + total;
-        if (sec==='4' && sub==='4_3') bySection['4'].subs['4_3'] = (bySection['4'].subs['4_3']||0) + total;
-        if (sec==='5') bySection['5'].items.push({ name: r.name||r.staff||'', val, total });
-      });
-
+      rows06 = rows06.map(r => migrateLegacyRow07({...r}));
+      const bySection = computeBySectionFromRows(rows06);
       actual06 = { ...actual06, bySection, rows: rows06 };
     }
 
@@ -1916,86 +1901,29 @@ async function _autoLoadGs07(no) {
     // เก็บ slot สำหรับ saveActual07
     _currentSlot = slot;
 
-    _showLoader07('🔄 กำลังนำข้อมูลเข้าฟอร์ม...');
+    showGsLoader('🔄 กำลังนำข้อมูลเข้าฟอร์ม...');
     applySlot07(slot);
 
-    _hideLoader07();
+    hideGsLoader();
     const parts = [];
     if (slot.budget)   parts.push('งบประมาณ');
     if (slot.actual06) parts.push('ใบเสร็จ(06)');
     if (slot.actual07) parts.push('ข้อมูล(07)');
-    _showStatus07('✅ โหลดสำเร็จ');
+    showGsStatus('✅ โหลดสำเร็จ');
 
   } catch(e) {
-    _hideLoader07();
-    _showStatus07('❌ โหลดไม่สำเร็จ: ' + e.message, 'error');
+    hideGsLoader();
+    showGsStatus('❌ โหลดไม่สำเร็จ: ' + e.message, 'error');
     console.warn('_autoLoadGs07 error:', e);
     updateSyncBanner(null);
   }
 }
 
-/* ── Loading overlay helpers (เหมือนไฟล์ 06) ── */
-function _showLoader07(msg) {
-  let el = document.getElementById('gs07-loader');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'gs07-loader';
-    el.style.cssText = 'position:fixed;inset:0;background:rgba(15,39,68,.55);z-index:9998;display:flex;align-items:center;justify-content:center;';
-    el.innerHTML =
-      '<div style="background:transparent;padding:16px;min-width:200px;max-width:280px;width:90%;' +
-      'font-family:Sarabun,sans-serif;text-align:center;box-sizing:border-box;">' +
-      
-      // เพิ่ม filter drop-shadow เป็นแสงออร่าสีขาวฟุ้งๆ (rgba 255, 255, 255, 0.7) เพื่อดันให้วงกลมโหลดเด่นเด้งออกมา
-      '<svg width="48" height="48" viewBox="0 0 48 48" style="display:block;margin:0 auto 14px;filter:drop-shadow(0 0 6px rgba(255,255,255,0.7));">' +
-      
-      // 1. วงกลมฐานเปลี่ยนจากสีเทาเป็นสีขาวทึบ (#ffffff)
-      '<circle cx="24" cy="24" r="20" fill="none" stroke="#ffffff" stroke-width="4"/>' +
-      
-      // 2. ตัวหมุนเป็นสีน้ำเงินเดิมของคุณ (#1a56db) แต่ขยับความหนาเป็น 4.5 ให้ข่มเส้นสีขาวและดูคมชัดขึ้น
-      '<circle cx="24" cy="24" r="20" fill="none" stroke="#1a56db" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="30 96" style="animation:gs7spin .9s linear infinite;transform-origin:center"/>' +
-      '</svg>' +
-      
-      // 3. ปรับตัวหนังสือเป็นสีขาว และใส่ text-shadow หนา 2 ชั้น เพื่อให้อ่านง่ายลอยเด่นบนทุกพื้นผิวเว็บ
-      '<div id="gs07-loader-msg" style="font-size:15px;color:#ffffff;font-weight:600;line-height:1.6;' +
-      'text-shadow:0 2px 4px rgba(0,0,0,0.6), 0 4px 12px rgba(0,0,0,0.3);"></div>' +
-      '</div>';
-    document.head.insertAdjacentHTML('beforeend', '<style>@keyframes gs7spin{to{transform:rotate(360deg)}}</style>');
-    document.body.appendChild(el);
-  }
-  el.style.display = 'flex';
-  const m = document.getElementById('gs07-loader-msg');
-  if (m) m.textContent = msg || 'กำลังโหลด...';
-}
-
-function _hideLoader07() {
-  const el = document.getElementById('gs07-loader');
-  if (el) el.style.display = 'none';
-}
-
-function _showStatus07(msg, type) {
-  const colors = {
-    ok:    ['#d1fae5','#065f46','#10b981'],
-    warn:  ['#fef3c7','#92400e','#f59e0b'],
-    error: ['#fee2e2','#991b1b','#ef4444'],
-  };
-  const [bg, text, border] = colors[type] || colors.ok;
-  let el = document.getElementById('gs07-status');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'gs07-status';
-    el.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);' +
-      'z-index:9999;padding:12px 24px;border-radius:10px;font-family:Sarabun,sans-serif;' +
-      'font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.15);white-space:nowrap;max-width:90vw;';
-    document.body.appendChild(el);
-  }
-  el.style.background = bg;
-  el.style.color      = text;
-  el.style.border     = '1.5px solid ' + border;
-  el.textContent      = msg;
-  el.style.display    = 'block';
-  clearTimeout(el._t);
-  el._t = setTimeout(() => { el.style.display = 'none'; }, 4000);
-}
+/* showGsLoader()/hideGsLoader()/showGsStatus() — ย้ายไปรวมที่ js/gas-api.js แล้ว (shared กับทุกไฟล์)
+   เดิมไฟล์นี้มี _showLoader07/_hideLoader07/_showStatus07 ก็อปวางซ้ำ (มาร์กอัป/สไตล์เหมือนกันเป๊ะกับ
+   ตัวกลาง) ทั้งที่โหลด js/gas-api.js อยู่ในหน้าอยู่แล้ว — ตกหล่นตอนย้ายไฟล์อื่นเข้า shared js/ ไปแล้ว
+   แต่ลืมสลับ loader ของไฟล์นี้มาใช้ตัวกลาง ลบออกแล้ว เปลี่ยนจุดเรียกใช้ทั้งหมดเป็น
+   showGsLoader()/hideGsLoader()/showGsStatus() แทน */
 
 /* ── POPUP หลังบันทึก — ถามกลับหน้าหลักหรือยัง ── */
 function showBackConfirmPopup(){
@@ -2012,7 +1940,7 @@ function showBackConfirmPopup(){
       <div style="font-size:13px;color:#6b7280;margin-bottom:22px;line-height:1.6;">
         กลับไปที่หน้าหลักเพื่อดำเนินการต่อไป?</div>
       <div style="display:flex;gap:10px;justify-content:center;">
-        <button onclick="location.href='01.Main-Reports.html';"
+        <button onclick="location.href='01_Main-Reports.html';"
           style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:8px;
           padding:11px 30px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;
           box-shadow:0 3px 12px rgba(16,185,129,.3);">✅ กลับหน้าหลัก</button>
@@ -2042,7 +1970,7 @@ function confirmBack07() {
           style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:8px;
           padding:10px 28px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;
           box-shadow:0 3px 12px rgba(16,185,129,.3);">💾 บันทึก</button>
-        <button onclick="document.getElementById('back-confirm-07').remove();location.href='01.Main-Reports.html';"
+        <button onclick="document.getElementById('back-confirm-07').remove();location.href='01_Main-Reports.html';"
           style="background:#f3f4f6;color:#374151;border:1.5px solid #d1d5db;border-radius:8px;
           padding:10px 24px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">
           ไม่บันทึก</button>
@@ -2051,39 +1979,15 @@ function confirmBack07() {
   document.body.appendChild(pop);
 }
 /* ============================================================
-   PDF EXPORT — ใช้ Puppeteer server (เดียวกับไฟล์ 06) แทน html2canvas + jsPDF เดิม
-   Server: trainfin (Render.com) — รับ POST { html, filename } คืนไฟล์ PDF กลับมา
-   จากนั้นอัปโหลดไฟล์ PDF ขึ้น Supabase Storage (bucket: pdfs) เพื่อได้ลิงก์สาธารณะไว้แชร์/เก็บอ้างอิง
-   (SUPABASE_URL / SUPABASE_ANON_KEY / supabaseClient ประกาศไว้แล้วที่ <head> สำหรับ checkAuth() —
-    ใช้ตัวแปร global เดียวกันตรงนี้ ไม่ต้องประกาศซ้ำ)
+   PDF EXPORT — ใช้ Puppeteer server ผ่าน APP_CONFIG.PDF_SERVER_URL (เดียวกับไฟล์ 05/06/08/09)
+   PDF_SERVICE_URL เก่า ('.../pdf' บน trainfin.onrender.com) เป็น endpoint ที่ถูกตัดออกไปแล้ว
+   (ดู js/config.js — ตอนนี้เหลือ endpoint เดียวคือ '.../generate-pdf') และ uploadPdfToSupabase()
+   ท้องถิ่นเดิม (flat filename ต่อท้าย timestamp, upsert:true ทับไฟล์เก่า, ไม่เคยเขียนลิงก์กลับ Sheet)
+   ถูกแทนที่ด้วย saveReportPdf(courseNo, 'pdf07', blob) จาก js/gas-api.js ซึ่งอัปโหลดแบบ versioning
+   (pdf07-v1.pdf, pdf07-v2.pdf, ... แยกโฟลเดอร์ตาม courseNo ไม่ทับของเก่า) และเขียนลิงก์ล่าสุดกลับ
+   Sheet คอลัมน์ pdf07/pdf07SavedAt ให้อัตโนมัติในตัว — ไม่ต้องเรียก gsApi('updateCourseField',...)
+   ซ้ำเองอีกต่อไป
 ============================================================ */
-const PDF_SERVICE_URL = 'https://trainfin.onrender.com/pdf';
-
-/* อัปโหลดไฟล์ PDF ขึ้น Supabase Storage แล้วคืน public URL (คืน null ถ้าอัปโหลดไม่สำเร็จ — ไม่ทำให้การดาวน์โหลดไฟล์ในเครื่องล้มเหลวไปด้วย) */
-async function uploadPdfToSupabase(pdfBlob, fname){
-  if(!supabaseClient){ console.warn('Supabase client ยังไม่พร้อม (โหลด SDK ไม่สำเร็จ)'); return null; }
-  try {
-    // ✅ Supabase Storage รับเฉพาะ key แบบ ASCII-safe (a-z, A-Z, 0-9, -, _, ., !, *, ' , ( ) ฯลฯ)
-    // ภาษาไทยไม่ผ่าน จะได้ error "Invalid key" — จึงแปลงอักขระที่ไม่ใช่ \w/-/. เป็น "_" ก่อน
-    // (ชื่อไฟล์ที่ผู้ใช้ดาวน์โหลดในเครื่อง ยังเป็นภาษาไทยตามปกติ เพราะมาจาก a.download คนละจุดกัน)
-    const asciiSafe = fname
-      .replace(/[^\w.\-]+/g, '_')
-      .replace(/_+/g, '_')
-      .replace(/^_|_$/g, '') || 'report';
-    const fileName = `${asciiSafe}-${Date.now()}.pdf`;
-    const pdfFile  = new File([pdfBlob], fileName, { type: 'application/pdf' });
-    const { error: uploadError } = await supabaseClient
-      .storage.from('pdfs')
-      .upload(fileName, pdfFile, { cacheControl: '3600', upsert: true });
-    if(uploadError) throw uploadError;
-    const { data } = supabaseClient.storage.from('pdfs').getPublicUrl(fileName);
-    return data.publicUrl;
-  } catch(err){
-    console.error('uploadPdfToSupabase error:', err);
-    return null;
-  }
-}
-
 async function savePdf07(btn){
   const el = document.getElementById('report-container-07');
   if(!el || document.getElementById('report-view').style.display==='none'){
@@ -2149,7 +2053,7 @@ ${originalStyles}
 </style>
 </head><body>${clone.outerHTML}</body></html>`;
 
-    const res = await fetch(PDF_SERVICE_URL, {
+    const res = await fetch(APP_CONFIG.PDF_SERVER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -2157,10 +2061,19 @@ ${originalStyles}
         filename: fname,
         // ตัวเลขในตารางกว้างเกิน A4 เล็กน้อย ผู้ใช้เลือกสเกลได้เองจากช่อง "สเกลหน้ากระดาษ"
         // ใต้ปุ่มบันทึก PDF (ค่าเริ่มต้น 75% กันล้น)
-        pdfOptions: { scale: pdfScale07 },
+        pdfOptions: {
+          format: 'A4',
+          landscape: false,
+          scale: pdfScale07,
+          margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' },
+          preferCSSPageSize: true,
+        },
       })
     });
-    if(!res.ok) throw new Error('เซิร์ฟเวอร์สร้าง PDF ไม่สำเร็จ (HTTP ' + res.status + ')');
+    if(!res.ok){
+      const errText = await res.text().catch(()=>res.statusText);
+      throw new Error(`เซิร์ฟเวอร์สร้าง PDF ผิดพลาด (${res.status}): ${errText}`);
+    }
 
     const blob = await res.blob();
 
@@ -2171,22 +2084,19 @@ ${originalStyles}
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    // อัปโหลดขึ้น Supabase Storage เพื่อได้ลิงก์สาธารณะไว้แชร์/เก็บอ้างอิง (ถ้าอัปโหลดไม่สำเร็จ ไม่กระทบไฟล์ที่ดาวน์โหลดไปแล้ว)
+    // อัปโหลดขึ้น Supabase Storage แบบ versioning ผ่าน saveReportPdf() (js/gas-api.js) — เก็บทุก
+    // เวอร์ชันไว้ (pdf07-v1.pdf, pdf07-v2.pdf, ...) ไม่ทับของเก่า และเขียนลิงก์ล่าสุดกลับ Sheet
+    // คอลัมน์ pdf07/pdf07SavedAt ให้เองในตัว (ไม่ต้องเรียก gsApi('updateCourseField',...) ซ้ำ)
     btn.textContent = '⏳ กำลังอัปโหลด...';
-    const publicUrl = await uploadPdfToSupabase(blob, fname);
-    if(publicUrl){
-      // บันทึกลิงก์กลับเข้าชีต courses (คอลัมน์ pdf07) เพื่อให้หน้า "ภาพรวมทั้งหมด" (10.PDF-Overview.html) ดึงไปแสดงได้
-      const courseNo = _currentSlot && _currentSlot.no;
-      if(courseNo && typeof gsApi === 'function'){
-        try {
-          await gsApi('updateCourseField', { no: courseNo, pdf07: publicUrl, pdf07SavedAt: new Date().toISOString() });
-        } catch(saveErr){
-          console.warn('บันทึกลิงก์ PDF กลับชีต courses ไม่สำเร็จ:', saveErr);
-        }
-      }
-      alert('✅ บันทึก PDF และอัปโหลดเรียบร้อยแล้ว\n' + publicUrl);
+    const courseNo = _currentSlot && _currentSlot.no;
+    const uploadResult = courseNo ? await saveReportPdf(courseNo, 'pdf07', blob) : null;
+    if(uploadResult){
+      console.log('อัปโหลด PDF ขึ้น Supabase และบันทึกลิงก์กลับ Sheet สำเร็จ:', uploadResult.publicUrl, '(v' + uploadResult.version + ')');
+      showGsStatus('✅ บันทึก PDF และอัปโหลดเรียบร้อยแล้ว', 'ok');
+    } else if(!courseNo){
+      showGsStatus('✅ ดาวน์โหลด PDF สำเร็จ (⚠️ ไม่พบเลขที่หลักสูตร จึงไม่ได้อัปโหลดขึ้น Supabase)', 'warn');
     } else {
-      alert('✅ ดาวน์โหลด PDF สำเร็จ (แต่อัปโหลดขึ้น Supabase ไม่สำเร็จ — ดูรายละเอียดใน console)');
+      showGsStatus('⚠️ ดาวน์โหลด PDF สำเร็จ แต่อัปโหลดเก็บถาวรไม่สำเร็จ', 'warn');
     }
   } catch(err){
     console.error('savePdf07 error:', err);
