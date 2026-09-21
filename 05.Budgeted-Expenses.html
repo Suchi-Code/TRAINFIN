@@ -3,8 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ประมาณการค่าใช้จ่าย...</title>
+<title>ประมาณการค่าใช้จ่าย</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- ── Shared modules (ต้องเรียงลำดับนี้เสมอ: config -> supabase SDK -> auth/date/gas-api) ── -->
+<script src="js/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/auth.js"></script>
+<script src="js/date-th.js"></script>
+<script src="js/gas-api.js"></script>
+<script src="js/print-layout.js"></script>
+<script>checkAuth();</script>
+
 <style>
 :root{--blue:#1a56db;--blue-light:#e8f0fe;--blue-dark:#1241b0;--gray-50:#f7f8fa;--gray-200:#d1d5db;--text:#1f2937;--navy:#0f2744;--accent:#e8a020;}
 *{box-sizing:border-box;}
@@ -172,6 +182,7 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
   .bgray{background:#eaeaea!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   .rpt-edit{border:none!important;}
   .hdr-edit{border:none!important;border-bottom:none!important;}
+  .no-print{display:none!important;}
   
   .note-row-2:has(input:placeholder-shown) {
     display: none !important;
@@ -264,7 +275,6 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
 
 </style>
 <!-- html2canvas/jsPDF ถูกลบออก — เปลี่ยนไปสร้าง PDF ผ่าน Puppeteer server ฝั่ง backend แทน (ดู savePdf05()) -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -288,13 +298,13 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
 <div class="form-section">
   <div class="form-section-header">📌 ข้อมูลหลักสูตร</div>
   <div class="form-section-body">
-    <div class="form-row single"><div class="form-group"><label>ชื่อหลักสูตร <span class="req">*</span></label><input type="text" id="f_courseName" value="ความปลอดภัยในการทำงานเกี่ยวกับสารเคมีอันตราย และการตอบโต้กรณีเกิดเหตุฉุกเฉิน" readonly></div></div>
+    <div class="form-row single"><div class="form-group"><label>ชื่อหลักสูตร <span class="req">*</span></label><input type="text" id="f_courseName" value="" readonly></div></div>
     <div class="form-row three">
-      <div class="form-group"><label>รุ่นที่</label><input type="text" id="f_batch" value="1-3/69" readonly></div>
-      <div class="form-group"><label>เลขที่รุ่นหลักสูตร</label><input type="text" id="f_courseNo" value="01320829" readonly></div>
-      <div class="form-group"><label>วันที่จัดอบรม</label><input type="text" id="f_date" value="26 พฤษภาคม 2569" readonly></div>
+      <div class="form-group"><label>รุ่นที่</label><input type="text" id="f_batch" value="" readonly></div>
+      <div class="form-group"><label>เลขที่รุ่นหลักสูตร</label><input type="text" id="f_courseNo" value="" readonly></div>
+      <div class="form-group"><label>วันที่จัดอบรม</label><input type="text" id="f_date" value="" readonly></div>
     </div>
-    <div class="form-row single"><div class="form-group"><label>สถานที่จัดอบรม</label><input type="text" id="f_location" value="การประปาส่วนภูมิภาคสาขาชัยนาท อำเภอเมืองชัยนาท จังหวัดชัยนาท" readonly></div></div>
+    <div class="form-row single"><div class="form-group"><label>สถานที่จัดอบรม</label><input type="text" id="f_location" value="" readonly></div></div>
   </div>
 </div>
 
@@ -313,20 +323,20 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
 <div class="form-section" id="sec_office_wrap">
   <div class="form-section-header">
     <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;font-weight:700;">
-      <input type="checkbox" id="chk_office" checked onchange="onCondChange()" style="width:16px;height:16px;">
+      <input type="checkbox" id="chk_office" onchange="onCondChange()" style="width:16px;height:16px;">
       ก. <span class="num-office">x</span>. ค่าวัสดุสำนักงาน
     </label>
   </div>
   <div id="sec_office_body" class="form-section-body"><div class="sub-items">
     <div class="sub-item-row" id="row_1_1">
       <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:600; color:#374151;">
-        <input type="checkbox" id="chk_1_1" checked onchange="document.getElementById('f_1_1').disabled = !this.checked; onCondChange();"> <span class="num-office">x</span>.<span class="sub-office-1">1</span> ค่าเครื่องเขียนแบบพิมพ์
+        <input type="checkbox" id="chk_1_1" onchange="document.getElementById('f_1_1').disabled = !this.checked; onCondChange();"> <span class="num-office">x</span>.<span class="sub-office-1">1</span> ค่าเครื่องเขียนแบบพิมพ์
       </label>
       <div class="field-group"><label>งบประมาณ (บาท)</label><input type="number" id="f_1_1" value="0" step="0.01"></div>
     </div>
     <div class="sub-item-row">
       <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:600; color:#374151;">
-        <input type="checkbox" id="chk_1_2" checked onchange="document.getElementById('f_1_2').disabled = !this.checked; onCondChange();"> <span class="num-office">x</span>.<span class="sub-office-2">2</span> ค่าถ่ายเอกสารและเข้าเล่ม
+        <input type="checkbox" id="chk_1_2" onchange="document.getElementById('f_1_2').disabled = !this.checked; onCondChange();"> <span class="num-office">x</span>.<span class="sub-office-2">2</span> ค่าถ่ายเอกสารและเข้าเล่ม
       </label>
       <div class="field-group"><label>งบประมาณ (บาท)</label><input type="number" id="f_1_2" value="0" step="0.01"></div>
     </div>
@@ -336,7 +346,7 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
 <div class="form-section" id="sec_misc_wrap">
   <div class="form-section-header">
     <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;font-weight:700;">
-      <input type="checkbox" id="chk_misc" checked onchange="onCondChange()" style="width:16px;height:16px;">
+      <input type="checkbox" id="chk_misc" onchange="onCondChange()" style="width:16px;height:16px;">
       ก. <span class="num-misc">x</span>. ค่าวัสดุเบ็ดเตล็ด
     </label>
   </div>
@@ -412,14 +422,14 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
 <div class="form-section" id="sec_food_wrap">
   <div class="form-section-header">
     <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;font-weight:700;">
-      <input type="checkbox" id="chk_food" checked onchange="onCondChange()" style="width:16px;height:16px;">
+      <input type="checkbox" id="chk_food" onchange="onCondChange()" style="width:16px;height:16px;">
       ก. <span class="num-food">x</span>. ค่าอาหารและเครื่องดื่ม
     </label>
   </div>
   <div id="sec_food_body" class="form-section-body"><div class="sub-items">
     <div class="sub-item-row" id="row_3_1">
       <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:600; color:#374151;">
-        <input type="checkbox" id="chk_3_1" checked onchange="onCondChange()"> <span class="num-food">x</span>.<span class="sub-food-lunch">1</span> อาหารกลางวัน
+        <input type="checkbox" id="chk_3_1" onchange="['f_3_1_rate','f_3_1_ppl','f_3_1_times','f_3_1_days'].forEach(id=>document.getElementById(id).disabled=!this.checked); onCondChange();"> <span class="num-food">x</span>.<span class="sub-food-lunch">1</span> อาหารกลางวัน
       </label>
       <div class="field-group">
         <input type="number" id="f_3_1_rate" value="0" step="0.01" style="width:70px;"><label>บ./คน/มื้อ</label>
@@ -441,7 +451,7 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
     </div>
     <div class="sub-item-row" id="row_3_2">
       <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:600; color:#374151;">
-        <input type="checkbox" id="chk_3_2" checked onchange="onCondChange()"> <span class="num-food">x</span>.<span class="sub-food-coffee">2</span> อาหารว่างและเครื่องดื่ม
+        <input type="checkbox" id="chk_3_2" onchange="['f_3_2_rate','f_3_2_ppl','f_3_2_times','f_3_2_days'].forEach(id=>document.getElementById(id).disabled=!this.checked); onCondChange();"> <span class="num-food">x</span>.<span class="sub-food-coffee">2</span> อาหารว่างและเครื่องดื่ม
       </label>
       <div class="field-group">
         <input type="number" id="f_3_2_rate" value="0" step="0.01" style="width:70px;"><label>บ./คน/มื้อ</label>
@@ -452,7 +462,7 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
     </div>
     <div class="sub-item-row" id="row_3_3">
       <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:600; color:#374151;">
-        <input type="checkbox" id="chk_3_3" checked onchange="document.getElementById('f_3_3').disabled = !this.checked; onCondChange();"> <span class="num-food">x</span>.<span class="sub-food-extdinner">3</span> ค่าอาหารเย็นวิทยากรภายนอก
+        <input type="checkbox" id="chk_3_3" onchange="document.getElementById('f_3_3').disabled = !this.checked; onCondChange();"> <span class="num-food">x</span>.<span class="sub-food-extdinner">3</span> ค่าอาหารเย็นวิทยากรภายนอก
       </label>
       <div class="field-group">
         <label>งบประมาณ (บาท)</label>
@@ -465,7 +475,7 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
 <div class="form-section" id="sec_stafftravel_wrap">
   <div class="form-section-header">
     <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;font-weight:700;">
-      <input type="checkbox" id="chk_stafftravel" checked onchange="onCondChange()" style="width:16px;height:16px;">
+      <input type="checkbox" id="chk_stafftravel" onchange="onCondChange()" style="width:16px;height:16px;">
       ก. <span class="num-stafftravel">x</span>. ค่าเดินทางเจ้าหน้าที่ดำเนินการและประสานงาน (กฝภ.1)
     </label>
   </div>
@@ -480,7 +490,7 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
 <div class="form-section" id="sec_ext_wrap">
   <div class="form-section-header">
     <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;font-weight:700;">
-      <input type="checkbox" id="chk_external" checked onchange="onCondChange()" style="width:16px;height:16px;">
+      <input type="checkbox" id="chk_external" onchange="onCondChange()" style="width:16px;height:16px;">
       ก. <span class="num-ext">x</span>. ค่าสมนาคุณวิทยากรภายนอก
     </label>
   </div>
@@ -544,9 +554,14 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
   </div>
 </div>
 
-<div class="form-section">
-  <div class="form-section-header">ข. ค่าใช้จ่ายในการเดินทางของผู้เข้ารับการฝึกอบรม</div>
-  <div class="form-section-body"><div class="sub-items">
+<div class="form-section" id="sec_kor_wrap">
+  <div class="form-section-header">
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;font-weight:700;">
+      <input type="checkbox" id="chk_kor" onchange="onCondChange()" style="width:16px;height:16px;">
+      ข. ค่าใช้จ่ายในการเดินทางของผู้เข้ารับการฝึกอบรม
+    </label>
+  </div>
+  <div id="sec_kor_body" class="form-section-body"><div class="sub-items">
     <div class="sub-item-row"><label>1. ค่าเบี้ยเลี้ยง</label><div class="field-group"><label>งบประมาณ (บาท)</label><input type="number" id="f_b1" value="0" step="0.01"></div></div>
     <div class="sub-item-row"><label>2. ค่าที่พัก</label><div class="field-group"><label>งบประมาณ (บาท)</label><input type="number" id="f_b2" value="0" step="0.01"></div></div>
     <div class="sub-item-row"><label>3. ค่าพาหนะ</label><div class="field-group"><label>งบประมาณ (บาท)</label><input type="number" id="f_b3" value="0" step="0.01"></div></div>
@@ -607,10 +622,10 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
     
       <h1 style="margin-top: 10px !important;"></h1>
 
-      <h1><input class="rpt-edit hdr-edit" type="text" id="r_title" value="ประมาณการค่าใช้จ่าย..." style="width:100%;text-align:center;font-size:inherit;font-weight:inherit;color:inherit;font-family:inherit;border-bottom:1px dotted #aaa;padding:2px 4px;"></h1>
-      <p><input class="rpt-edit hdr-edit" type="text" id="r_hdr1" style="width:100%;text-align:center;font-size:inherit;font-weight:inherit;color:inherit;font-family:inherit;border-bottom:1px dotted #aaa;padding:2px 4px;"></p>
-      <p><input class="rpt-edit hdr-edit" type="text" id="r_hdr2" style="width:100%;text-align:center;font-size:inherit;font-weight:inherit;color:inherit;font-family:inherit;border-bottom:1px dotted #aaa;padding:2px 4px;"></p>
-      <p><input class="rpt-edit hdr-edit" type="text" id="r_hdr3" style="width:100%;text-align:center;font-size:inherit;font-weight:inherit;color:inherit;font-family:inherit;border-bottom:1px dotted #aaa;padding:2px 4px;"></p>
+      <h1><div class="rpt-edit hdr-edit" contenteditable="true" id="r_title" style="width:100%;text-align:center;font-size:inherit;font-weight:inherit;color:inherit;font-family:inherit;background:transparent;border:none;outline:none;padding:2px 4px;">ประมาณการค่าใช้จ่าย...</div></h1>
+      <p><div class="rpt-edit hdr-edit" contenteditable="true" id="r_hdr1" style="width:100%;text-align:center;font-size:inherit;font-weight:inherit;color:inherit;font-family:inherit;background:transparent;border:none;outline:none;padding:2px 4px;"></div></p>
+      <p><div class="rpt-edit hdr-edit" contenteditable="true" id="r_hdr2" style="width:100%;text-align:center;font-size:inherit;font-weight:inherit;color:inherit;font-family:inherit;background:transparent;border:none;outline:none;padding:2px 4px;"></div></p>
+      <p><div class="rpt-edit hdr-edit" contenteditable="true" id="r_hdr3" style="width:100%;text-align:center;font-size:inherit;font-weight:inherit;color:inherit;font-family:inherit;background:transparent;border:none;outline:none;padding:2px 4px;"></div></p>
     </div>
     <div id="rpt_wrap"></div>
   </div>
@@ -647,6 +662,7 @@ function hasOffice(){ return document.getElementById('chk_office')?.checked; }
 function hasMisc(){ return document.getElementById('chk_misc')?.checked; }
 function hasFood(){ return document.getElementById('chk_food')?.checked; }
 function hasStaffTravel(){ return document.getElementById('chk_stafftravel')?.checked; }
+function hasKor(){ return document.getElementById('chk_kor')?.checked; }
 function hasOfficeItem1(){ return document.getElementById('chk_1_1')?.checked; }
 function hasOfficeItem2(){ return document.getElementById('chk_1_2')?.checked; }
 function hasFoodLunch(){ return document.getElementById('chk_3_1')?.checked; }
@@ -713,20 +729,20 @@ function updateSectionNumberLabels(){
   document.querySelectorAll('.sub-venue-staff').forEach(el=>el.textContent=staffNum||2);
   document.querySelectorAll('.sub-venue-vip').forEach(el=>el.textContent=vipNum||3);
 
-  let oSub=1;
-  const office1Num = hasOfficeItem1() ? oSub++ : null;
-  const office2Num = hasOfficeItem2() ? oSub++ : null;
-  document.querySelectorAll('.sub-office-1').forEach(el=>el.textContent=office1Num||1);
-  document.querySelectorAll('.sub-office-2').forEach(el=>el.textContent=office2Num||2);
+  // ✅ เลขลำดับ 1.1/1.2 (วัสดุสำนักงาน) — แถวทั้งสองแสดงบนจอตลอดเวลาไม่เคยถูกซ่อนไม่ว่าจะติ๊กหรือไม่
+  // จึงต้องนับตามตำแหน่งที่ปรากฏบนจอเสมอ (1, 2 คงที่) ไม่ข้ามรายการที่ปิดติ๊ก — ของเดิมข้ามรายการที่
+  // ปิดไปนับต่อ ทำให้ตอนปิด "1.1" แล้วเปิด "1.2" ไว้ ทั้งสองแถวได้เลข "1" ซ้ำกัน
+  document.querySelectorAll('.sub-office-1').forEach(el=>el.textContent=1);
+  document.querySelectorAll('.sub-office-2').forEach(el=>el.textContent=2);
 
-  let fSub=1;
-  const lunchOn=hasFoodLunch();
-  if(lunchOn){ document.querySelectorAll('.sub-food-lunch').forEach(el=>el.textContent=fSub); fSub++; }
-  const dinnerOn=hasFoodDinner();
-  if(dinnerOn){ document.querySelectorAll('.sub-food-dinner').forEach(el=>el.textContent=fSub); fSub++; }
-  const coffeeOn=hasFoodCoffee();
-  if(coffeeOn){ document.querySelectorAll('.sub-food-coffee').forEach(el=>el.textContent=fSub); fSub++; }
-  document.querySelectorAll('.sub-food-extdinner').forEach(el=>el.textContent=fSub);
+  // ✅ เลขลำดับหมวดอาหาร (3.1-3.4) — เช่นเดียวกับข้างบน ทุกแถว (กลางวัน/เย็น/ว่าง) แสดงบนจอตลอดเวลา
+  // ไม่เคยถูกซ่อนไม่ว่าจะติ๊กหรือไม่ (มีแค่ "อาหารเย็นวิทยากรภายนอก" ที่ถูกซ่อนจริงตาม ext) จึงนับตาม
+  // ตำแหน่งคงที่เสมอ ไม่ข้ามรายการที่ปิด — รายงาน PDF (buildTable()) ยังคงกรองเฉพาะรายการที่ติ๊กแล้ว
+  // เรียงเลขใหม่ของตัวเองแยกต่างหากอยู่แล้ว ไม่กระทบจากการแก้จุดนี้
+  document.querySelectorAll('.sub-food-lunch').forEach(el=>el.textContent=1);
+  document.querySelectorAll('.sub-food-dinner').forEach(el=>el.textContent=2);
+  document.querySelectorAll('.sub-food-coffee').forEach(el=>el.textContent=3);
+  document.querySelectorAll('.sub-food-extdinner').forEach(el=>el.textContent=4);
 
   if(nums.intTravel){
     document.getElementById('lbl_Ax').textContent = `${nums.intTravel}.1 ค่าเบี้ยเลี้ยง`;
@@ -786,16 +802,27 @@ function onCondChange(){
   document.getElementById('f_food_dinner_times').disabled = !hasFoodDinner();
   document.getElementById('f_food_dinner_days').disabled = !hasFoodDinner();
 
+  // ✅ ตั้งค่า disabled ของฟิลด์ sub-item ให้ตรงกับ checkbox ตั้งแต่ตอนโหลดหน้าครั้งแรก
+  // (เดิมพึ่ง onchange ของ checkbox แต่ละตัวอย่างเดียว ซึ่งไม่เคยถูกยิงตอนโหลดหน้า ทำให้ฟิลด์
+  // ยังกรอกได้ปกติทั้งที่ checkbox ปิดอยู่ จนกว่าผู้ใช้จะไปคลิก checkbox เองสักครั้ง)
+  document.getElementById('f_1_1').disabled = !hasOfficeItem1();
+  document.getElementById('f_1_2').disabled = !hasOfficeItem2();
+  ['f_3_1_rate','f_3_1_ppl','f_3_1_times','f_3_1_days'].forEach(id=>{ document.getElementById(id).disabled = !hasFoodLunch(); });
+  ['f_3_2_rate','f_3_2_ppl','f_3_2_times','f_3_2_days'].forEach(id=>{ document.getElementById(id).disabled = !hasFoodCoffee(); });
+
   const extBody = document.getElementById('sec_ext_body');
   if(extBody) extBody.style.display = ext ? 'block' : 'none';
 
   const row33 = document.getElementById('row_3_3');
   if(row33) row33.style.display = ext ? '' : 'none';
   const chk33 = document.getElementById('chk_3_3');
+  const f33 = document.getElementById('f_3_3');
   if(chk33 && !ext) {
     chk33.checked = false;
-    const f33 = document.getElementById('f_3_3');
     if(f33) f33.disabled = true;
+  } else if(f33 && chk33) {
+    // ✅ ext เปิดอยู่ — ให้ disabled ตามสถานะ chk_3_3 จริง (เดิมไม่เคยตั้งค่านี้ตอนโหลดหน้าแรก)
+    f33.disabled = !chk33.checked;
   }
 
   document.getElementById('cond_expense_wrap').style.display = ext?'block':'none';
@@ -806,6 +833,11 @@ function onCondChange(){
 
   const presBody = document.getElementById('sec_pres_body');
   if(presBody) presBody.style.display = hasPres()?'block':'none';
+
+  // ข. ค่าใช้จ่ายในการเดินทางของผู้เข้ารับการฝึกอบรม — ไม่ซ่อนหัวข้อ (ต้องกดติ๊กเองได้เสมอ)
+  // แค่ toggle ช่องกรอกปิด/เปิด ผลของการปิดจะไปตัดทั้งหมวดออกจากตารางรายงานที่ buildTable()
+  const korBody = document.getElementById('sec_kor_body');
+  if(korBody) korBody.style.display = hasKor()?'block':'none';
 
   updateSectionNumberLabels();
   renderVenueMeeting();
@@ -1029,6 +1061,18 @@ function formatDateRangeTH(dates){
   return clean.join(', ');
 }
 
+// ✅ เพิ่มบรรทัดหมายเหตุเพิ่มเติมได้เรื่อยๆ (เดิมตายตัว 2 บรรทัด ตอนนี้เริ่มที่ 1 บรรทัด กดปุ่มเพิ่มเอง
+// ได้ไม่จำกัด) — เรียกจากปุ่มใน noteHTML ที่ buildTable() สร้างไว้ (ปุ่มถูกซ่อนตอนพิมพ์/เซฟ PDF
+// ด้วย class .no-print)
+function addNoteLine05(){
+  const container = document.getElementById('noteExtraLines');
+  if(!container) return;
+  const div = document.createElement('div');
+  div.className = 'note-row-2';
+  div.innerHTML = `<span style="color: #000;"> </span><input class="rpt-edit" type="text" placeholder="ระบุหมายเหตุเพิ่มเติมที่นี่ (ถ้ามี)..." style="width: 95%; font-family: 'Sarabun', sans-serif; font-size: 14px; color: #000; font-weight: normal;">`;
+  container.appendChild(div);
+}
+
 function buildTable(){
   const nums=calcSectionNumbers();
   const useInternal=hasInternal();
@@ -1062,7 +1106,8 @@ function buildTable(){
   const stafftravelOn=hasStaffTravel();
   const s41=stafftravelOn?v('f_4_1'):0, s42=stafftravelOn?v('f_4_2'):0, s43=stafftravelOn?v('f_4_3'):0;
 
-  const bb1=v('f_b1'),bb2=v('f_b2'),bb3=v('f_b3');
+  const korOn = hasKor();
+  const bb1=korOn?v('f_b1'):0, bb2=korOn?v('f_b2'):0, bb3=korOn?v('f_b3'):0;
   const sec1=s11+s12, sec2=s21, secFood=s31+sD+s32+s33, secTravelStaff=s41+s42+s43;
 
   const lumpOn=hasLump();
@@ -1439,29 +1484,34 @@ if(useInternal){
   const lastSec = presOn ? nums.pres : (useInternal ? nums.intPayroll : preInternalLast);
   rows.push(row(td(`รวมเงินข้อ ก. (1. - ${lastSec}.) เป็นเงิน`,'tc tw bgray bt2')+td('','bgray bt2')+td(fmt(gorTotal),'tr tw bgray bt2')));
   const lastGorRow = rows[rows.length-1];
-  rows[rows.length-1] = lastGorRow.replace('<tr>','<tr class="bb3">');
+  // ✅ ถ้าปิดข้อ ข. ไว้ (ไม่ติ๊ก chk_kor) แถวนี้คือแถวสุดท้ายของทั้งตาราง — ปิดท้ายด้วยเส้นคู่
+  // (double-bottom) แทนที่จะไปรอปิดที่แถว "รวม ก.และข." ซึ่งจะไม่ถูกสร้างขึ้นเลยในกรณีนี้
+  rows[rows.length-1] = lastGorRow.replace('<tr>', korOn ? '<tr class="bb3">' : '<tr class="bb3 double-bottom">');
 
-  // ข.
-   const korTotal=bb1+bb2+bb3;
-  rows.push(row(td(`
-    <div style="display: flex; align-items: center; white-space: nowrap; gap: 8px;">
-      <span>ข. ค่าใช้จ่ายในการเดินทางของผู้เข้ารับการฝึกอบรม</span>
-      <div style="flex-grow: 1;">${ie('ระบุรายละเอียด', undefined, '100%', true)}</div>
-    </div>
-  `,'tl tw nb')+td('','nb')+td('','nb')));
-  
-  rows.push(...renderTriad('', [
-    {label:'ค่าเบี้ยเลี้ยง', amt:bb1},
-    {label:'ค่าที่พัก', amt:bb2},
-    {label:'ค่าพาหนะ', amt:bb3},
-  ]));
+  // ข. — แสดงทั้งหมวด (หัวข้อ/รายการย่อย/ยอดรวม) เฉพาะตอนติ๊ก checkbox ข. ไว้เท่านั้น
+  // (เดิมแสดงทุกครั้งไม่มี checkbox ควบคุมเลย ทำให้ปิดไม่ได้แม้หลักสูตรนั้นไม่มีค่าใช้จ่ายผู้เข้าอบรม)
+  const korTotal = korOn ? (bb1+bb2+bb3) : 0;
+  if(korOn){
+    rows.push(row(td(`
+      <div style="display: flex; align-items: center; white-space: nowrap; gap: 8px;">
+        <span>ข. ค่าใช้จ่ายในการเดินทางของผู้เข้ารับการฝึกอบรม</span>
+        <div style="flex-grow: 1;">${ie('ระบุรายละเอียด', undefined, '100%', true)}</div>
+      </div>
+    `,'tl tw nb')+td('','nb')+td('','nb')));
 
-  const korItemsCount = [bb1,bb2,bb3].filter(x=>x).length;
+    rows.push(...renderTriad('', [
+      {label:'ค่าเบี้ยเลี้ยง', amt:bb1},
+      {label:'ค่าที่พัก', amt:bb2},
+      {label:'ค่าพาหนะ', amt:bb3},
+    ]));
 
-  rows.push(`<tr class="bb3">${td(`รวมเงินข้อ ข. (1. - ${korItemsCount}.) เป็นเงิน`,'tc tw bt2')+td('','bt2')+td(fmt(korTotal),'tr tw bt2')}</tr>`);
+    const korItemsCount = [bb1,bb2,bb3].filter(x=>x).length;
 
-  // รวมทั้งสิ้น
-  rows.push(`<tr class="bb2">${td('รวมเงินข้อ ก. และ ข. เป็นเงิน ทั้งสิ้น','tc tw bgray bt2 double-bottom')+td('','bgray bt2 double-bottom')+td(fmt(gorTotal+korTotal),'tr tw bgray bt2 double-bottom')}</tr>`);
+    rows.push(`<tr class="bb3">${td(`รวมเงินข้อ ข. (1. - ${korItemsCount}.) เป็นเงิน`,'tc tw bt2')+td('','bt2')+td(fmt(korTotal),'tr tw bt2')}</tr>`);
+
+    // รวมทั้งสิ้น
+    rows.push(`<tr class="bb2">${td('รวมเงินข้อ ก. และ ข. เป็นเงิน ทั้งสิ้น','tc tw bgray bt2 double-bottom')+td('','bgray bt2 double-bottom')+td(fmt(gorTotal+korTotal),'tr tw bgray bt2 double-bottom')}</tr>`);
+  }
 
   // คำนวณยอดเงินรวมเฉพาะข้อ ก. สำหรับยืมเงินทดลองจ่าย
   const extTotalNote = secFuel+sec1+sec2+secLump+secVenue+secFood+secTravelStaff+secExt1+secExt2;
@@ -1483,14 +1533,14 @@ if(useInternal){
         <div style="margin-bottom: 4px;">
           <input class="rpt-edit" type="text" value="1. ยืมเงินทดลองจ่าย ข้อ ก. (1. - ${baseNote}.) เป็นเงิน ${fmt(extTotalNote)} บาท (เงิน${ThaiBaht(extTotalNote)})" style="width: 100%; color: #000 !important; font-family: 'Sarabun', sans-serif; font-size: 14px; font-weight: normal;">
         </div>
-        
-        <div class="note-row-2">
-          <span style="color: #000;"> </span><input class="rpt-edit" type="text" placeholder="ระบุหมายเหตุเพิ่มเติมที่นี่ (ถ้ามี)..." style="width: 95%; font-family: 'Sarabun', sans-serif; font-size: 14px; color: #000; font-weight: normal;">
+
+        <div id="noteExtraLines">
+          <div class="note-row-2">
+            <span style="color: #000;"> </span><input class="rpt-edit" type="text" placeholder="ระบุหมายเหตุเพิ่มเติมที่นี่ (ถ้ามี)..." style="width: 95%; font-family: 'Sarabun', sans-serif; font-size: 14px; color: #000; font-weight: normal;">
+          </div>
         </div>
-        
-        <div class="note-row-2">
-          <span style="color: #000;"> </span><input class="rpt-edit" type="text" placeholder="ระบุหมายเหตุเพิ่มเติมที่นี่ (ถ้ามี)..." style="width: 95%; font-family: 'Sarabun', sans-serif; font-size: 14px; color: #000; font-weight: normal;">
-        </div>
+        <button type="button" class="no-print btn-add-note" onclick="addNoteLine05()"
+          style="margin-top:4px;padding:3px 12px;font-size:12px;border:1px dashed var(--blue,#1a56db);background:var(--blue-light,#e8f0fe);color:var(--blue,#1a56db);border-radius:5px;cursor:pointer;font-family:'Sarabun',sans-serif;">+ เพิ่มบรรทัด</button>
       </div>
     </div>
   `;
@@ -1502,9 +1552,9 @@ if(useInternal){
    SHOW / BACK
 ============================================================ */
 function showReport(doPrint){
-  document.getElementById('r_hdr1').value=`หลักสูตร "${document.getElementById('f_courseName').value}" รุ่นที่ ${document.getElementById('f_batch').value}`;
-  document.getElementById('r_hdr2').value=`เลขที่รุ่นหลักสูตร ${document.getElementById('f_courseNo').value} ในวันที่ ${document.getElementById('f_date').value}`;
-  document.getElementById('r_hdr3').value=`ณ ${document.getElementById('f_location').value}`;
+  document.getElementById('r_hdr1').textContent=`หลักสูตร "${document.getElementById('f_courseName').value}" รุ่นที่ ${document.getElementById('f_batch').value}`;
+  document.getElementById('r_hdr2').textContent=`เลขที่รุ่นหลักสูตร ${document.getElementById('f_courseNo').value} ในวันที่ ${document.getElementById('f_date').value}`;
+  document.getElementById('r_hdr3').textContent=`ณ ${document.getElementById('f_location').value}`;
   document.getElementById('rpt_wrap').innerHTML=buildTable();
 
   try {
@@ -1517,7 +1567,7 @@ function showReport(doPrint){
   document.getElementById('report-view').style.display='block';
   const hdr05 = document.querySelector('.site-header'); if(hdr05) hdr05.style.display='none';
   const ftr05 = document.querySelector('footer'); if(ftr05) ftr05.style.display='none';
-  applyRowSpacing05();
+  rowSpacing05.init();
   window.scrollTo(0,0);
   if(doPrint) setTimeout(()=>window.print(),300);
 }
@@ -1529,43 +1579,15 @@ function backToForm(){
   window.scrollTo(0,0);
 }
 
-const ROW_SPACING_LEVELS_05 = [
-  {label:'แน่น',      pad:'2px'},
-  {label:'กระชับ',    pad:'3.5px'},
-  {label:'ปกติ',      pad:'5px'},
-  {label:'กว้าง',     pad:'7px'},
-  {label:'กว้างมาก',  pad:'9px'},
-];
-let rowSpacingIdx05 = 2; // ปกติ
-
-function applyRowSpacing05(){
-  const lvl = ROW_SPACING_LEVELS_05[rowSpacingIdx05];
-  const rc = document.getElementById('report-container-05');
-  if(rc) rc.style.setProperty('--row-pad-v', lvl.pad);
-  const lbl = document.getElementById('sp_level_05');
-  if(lbl) lbl.textContent = lvl.label;
-  const dec = document.getElementById('sp_dec');
-  const inc = document.getElementById('sp_inc');
-  if(dec) dec.disabled = (rowSpacingIdx05 === 0);
-  if(inc) inc.disabled = (rowSpacingIdx05 === ROW_SPACING_LEVELS_05.length - 1);
-  try{ sessionStorage.setItem('rpt05_rowSpacing', String(rowSpacingIdx05)); }catch(e){}
-}
-
-function adjustRowSpacing05(dir){
-  const next = rowSpacingIdx05 + dir;
-  if(next < 0 || next >= ROW_SPACING_LEVELS_05.length) return;
-  rowSpacingIdx05 = next;
-  applyRowSpacing05();
-}
-(function(){
-  try{
-    const saved = sessionStorage.getItem('rpt05_rowSpacing');
-    if(saved !== null){
-      const idx = parseInt(saved, 10);
-      if(!isNaN(idx) && idx >= 0 && idx < ROW_SPACING_LEVELS_05.length) rowSpacingIdx05 = idx;
-    }
-  }catch(e){}
-})();
+// ✅ ปุ่มปรับระยะห่างบรรทัด (ย้าย logic ไป PaginateTH.makeRowSpacingControl ใน js/print-layout.js
+// แล้ว — ไฟล์นี้แค่ผูก selector/id ของตัวเองเข้ากับ control ที่ใช้ร่วมกับ 06/07)
+const rowSpacing05 = PaginateTH.makeRowSpacingControl({
+  containerSelector: '#report-container-05',
+  sessionKey: 'rpt05_rowSpacing',
+  labelId: 'sp_level_05', decId: 'sp_dec', incId: 'sp_inc',
+});
+function adjustRowSpacing05(dir){ rowSpacing05.adjust(dir); }
+rowSpacing05.init();
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1579,51 +1601,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const no = (cd.no || '').trim();
   if (no) {
-    _showLoader05('🔍 ค้นหาเลขที่หลักสูตร ' + no + ' ใน Google Sheets...');
+    showGsLoader('🔍 ค้นหาเลขที่หลักสูตร ' + no + ' ใน Google Sheets...');
     _autoLoadGs05(no, cd);
   }
 
 });
 
-const _MONTHS_TH_05 = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
-                'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
-// ✅ ป้องกันบั๊ก timezone shift: ถ้า Google Apps Script ส่ง dateStart/dateEnd มาเป็น
-// ISO datetime ที่มี time ต่อท้าย (เช่น "2026-07-21T17:00:00.000Z" ซึ่งจริงๆ คือเที่ยงคืน
-// วันที่ 22 ตามเวลาไทย GMT+7) ต้องชดเชย +7 ชั่วโมงก่อนตัดเอาวันที่ ไม่งั้นจะได้วันที่ก่อนหน้า
-// 1 วันเสมอ (เอา parseInt ตัด string ตรงๆ จะโดนตัวอักษร T ทำให้ได้วันที่ผิดแบบเงียบๆ)
+// วันที่ไทย — logic ย้ายไปรวมที่ js/date-th.js แล้ว (ใช้ร่วมกันทุกไฟล์)
+// เก็บชื่อฟังก์ชันเดิมไว้เป็น wrapper บางๆ กันไม่ต้องแก้จุดเรียกใช้ทั้งไฟล์
 function _normThaiDate05(v) {
-  if (!v) return '';
-  const s = String(v);
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s; // date-only string อยู่แล้ว ไม่ต้องแก้
-  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):/);
-  if (m) {
-    const hh = parseInt(m[4], 10);
-    if (hh >= 17) {
-      const d = new Date(s);
-      d.setUTCHours(d.getUTCHours() + 7);
-      const yy = d.getUTCFullYear(), mm = String(d.getUTCMonth()+1).padStart(2,'0'), dd = String(d.getUTCDate()).padStart(2,'0');
-      return `${yy}-${mm}-${dd}`;
-    }
-    return `${m[1]}-${m[2]}-${m[3]}`;
-  }
-  return s;
+  return DateTH.normalize(v);
 }
 function isoTh05(iso) {
-  const clean = _normThaiDate05(iso);
-  if (!clean || !/^\d{4}-\d{2}-\d{2}$/.test(clean)) return clean || '';
-  const p = clean.split('-');
-  return `${parseInt(p[2])} ${_MONTHS_TH_05[parseInt(p[1])-1]} ${parseInt(p[0])+543}`;
+  return DateTH.format(iso);
 }
 function isoThRange05(ds, de) {
-  ds = _normThaiDate05(ds); de = _normThaiDate05(de);
-  if (!ds) return '';
-  if (!de || de === ds) return isoTh05(ds);
-  const ps = ds.split('-'), pe = de.split('-');
-  if (ps[0]===pe[0] && ps[1]===pe[1])
-    return `${parseInt(ps[2])} – ${parseInt(pe[2])} ${_MONTHS_TH_05[parseInt(ps[1])-1]} ${parseInt(ps[0])+543}`;
-  if (ps[0]===pe[0])
-    return `${parseInt(ps[2])} ${_MONTHS_TH_05[parseInt(ps[1])-1]} – ${parseInt(pe[2])} ${_MONTHS_TH_05[parseInt(pe[1])-1]} ${parseInt(ps[0])+543}`;
-  return isoTh05(ds) + ' – ' + isoTh05(de);
+  return DateTH.formatRange(ds, de);
 }
 function _prefillMeta05(cd) {
   const sf = (id, val) => { const e = document.getElementById(id); if (e && val) e.value = val; };
@@ -1632,7 +1625,6 @@ function _prefillMeta05(cd) {
   sf('f_courseNo',   cd.no || cd.courseNo || '');
   sf('f_location',   cd.location);
 
-  const months = _MONTHS_TH_05;
   function isoTh(iso) { return isoTh05(iso); }
   function isoThRange(ds, de) { return isoThRange05(ds, de); }
   const dateStr = cd.date || '';
@@ -1642,125 +1634,68 @@ function _prefillMeta05(cd) {
 }
 
 async function _autoLoadGs05(no, cd) {
-  try {
-    _showLoader05('📥 กำลังโหลดข้อมูล');
-    const result = await gsApi('getByNo', null, no);
-    console.log('05 getByNo:', result);
+  showGsLoader('📥 กำลังโหลดข้อมูล');
+  const result = await gsApi('getByNo', null, no);
+  console.log('05 getByNo:', result);
 
-    const budget   = result && result.budget   ? result.budget   : null;
-    const course   = result && result.course   ? result.course   : null;
-
-    if (!budget && !course) {
-      _hideLoader05();
-      _showStatus05('⚠️ ไม่พบข้อมูลงบประมาณของเลขที่ ' + no + ' — กรอกข้อมูลใหม่ได้เลย', 'warn');
-      return;
-    }
-
-    if (course) {
-      const sf = (id, val) => { const e = document.getElementById(id); if (e && val) e.value = val; };
-      sf('f_courseName', course.course   || cd.course);
-      sf('f_batch',      course.batch    || cd.batch);
-      sf('f_location',   course.location || cd.location);
-
-      // ✅ รีเฟรชวันที่จัดอบรมด้วยค่าที่ดึงมาจริงจาก Sheet ของเลขที่ 'no' นี้เท่านั้น
-      // (เดิมไม่มีบรรทัดนี้ ทำให้ f_date ค้างค่าจาก sessionStorage เก่าซึ่งอาจเป็นของ
-      // หลักสูตรอื่นที่เคยเปิดดูก่อนหน้า) พร้อมแคชไว้ผูกกับเลขที่ no สำหรับ saveBudgetSlot()
-      if (course.dateStart) {
-        const dispDate = isoThRange05(course.dateStart, course.dateEnd || '');
-        const fDateEl = document.getElementById('f_date');
-        if (fDateEl && dispDate) fDateEl.value = dispDate;
-        // ✅ เก็บแคชเป็นค่าที่ผ่านการชดเชย timezone แล้ว (YYYY-MM-DD ล้วน) ไม่ใช่ค่าดิบจาก API
-        // ที่อาจมี "T17:00:00.000Z" ติดมา — เดิมเก็บค่าดิบไว้ พอกด "ย้อนกลับ" (เรียก
-        // saveBudgetSlot() ก่อน redirect) จะเอาค่าดิบนี้ไปเก็บ sessionStorage และเขียนทับ
-        // Sheet ด้วย ทำให้ไฟล์ 01 อ่านค่าที่ยังไม่แปลงแล้วเพี้ยนไป 1 วัน
-        const normDS = _normThaiDate05(course.dateStart);
-        const normDE = _normThaiDate05(course.dateEnd || '') || normDS;
-        _courseDatesCache = { no, dateStart: normDS, dateEnd: normDE };
-      } else {
-        // ไม่มีวันที่จาก Sheet สำหรับเลขที่นี้ — เคลียร์แคชกันเอาของหลักสูตรอื่นมาใช้ผิด
-        _courseDatesCache = { no, dateStart: '', dateEnd: '' };
-      }
-    }
-
-    if (budget) {
-      let speakers = null;
-      if (budget.spkJson) {
-        try {
-          speakers = typeof budget.spkJson === 'string'
-            ? JSON.parse(budget.spkJson)
-            : budget.spkJson;
-        } catch(e) { speakers = null; }
-      }
-      restoreBudgetForm(budget, speakers);
-    }
-
-    _hideLoader05();
-    const msg = budget ? '✅ โหลดข้อมูลงบประมาณสำเร็จ' : '✅ โหลดข้อมูลหลักสูตรสำเร็จ';
-    _showStatus05(msg, 'ok');
-
-  } catch(e) {
-    _hideLoader05();
-    _showStatus05('❌ โหลดไม่สำเร็จ: ' + e.message, 'error');
-    console.warn('_autoLoadGs05 error:', e);
+  // gsApi คืน null เมื่อเชื่อมต่อ/เรียก API ไม่สำเร็จ (ไม่ throw แล้ว) — แยกเคสนี้ออกจาก
+  // "เชื่อมต่อสำเร็จแต่ยังไม่เคยมีข้อมูลของเลขที่นี้" ให้ข้อความไม่กำกวม
+  if (result === null) {
+    hideGsLoader();
+    showGsStatus('❌ โหลดไม่สำเร็จ — ตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่', 'error');
+    return;
   }
-}
 
-function _showLoader05(msg) {
-  let el = document.getElementById('gs05-loader');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'gs05-loader';
-    el.style.cssText = 'position:fixed;inset:0;background:rgba(15,39,68,.55);z-index:9998;display:flex;align-items:center;justify-content:center;';
-    el.innerHTML =
-      '<div style="background:transparent;padding:16px;min-width:200px;max-width:280px;width:90%;' +
-      'font-family:Sarabun,sans-serif;text-align:center;box-sizing:border-box;">' +
-      
-      '<svg width="48" height="48" viewBox="0 0 48 48" style="display:block;margin:0 auto 14px;animation:gs7spin .9s linear infinite;transform-origin:center;filter:drop-shadow(0 0 6px rgba(255,255,255,0.7));">' +
-      
-      '<circle cx="24" cy="24" r="20" fill="none" stroke="#ffffff" stroke-width="4"/>' +
-      
-      '<circle cx="24" cy="24" r="20" fill="none" stroke="#1a56db" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="30 96"/>' +
-      '</svg>' +
-      
-      '<div id="gs05-loader-msg" style="font-size:15px;color:#ffffff;font-weight:600;line-height:1.6;' +
-      'text-shadow:0 2px 4px rgba(0,0,0,0.6), 0 4px 12px rgba(0,0,0,0.3);"></div>' +
-      '</div>';
-    document.head.insertAdjacentHTML('beforeend', '<style>@keyframes gs7spin{to{transform:rotate(360deg)}}</style>');
-    document.body.appendChild(el);
+  const budget   = result && result.budget   ? result.budget   : null;
+  const course   = result && result.course   ? result.course   : null;
+
+  if (!budget && !course) {
+    hideGsLoader();
+    showGsStatus('⚠️ ไม่พบข้อมูลงบประมาณของเลขที่ ' + no + ' — กรอกข้อมูลใหม่ได้เลย', 'warn');
+    return;
   }
-  el.style.display = 'flex';
-  const m = document.getElementById('gs05-loader-msg');
-  if (m) m.textContent = msg || 'กำลังโหลด...';
-}
 
-function _hideLoader05() {
-  const el = document.getElementById('gs05-loader');
-  if (el) el.style.display = 'none';
-}
+  if (course) {
+    const sf = (id, val) => { const e = document.getElementById(id); if (e && val) e.value = val; };
+    sf('f_courseName', course.course   || cd.course);
+    sf('f_batch',      course.batch    || cd.batch);
+    sf('f_location',   course.location || cd.location);
 
-function _showStatus05(msg, type) {
-  const colors = {
-    ok:    ['#d1fae5','#065f46','#10b981'],
-    warn:  ['#fef3c7','#92400e','#f59e0b'],
-    error: ['#fee2e2','#991b1b','#ef4444'],
-  };
-  const [bg, text, border] = colors[type] || colors.ok;
-  let el = document.getElementById('gs05-status');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'gs05-status';
-    el.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);' +
-      'z-index:9999;padding:12px 24px;border-radius:10px;font-family:Sarabun,sans-serif;' +
-      'font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.15);white-space:nowrap;max-width:90vw;';
-    document.body.appendChild(el);
+    // ✅ รีเฟรชวันที่จัดอบรมด้วยค่าที่ดึงมาจริงจาก Sheet ของเลขที่ 'no' นี้เท่านั้น
+    // (เดิมไม่มีบรรทัดนี้ ทำให้ f_date ค้างค่าจาก sessionStorage เก่าซึ่งอาจเป็นของ
+    // หลักสูตรอื่นที่เคยเปิดดูก่อนหน้า) พร้อมแคชไว้ผูกกับเลขที่ no สำหรับ saveBudgetSlot()
+    if (course.dateStart) {
+      const dispDate = isoThRange05(course.dateStart, course.dateEnd || '');
+      const fDateEl = document.getElementById('f_date');
+      if (fDateEl && dispDate) fDateEl.value = dispDate;
+      // ✅ เก็บแคชเป็นค่าที่ผ่านการชดเชย timezone แล้ว (YYYY-MM-DD ล้วน) ไม่ใช่ค่าดิบจาก API
+      // ที่อาจมี "T17:00:00.000Z" ติดมา — เดิมเก็บค่าดิบไว้ พอกด "ย้อนกลับ" (เรียก
+      // saveBudgetSlot() ก่อน redirect) จะเอาค่าดิบนี้ไปเก็บ sessionStorage และเขียนทับ
+      // Sheet ด้วย ทำให้ไฟล์ 01 อ่านค่าที่ยังไม่แปลงแล้วเพี้ยนไป 1 วัน
+      const normDS = _normThaiDate05(course.dateStart);
+      const normDE = _normThaiDate05(course.dateEnd || '') || normDS;
+      _courseDatesCache = { no, dateStart: normDS, dateEnd: normDE };
+    } else {
+      // ไม่มีวันที่จาก Sheet สำหรับเลขที่นี้ — เคลียร์แคชกันเอาของหลักสูตรอื่นมาใช้ผิด
+      _courseDatesCache = { no, dateStart: '', dateEnd: '' };
+    }
   }
-  el.style.background = bg;
-  el.style.color      = text;
-  el.style.border     = '1.5px solid ' + border;
-  el.textContent      = msg;
-  el.style.display    = 'block';
-  clearTimeout(el._t);
-  el._t = setTimeout(() => { el.style.display = 'none'; }, 4000);
+
+  if (budget) {
+    let speakers = null;
+    if (budget.spkJson) {
+      try {
+        speakers = typeof budget.spkJson === 'string'
+          ? JSON.parse(budget.spkJson)
+          : budget.spkJson;
+      } catch(e) { speakers = null; }
+    }
+    restoreBudgetForm(budget, speakers);
+  }
+
+  hideGsLoader();
+  const msg = budget ? '✅ โหลดข้อมูลงบประมาณสำเร็จ' : '✅ โหลดข้อมูลหลักสูตรสำเร็จ';
+  showGsStatus(msg, 'ok');
 }
 
 /* ============================================================
@@ -1795,32 +1730,6 @@ function getSavedSlots() {
 }
 function putSavedSlots(arr) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
-}
-
-/* ============================================================
-   GOOGLE SHEET API
-============================================================ */
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbySJROnBMkxFBNyPvET3DC5ihdCz03OPzvi2xXm6cMQpoPFsi2pAiTQAQIVSDUwQNVZ5w/exec';
-
-async function gsApi(action, data, no) {
-  // GET สำหรับ read, POST สำหรับ write
-  try {
-    let res;
-    if (data) {
-      const params = new URLSearchParams({ action, data: JSON.stringify(data) });
-      if (no) params.append('no', no);
-      res = await fetch(GAS_URL, { method: 'POST', body: params });
-    } else {
-      let url = GAS_URL + '?action=' + encodeURIComponent(action);
-      if (no) url += '&no=' + encodeURIComponent(no);
-      res = await fetch(url);
-    }
-    const json = await res.json();
-    if (json.ok) return json.data;
-    throw new Error(json.error || 'API error');
-  } catch(e) {
-    throw e;
-  }
 }
 
 /* ── RESTORE FORM FROM SAVED DATA ── */
@@ -1882,6 +1791,10 @@ function restoreBudgetForm(budget, speakers) {
     document.getElementById('chk_misc').checked   = toggles.misc   !== undefined ? !!toggles.misc   : true;
     document.getElementById('chk_food').checked   = toggles.food   !== undefined ? !!toggles.food   : true;
     document.getElementById('chk_stafftravel').checked = toggles.stafftravel !== undefined ? !!toggles.stafftravel : true;
+    // ✅ ค่าเริ่มต้นของ checkbox ข. คือไม่ติ๊ก — ติ๊กเฉพาะตอนโหลดข้อมูลเก่าที่เคยบันทึก kor:true ไว้จริง
+    // (ข้อมูลเก่ามากๆ ที่ไม่เคยมี toggles.kor เก็บไว้เลยจะกลายเป็นไม่ติ๊ก เหมือนหลักสูตรใหม่)
+    const chkKor = document.getElementById('chk_kor');
+    if (chkKor) chkKor.checked = !!toggles.kor;
 
     const lump = spkParsedPre.lump || {};
     document.getElementById('chk_lump').checked = !!lump.on;
@@ -2012,7 +1925,8 @@ function computeBudget() {
     const stafftravelOn=hasStaffTravel();
     const s41=stafftravelOn?v('f_4_1'):0, s42=stafftravelOn?v('f_4_2'):0, s43=stafftravelOn?v('f_4_3'):0;
 
-    const bb1=v('f_b1'),bb2=v('f_b2'),bb3=v('f_b3');
+    const korOn = hasKor();
+    const bb1=korOn?v('f_b1'):0,bb2=korOn?v('f_b2'):0,bb3=korOn?v('f_b3'):0;
     const useInternal=hasInternal();
 
     const lumpOn=hasLump();
@@ -2070,7 +1984,7 @@ function computeBudget() {
       hasLodging: L, hasTravel: T,
       fuel: { on: fuelOn, amt: secFuel },
       toggles: { office: officeOn, misc: miscOn, food: foodOn, stafftravel: stafftravelOn,
-                 office_1_1: has11, office_1_2: has12, food_lunch: has31, food_coffee: has32 },
+                 office_1_1: has11, office_1_2: has12, food_lunch: has31, food_coffee: has32, kor: korOn },
       lump: { on: lumpOn, rate: lRate, vehicles: lVeh, days: lDays },
       venue: { on: venueOn, meetingOn: mOn, lodgingOn: hasVenueLodging(), vipOn, staffOn,
                meeting: JSON.parse(JSON.stringify(venueData.meeting)),
@@ -2106,7 +2020,7 @@ function showSaveToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2800);
 }
 
-function saveBudgetSlot() {
+async function saveBudgetSlot() {
   const course = (document.getElementById('f_courseName')||{}).value || '';
   const batch  = (document.getElementById('f_batch')||{}).value || '';
   const no     = (document.getElementById('f_courseNo')||{}).value || '';
@@ -2170,35 +2084,48 @@ function saveBudgetSlot() {
   const courseFieldPayload = { no, course, batch, location, savedAt: new Date().toISOString() };
   if (dateStart) courseFieldPayload.dateStart = dateStart;
   if (dateEnd)   courseFieldPayload.dateEnd   = dateEnd;
-  gsApi('updateCourseField', courseFieldPayload);
-  gsApi('saveBudget', {
-    no,
 
-    secFuel: budget.secFuel||0,
-    s11: budget.s11||0, s12: budget.s12||0, sec1: budget.sec1||0,
-    s21: budget.s21||0, sec2: budget.sec2||0,
-    s31: budget.s31||0, s32: budget.s32||0, s33: budget.s33||0, sec3: budget.sec3||0,
-    r31: budget.r31||0, p31: budget.p31||0, m31: budget.m31||1, d31: budget.d31||0,
-    r32: budget.r32||0, p32: budget.p32||0, m32: budget.m32||1, d32: budget.d32||0,
-    sD: budget.sD||0, rD: budget.rD||0, pD: budget.pD||0, mD: budget.mD||1, dD: budget.dD||0,
-    s41: budget.s41||0, s42: budget.s42||0, s43: budget.s43||0, sec4: budget.sec4||0,
-    secLump: budget.secLump||0, lRate: budget.lRate||0, lVeh: budget.lVeh||0, lDays: budget.lDays||0,
-    secVenue: budget.secVenue||0, secVenueMeeting: budget.secVenueMeeting||0,
-    secVenueVip: budget.secVenueVip||0, secVenueStaff: budget.secVenueStaff||0,
-    sec5: budget.sec5||0, sec6: budget.sec6||0, secInternal: budget.secInternal||0,
-    gorTotal: budget.gorTotal||0,
-    bb1: budget.bb1||0, bb2: budget.bb2||0, bb3: budget.bb3||0,
-    korTotal: budget.korTotal||0,
-    budgetTotal: budget.grandTotal||0,
-    grandTotal: budget.grandTotal||0,
-    in_allowance: budget.in1      || 0,
-    in_lodging:   budget.in2      || 0,
-    in_travel:    budget.in3      || 0,
-    in_payroll:   budget.inPayroll || 0,
-    secPres: budget.secPres||0, pres1: budget.pres1||0, pres2: budget.pres2||0, pres3: budget.pres3||0,
-    spkJson: JSON.stringify(speakers||{}),
-    savedAt: new Date().toISOString()
-  });
+  // ⚠️ เดิมสองบรรทัดนี้ไม่มี await (fire-and-forget) ทำให้ตอนกดปุ่ม "บันทึก" ในป๊อปอัพ
+  // ย้อนกลับ แล้วต่อด้วย location.href ทันที เบราว์เซอร์อาจยกเลิก request ที่ยังค้างอยู่
+  // ก่อนบันทึกเสร็จจริง — ตอนนี้ await ให้เสร็จก่อนเสมอ พร้อมโชว์ loading ระหว่างรอ
+  showGsLoader('💾 กำลังบันทึก...');
+  const [saveCourseResult, saveBudgetResult] = await Promise.all([
+    gsApi('updateCourseField', courseFieldPayload),
+    gsApi('saveBudget', {
+      no,
+
+      secFuel: budget.secFuel||0,
+      s11: budget.s11||0, s12: budget.s12||0, sec1: budget.sec1||0,
+      s21: budget.s21||0, sec2: budget.sec2||0,
+      s31: budget.s31||0, s32: budget.s32||0, s33: budget.s33||0, sec3: budget.sec3||0,
+      r31: budget.r31||0, p31: budget.p31||0, m31: budget.m31||1, d31: budget.d31||0,
+      r32: budget.r32||0, p32: budget.p32||0, m32: budget.m32||1, d32: budget.d32||0,
+      sD: budget.sD||0, rD: budget.rD||0, pD: budget.pD||0, mD: budget.mD||1, dD: budget.dD||0,
+      s41: budget.s41||0, s42: budget.s42||0, s43: budget.s43||0, sec4: budget.sec4||0,
+      secLump: budget.secLump||0, lRate: budget.lRate||0, lVeh: budget.lVeh||0, lDays: budget.lDays||0,
+      secVenue: budget.secVenue||0, secVenueMeeting: budget.secVenueMeeting||0,
+      secVenueVip: budget.secVenueVip||0, secVenueStaff: budget.secVenueStaff||0,
+      sec5: budget.sec5||0, sec6: budget.sec6||0, secInternal: budget.secInternal||0,
+      gorTotal: budget.gorTotal||0,
+      bb1: budget.bb1||0, bb2: budget.bb2||0, bb3: budget.bb3||0,
+      korTotal: budget.korTotal||0,
+      budgetTotal: budget.grandTotal||0,
+      grandTotal: budget.grandTotal||0,
+      in_allowance: budget.in1      || 0,
+      in_lodging:   budget.in2      || 0,
+      in_travel:    budget.in3      || 0,
+      in_payroll:   budget.inPayroll || 0,
+      secPres: budget.secPres||0, pres1: budget.pres1||0, pres2: budget.pres2||0, pres3: budget.pres3||0,
+      spkJson: JSON.stringify(speakers||{}),
+      savedAt: new Date().toISOString()
+    })
+  ]);
+  hideGsLoader();
+
+  if (!saveCourseResult || !saveBudgetResult) {
+    showGsStatus('❌ บันทึกไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่', 'error');
+    return;
+  }
 
   if (budget) {
     localStorage.setItem('budgetData', JSON.stringify(budget));
@@ -2222,7 +2149,7 @@ function saveBudgetSlot() {
       ${no ? '<div style="font-size:12px;color:#9ca3af;margin-bottom:18px;">เลขที่: ' + no + '</div>' : '<div style="margin-bottom:18px;"></div>'}
       <div style="font-size:13px;color:#374151;font-weight:600;margin-bottom:16px;">ต้องการย้อนกลับหน้าหลักหรือไม่?</div>
       <div style="display:flex;gap:10px;justify-content:center;">
-        <button onclick="document.getElementById('save-done-overlay').remove();location.href='01.Main-Reports.html';"
+        <button onclick="document.getElementById('save-done-overlay').remove();location.href='01_Main-Reports.html';"
           style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:8px;
           padding:10px 28px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;
           box-shadow:0 3px 12px rgba(16,185,129,.3);">ใช่</button>
@@ -2235,39 +2162,9 @@ function saveBudgetSlot() {
   document.body.appendChild(pop);
 }
 
-// URL ของ Puppeteer PDF server ที่ deploy ไว้บน Render
-const PDF_SERVER_URL = 'https://trainfin.onrender.com/generate-pdf';
-
-// ===== Supabase (สำหรับอัปโหลด PDF ที่สร้างเสร็จแล้วขึ้นเก็บถาวร) =====
-const SUPABASE_URL = 'https://dcaydbxyjisegqzzildq.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjYXlkYnh5amlzZWdxenppbGRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2OTk5NDgsImV4cCI6MjEwMDI3NTk0OH0.cEk8k90NeTTnkZV0Sny7nuN8UbW15_eW8S_HTQSBwwA';
-const supabaseClient = (typeof window.supabase !== 'undefined')
-  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : null;
-
-// อัปโหลด PDF ขึ้น Supabase Storage (bucket: pdfs) — คืนค่า public URL หรือ null ถ้าไม่สำเร็จ
-async function uploadPdfToSupabase05(pdfBlob, fname){
-  if(!supabaseClient){ console.warn('Supabase client ยังไม่พร้อม (โหลด SDK ไม่สำเร็จ)'); return null; }
-  try {
-    // Supabase Storage รับเฉพาะ key แบบ ASCII-safe เท่านั้น ภาษาไทยทำให้เกิด error "Invalid key"
-    // (ชื่อไฟล์ที่ผู้ใช้ดาวน์โหลดในเครื่อง ยังเป็นภาษาไทยตามปกติ เพราะคนละจุดกับตรงนี้)
-    const asciiSafe = fname
-      .replace(/[^\w.\-]+/g, '_')
-      .replace(/_+/g, '_')
-      .replace(/^_|_$/g, '') || 'report';
-    const fileName = `${asciiSafe}-${Date.now()}.pdf`;
-    const pdfFile  = new File([pdfBlob], fileName, { type: 'application/pdf' });
-    const { error: uploadError } = await supabaseClient
-      .storage.from('pdfs')
-      .upload(fileName, pdfFile, { cacheControl: '3600', upsert: true });
-    if(uploadError) throw uploadError;
-    const { data } = supabaseClient.storage.from('pdfs').getPublicUrl(fileName);
-    return data.publicUrl;
-  } catch(err){
-    console.error('uploadPdfToSupabase05 error:', err);
-    return null;
-  }
-}
+// PDF_SERVER_URL / Supabase client / อัปโหลด PDF — ย้ายไปรวมที่ js/gas-api.js แล้ว
+// (ใช้ saveReportPdf(courseNo, reportKey, blob) ซึ่งอัปโหลดแบบ versioning + บันทึกลิงก์
+// กลับ Sheet ให้อัตโนมัติในฟังก์ชันเดียว — ดู savePdf05() ด้านล่าง)
 
 async function savePdf05(btn){
   const el = document.getElementById('report-container-05');
@@ -2275,6 +2172,7 @@ async function savePdf05(btn){
 
   const course = document.getElementById('f_courseName')?.value || 'งบประมาณ';
   const batch  = document.getElementById('f_batch')?.value || '';
+  const courseNo = document.getElementById('f_courseNo')?.value || '';
   const safe   = s => s.replace(/[/\\:*?"<>|]/g,'_').trim();
   const fname  = safe(`งบประมาณ_${course}_รุ่น${batch}`) || 'budget05';
 
@@ -2283,12 +2181,12 @@ async function savePdf05(btn){
   try {
     const clone = el.cloneNode(true);
 
-    // แปลง input ที่แก้ไขได้ (หัวกระดาษ/ช่องหมายเหตุ) ให้เป็นข้อความนิ่งๆ ก่อนส่งไป render
-    clone.querySelectorAll('input.hdr-edit').forEach(inp => {
-      const d = document.createElement('div');
-      d.style.cssText = 'font-family:Sarabun,sans-serif;font-size:14px;font-weight:700;color:#000;text-align:center;line-height:1.6;width:100%;';
-      d.textContent = inp.value;
-      inp.parentNode.replaceChild(d, inp);
+    // แปลง input ที่แก้ไขได้ (ช่องหมายเหตุ) ให้เป็นข้อความนิ่งๆ ก่อนส่งไป render
+    // (หัวเอกสาร 4 บรรทัด — r_title/r_hdr1-3 — เป็น <div contenteditable> อยู่แล้ว ไม่ใช่ input
+    // อีกต่อไป แค่ถอด attribute contenteditable ออกก่อนส่ง ดูด้านล่าง)
+    clone.querySelectorAll('[contenteditable]').forEach(el2 => {
+      el2.removeAttribute('contenteditable');
+      el2.style.outline = 'none';
     });
 
     clone.querySelectorAll('input.rpt-edit').forEach(inp => {
@@ -2366,7 +2264,7 @@ ${originalStyles}
 <body>${clone.outerHTML}</body>
 </html>`;
 
-    const res = await fetch(PDF_SERVER_URL, {
+const res = await fetch(APP_CONFIG.PDF_SERVER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -2379,7 +2277,7 @@ ${originalStyles}
           landscape: false,
           // มาตราส่วนหน้ากระดาษ — อ่านจากตัวเลือกที่ผู้ใช้ตั้งไว้ใต้ปุ่ม "บันทึก PDF"
           // (ค่าเริ่มต้น 90% ถ้าหา element ไม่เจอด้วยเหตุผลใดก็ตาม)
-          scale: parseFloat(document.getElementById('pdf_scale_05')?.value) || 0.9,
+          scale: PaginateTH.getPdfScale('pdf_scale_05', 90),
           margin: { top: '12mm', right: '5mm', bottom: '12mm', left: '5mm' },
           preferCSSPageSize: true,
         },
@@ -2397,28 +2295,23 @@ ${originalStyles}
     document.body.appendChild(a); a.click(); a.remove();
     URL.revokeObjectURL(url);
 
-    // อัปโหลดขึ้น Supabase เก็บถาวรด้วย (ไม่บล็อกการดาวน์โหลดในเครื่อง ถ้าอัปโหลดไม่สำเร็จ
-    // ผู้ใช้ก็ยังได้ไฟล์ในเครื่องตามปกติ แค่ไม่มีลิงก์ถาวรเก็บไว้)
-    const publicUrl = await uploadPdfToSupabase05(blob, fname);
-    /* ============================================================
-   บันทึกลิงก์ PDF กลับเข้าชีต courses (ให้ 10.PDF-Overview.html ดึงไปแสดง)
-============================================================ */
-    if (publicUrl) {
-      console.log('อัปโหลด PDF ขึ้น Supabase สำเร็จ:', publicUrl);
-      const courseNo = document.getElementById('f_courseNo')?.value || '';
-      if (courseNo) {
-        try {
-          await gsApi('updatePdfUrl', {
-            no: courseNo, pdf05: publicUrl,
-            pdf05SavedAt: new Date().toISOString(), sheetName: 'courses'
-          });
-        } catch(e) { console.warn('บันทึกลิงก์ PDF 05 ไม่สำเร็จ:', e); }
+    // อัปโหลดขึ้น Supabase เก็บถาวร (versioning pdf05-v1.pdf, v2, ...) + บันทึกลิงก์ล่าสุด
+    // กลับเข้าชีต courses ให้อัตโนมัติในฟังก์ชันเดียว (แก้บั๊กเดิม: เคยแค่อัปโหลดแล้วไม่เคย
+    // เขียนลิงก์กลับ Sheet เลย ทำให้ 10.PDF-Overview.html ไม่เคยเห็นไฟล์นี้)
+    if (courseNo) {
+      const saved = await saveReportPdf(courseNo, 'pdf05', blob);
+      if (saved) {
+        console.log('อัปโหลด PDF ขึ้น Supabase และบันทึกลิงก์กลับ Sheet สำเร็จ:', saved.publicUrl, '(v' + saved.version + ')');
+      } else {
+        showGsStatus('⚠️ ดาวน์โหลด PDF สำเร็จ แต่อัปโหลดเก็บถาวรไม่สำเร็จ', 'warn');
       }
+    } else {
+      console.warn('savePdf05: ไม่พบเลขที่หลักสูตร (f_courseNo) — ข้ามการอัปโหลดเก็บถาวร');
     }
 
   } catch(err){
     console.error('savePdf05 error:', err);
-    alert('สร้าง PDF ไม่สำเร็จ: ' + err.message + '\n\nตรวจสอบว่าตั้งค่า PDF_SERVER_URL ถูกต้อง และเซิร์ฟเวอร์ Puppeteer เปิดใช้งานอยู่');
+    alert('สร้าง PDF ไม่สำเร็จ: ' + err.message + '\n\nตรวจสอบว่าเซิร์ฟเวอร์ Puppeteer เปิดใช้งานอยู่');
   } finally {
     btn.disabled = false; btn.textContent = '💾 บันทึก PDF';
   }
@@ -2434,13 +2327,14 @@ function confirmBack05() {
       <div style="font-size:36px;margin-bottom:10px;">💾</div>
       <div style="font-size:16px;font-weight:700;color:#111827;margin-bottom:8px;">บันทึกงบประมาณก่อนออก?</div>
       <div style="font-size:13px;color:#6b7280;margin-bottom:22px;line-height:1.6;">
-        </div>
+        คุณต้องการบันทึกข้อมูลก่อนกลับไปหน้าหลักหรือไม่?
+      </div>
       <div style="display:flex;gap:10px;justify-content:center;">
-        <button onclick="saveBudgetSlot();document.getElementById('back-confirm-overlay').remove();location.href='01.Main-Reports.html';"
+        <button onclick="document.getElementById('back-confirm-overlay').remove();saveBudgetSlot();"
           style="background:linear-gradient(135deg,#1a56db,#1241b0);color:#fff;border:none;border-radius:8px;
           padding:10px 28px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;
           box-shadow:0 3px 12px rgba(26,86,219,.3);">💾 บันทึก</button>
-        <button onclick="document.getElementById('back-confirm-overlay').remove();location.href='01.Main-Reports.html';"
+        <button onclick="document.getElementById('back-confirm-overlay').remove();location.href='01_Main-Reports.html';"
           style="background:#f3f4f6;color:#374151;border:1.5px solid #d1d5db;border-radius:8px;
           padding:10px 24px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">
           ไม่บันทึก</button>
