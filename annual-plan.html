@@ -1,0 +1,1120 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ระบบติดตามงบประมาณและหลักสูตรฝึกอบรม</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+  <!-- ── Shared modules (ต้องเรียงลำดับนี้เสมอ: config -> supabase SDK -> auth/date/gas-api) ── -->
+  <script src="js/config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/date-th.js"></script>
+  <script src="js/gas-api.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script>checkAuth();</script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap');
+    :root{--navy:#092c4c;--blue:#0b6aab;--sky:#eaf4fb;--line:#dce5ec;--ink:#1b2a38;--muted:#627587;--green:#197a5d;--amber:#bf7800;--purple:#7865c8;--teal:#0f8a83;--coral:#c4562f;--bg:#f3f6f8}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:"Prompt","Segoe UI",Tahoma,Arial,sans-serif;font-size:14px}
+    .layout{display:flex;min-height:100vh}
+
+    /* ===== Sidebar ===== */
+    .sidebar{position:sticky;top:0;align-self:flex-start;height:100vh;width:260px;flex:0 0 260px;background:var(--navy);color:#dce8f2;padding:20px 16px;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;transition:width .22s ease,flex-basis .22s ease,padding .22s ease}
+    .sidebar::-webkit-scrollbar{width:5px}
+    .sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:99px}
+    .sidebar-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:0 6px 20px;border-bottom:1px solid rgba(255,255,255,.15);margin-bottom:0}
+    .brand{display:flex;align-items:center;gap:11px;min-width:0;overflow:hidden}
+    .mark{height:37px;width:37px;flex:0 0 37px;border-radius:10px;object-fit:cover;background:#fff}
+    .brand-text{min-width:0}
+    .brand b{display:block;color:#fff;font-size:15px;white-space:nowrap}
+    .brand span{
+      font-size: 10.5px;
+      color: #a9c3d6;
+      white-space: normal;  /* เปลี่ยนจาก nowrap เป็น normal เพื่อให้ขึ้นบรรทัดใหม่ได้ */
+      line-height: 1.3;     /* ระยะห่างบรรทัดให้อ่านง่าย */
+      display: block;
+    }
+    .nav{padding-top:20px}
+    .nav-label{font-size:11px;letter-spacing:.08em;color:#82a4bd;padding:0 12px 10px;white-space:nowrap;overflow:hidden}
+    .nav a{display:flex;align-items:center;gap:12px;text-decoration:none;color:#c9dae7;padding:12px;border-radius:8px;margin:3px 0;transition:.15s;white-space:nowrap;overflow:hidden}
+    .nav a:hover{background:rgba(255,255,255,.08)}
+    .nav a.active{background:#1275b4;color:#fff;font-weight:700;box-shadow:inset 3px 0 #91d8ff}
+    .nav svg{width:19px;height:19px;flex:0 0 19px;fill:none;stroke:currentColor;stroke-width:1.8}
+    .user{margin-top:auto;background:rgba(255,255,255,.07);padding:13px;border-radius:9px;font-size:12px;overflow:hidden;white-space:nowrap;flex:0 0 auto}
+    .user b{color:#fff;display:block;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis}
+    .user span{color:#a9c3d6}
+
+    .sidebar-toggle{flex:0 0 26px;width:26px;height:26px;background:transparent;border:0;color:#cfe0ee;cursor:pointer;display:grid;place-items:center;transition:.15s;margin-top:2px;padding:0}
+    .sidebar-toggle:hover{color:#fff}
+    .sidebar-toggle svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.2;transition:transform .22s ease}
+    .sidebar-toggle.collapsed svg{transform:rotate(180deg)}
+
+    .sidebar.collapsed{width:76px;flex-basis:76px;padding-left:12px;padding-right:12px}
+    .sidebar.collapsed .sidebar-head{flex-direction:column;align-items:center;gap:12px;padding-left:0;padding-right:0}
+    .sidebar.collapsed .brand{justify-content:center}
+    .sidebar.collapsed .brand-text,.sidebar.collapsed .nav-label,.sidebar.collapsed .user{display:none}
+    .sidebar.collapsed .nav a{justify-content:center;padding-left:8px;padding-right:8px}
+    .sidebar.collapsed .nav a span{display:none}
+
+    .main{width:calc(100% - 260px);max-width:calc(100% - 260px);padding:30px 34px 42px;min-width:0;transition:width .22s ease,max-width .22s ease;overflow-x:hidden}
+    .main.wide{width:calc(100% - 76px);max-width:calc(100% - 76px)}
+
+    .topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:25px}
+    .crumb{font-size:12px;color:var(--muted);margin-bottom:5px}
+    .topbar h1{font-size:25px;margin:0;color:var(--navy);letter-spacing:-.4px}
+    .year{background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 13px;font-weight:700;color:var(--navy)}
+
+    .summary{display:grid;grid-template-columns:repeat(5,minmax(170px,1fr));gap:14px;margin-bottom:20px}
+    .card{background:#fff;border:1px solid #e5ebef;border-radius:10px;padding:16px 18px;box-shadow:0 2px 8px rgba(19,47,68,.035);display:flex;flex-direction:column;gap:2px}
+    .card .top-row{display:flex;align-items:center;justify-content:space-between}
+    .card label{font-size:12px;color:var(--muted);display:block;margin-bottom:7px}
+    .card .ic{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;flex:0 0 26px}
+    .card .ic svg{width:14px;height:14px;stroke-width:2.2}
+    .card strong{font-size:21px;color:var(--navy)}
+    .card .sub{font-size:11px;margin-top:5px;color:var(--green)}
+
+    .panel{background:#fff;border:1px solid #e0e8ed;border-radius:11px;overflow:hidden}
+    .panel-head{padding:19px 20px 15px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+    .panel-head h2{font-size:16px;color:var(--navy);margin:0 0 4px}
+    .panel-head p{margin:0;color:var(--muted);font-size:12px}
+    .count-chip{background:var(--sky);color:#0a5c8c;border:1px solid #cfe4f0;border-radius:999px;padding:6px 13px;font-size:12px;font-weight:700;white-space:nowrap}
+
+    .controls{padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fbfcfd;border-bottom:1px solid var(--line);flex-wrap:wrap}
+    .filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .search{width:300px;border:1px solid #cfdbe3;border-radius:7px;padding:9px 10px;color:var(--ink);font:inherit;outline:none}
+    .search:focus{border-color:#2589c5;box-shadow:0 0 0 3px #e5f3fb}
+    select{border:1px solid #cfdbe3;background:#fff;border-radius:7px;padding:9px;color:var(--ink);font:inherit}
+    .owner-lock{display:flex;align-items:center;gap:6px;border:1px solid #cfdbe3;background:#f3f7f9;color:#43596b;border-radius:7px;padding:9px 12px;font-size:12.5px;font-weight:600;white-space:nowrap;cursor:default}
+    .owner-lock svg{width:13px;height:13px;stroke:#8098a8;flex:0 0 13px}
+    .owner-lock b{color:var(--navy)}
+
+    .table-wrap{overflow:auto;max-height:900px}
+    table{width:100%;border-collapse:separate;border-spacing:0}
+    th{position:sticky;top:0;z-index:2;text-align:center;vertical-align:middle;font-size:13px;font-weight:600;letter-spacing:.015em;background:#0d547f;color:#fff;padding:14px 12px;border:0;white-space:nowrap}
+    th:first-child{border-top-left-radius:0}
+    td{padding:12px;border:0;border-bottom:1px solid #e7edf1;vertical-align:top;color:#384b5a;font-size:12px;white-space:nowrap}
+    .number,.money{text-align:right;white-space:nowrap}
+    .course{font-weight:600;color:#1c3547;line-height:1.45;white-space:normal;word-break:break-word;width:420px}
+    .target{white-space:nowrap;line-height:1.35;width:1%}
+    .section td{background:#f0f7fb;color:#115a88;font-size:12px;font-weight:800;padding:10px 12px}
+    .program td{background:#e0eef7;color:#092c4c;font-weight:800;padding:12px}
+    .badge{display:inline-block;border-radius:999px;padding:3px 8px;font-size:10px;font-weight:800}
+    .core{background:#e0f1fa;color:#09618e}
+    .qw{background:#fff2d8;color:#9c6200}
+    .tn{background:#ece9fb;color:#5948a4}
+    .format{white-space:nowrap;color:#557080}
+    .schedule{display:flex;flex-wrap:wrap;gap:4px;min-width:150px;justify-content:center;font-family:inherit}
+    .schedule span{padding:3px 7px;border-radius:5px;font-size:11px;white-space:nowrap;font-family:inherit;font-weight:600}
+    .schedule span.q-pill{background:#eaf4fb;color:#0b6aab}
+    .schedule span.times-pill{background:#fff6e8;color:#9c6200}
+    .schedule span.days-pill{background:#eafaf5;color:#0f8a73}
+    .schedule b{font-size:11px;font-family:inherit;font-weight:700}
+    .center{text-align:center!important;vertical-align:middle}
+
+    .actions{display:flex;gap:7px;justify-content:center}
+    .icon-btn{border:1px solid transparent;border-radius:8px;width:32px;height:32px;display:grid;place-items:center;cursor:pointer;transition:.15s}
+    .icon-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.1}
+    .icon-btn.edit{background:#eaf4fb;color:#0b6aab;border-color:#cfe4f0}
+    .icon-btn.edit:hover{background:#0b6aab;color:#fff;box-shadow:0 4px 10px rgba(11,106,171,.35);transform:translateY(-1px)}
+    .icon-btn.view{background:#eafaf5;color:#0f8a73;border-color:#c9ecdc}
+    .icon-btn.view:hover{background:#0f8a73;color:#fff;box-shadow:0 4px 10px rgba(15,138,115,.35);transform:translateY(-1px)}
+    .icon-btn.del{background:#fdeeea;color:#c4562f;border-color:#f3cfc0}
+    .icon-btn.del:hover{background:#c4562f;color:#fff;box-shadow:0 4px 10px rgba(196,86,47,.35);transform:translateY(-1px)}
+
+    .btn-add-plan{background:#0b6aab;color:#fff;border:0;border-radius:8px;padding:9px 16px;font:inherit;font-weight:700;font-size:13px;cursor:pointer;transition:.15s;white-space:nowrap}
+    .btn-add-plan:hover{background:#07598f}
+
+    .empty{padding:38px;text-align:center;color:var(--muted)}
+
+    .dashboard-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:24px;width:100%;min-width:0}
+    .chart-card{background:#fff;border:1px solid #e0e8ed;border-radius:11px;padding:18px;box-shadow:0 2px 8px rgba(19,47,68,.035);min-width:0;overflow:hidden}
+    .chart-card.wide{grid-column:1/-1}
+    .chart-card.span-2-rows{grid-row:span 2;display:flex;flex-direction:column}
+    .chart-card .chart-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;gap:8px}
+    .chart-card h3{margin:0;color:var(--navy);font-size:15.5px}
+    .chart-card .chart-note{font-size:11px;color:var(--muted)}
+    .chart-container{position:relative;height:260px;width:100%;min-width:0}
+    .chart-container.tall{height:300px}
+    .chart-container canvas{max-width:100%}
+
+    /* ===== Month contribution-style grid ===== */
+    /* ===== Month contribution-style grid (ปรับปรุงใหม่) ===== */
+    .month-grid-wrap {
+      flex: 1 1 auto;
+      max-height: 560px;
+      overflow: auto;
+      border: 1px solid #eef2f5;
+      border-radius: 8px;
+      padding: 0; /* ปรับ padding เป็น 0 เพื่อให้เส้นกั้นชนขอบพอดี */
+    }
+    .mg-head, .mg-row {
+      display: grid;
+      grid-template-columns: 12fr repeat(12, 1fr);
+      gap: 4px; /* เพิ่มระยะห่างระหว่างคอลัมน์เล็กน้อย */
+      align-items: center; /* จัดชื่อหลักสูตรและบล็อกสีให้อยู่ตรงกลางแนวตั้ง */
+    }
+    .mg-head {
+      position: sticky;
+      top: 0;
+      background: #f8fafc; /* ปรับพื้นหลังหัวตารางให้นวลขึ้น */
+      z-index: 1;
+      padding: 8px 10px;
+      border-bottom: 2px solid var(--line);
+    }
+    .mg-month {
+      text-align: center;
+      font-size: 9px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    /* --- ปรับปรุงเส้นกั้นแถว และ Hover Effect --- */
+    .mg-row {
+      padding: 6px 10px; /* เพิ่มระยะห่างบน-ล่างของแต่ละแถว */
+      border-bottom: 1px solid #e7edf1; /* เส้นกั้นแนวนอนสีเทาบางจางๆ */
+      transition: background-color 0.15s ease;
+    }
+    .mg-row:last-child {
+      border-bottom: none; /* แถวสุดท้ายไม่ต้องมีเส้นกั้น */
+    }
+    .mg-row:hover {
+      background-color: #f1f7fb; /* แรเงาพื้นหลังเมื่อเอาเมาส์ชี้ เพื่อไล่สายตาง่ายขึ้น */
+    }
+
+    .mg-label {
+      font-size: 10px;
+      line-height: 1.3;
+      color: #2c3e50;
+      padding-right: 8px;
+      font-weight: 500;
+      white-space: normal;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      word-break: break-word;
+    }
+    .mg-cell {
+      aspect-ratio: 1/1;
+      width: 100%;
+      border-radius: 3px;
+      background: #eef2f5;
+    }
+    .mg-cell.on { background: #0b6aab; }
+    .mg-cell.on.qw { background: #bf7800; }
+    .mg-cell.on.tn { background: #7865c8; }
+    .mg-cell.on:hover {
+      outline: 2px solid #092c4c;
+      outline-offset: 1px;
+      cursor: pointer;
+    }
+    .mg-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 10px;
+      padding: 10px 4px 0;
+      border-top: 1px solid var(--line);
+      flex: 0 0 auto;
+    }
+    .mg-legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+    .mg-legend-item i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; flex: 0 0 11px; }
+    .mg-legend-item i.core { background: #0b6aab; }
+    .mg-legend-item i.qw { background: #bf7800; }
+    .mg-legend-item i.tn { background: #7865c8; }
+
+    .modal-backdrop{display:none;position:fixed;inset:0;background:rgba(7,29,46,.5);z-index:10;align-items:center;justify-content:center;padding:20px}
+    .modal-backdrop.show{display:flex}
+    .modal{background:#fff;border-radius:12px;box-shadow:0 18px 45px rgba(0,0,0,.24);width:min(680px,100%);max-height:90vh;overflow:auto}
+    .modal-head{padding:20px 22px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:15px}
+    .modal-head h3{margin:0;color:var(--navy);font-size:18px}
+    .modal-head p{margin:4px 0 0;color:var(--muted);font-size:12px}
+    .close{border:0;background:transparent;font-size:25px;line-height:20px;color:#617789;cursor:pointer}
+    .modal-body{padding:20px 22px}
+    .finance-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:11px;margin-bottom:18px}
+    .finance{border:1px solid var(--line);border-radius:8px;padding:12px}
+
+    /* ===== เพิ่ม/แก้ไข แผนงาน (modal form) ===== */
+    .plan-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .plan-field{display:flex;flex-direction:column;gap:5px}
+    .plan-field.plan-wide{grid-column:1/-1}
+    .plan-field label{font-size:12px;font-weight:600;color:var(--muted)}
+    .plan-field input,.plan-field select,.plan-field textarea{border:1px solid #cfdbe3;border-radius:7px;padding:9px 11px;font:inherit;font-size:13.5px;color:var(--ink);background:#fff}
+    .plan-field input:focus,.plan-field select:focus,.plan-field textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px #e5f3fb}
+    .plan-field input:disabled{background:#f3f6f8;color:#8f9aa6;cursor:not-allowed}
+    .plan-inline-btn{border:1px solid #ccd9e0;background:#fff;color:#506978;border-radius:7px;padding:0 12px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap}
+    .plan-inline-btn:hover{background:#f5f8fa;border-color:#b9cddb}
+    .plan-cancel-link{background:transparent;border:0;color:var(--blue);font-size:11.5px;text-decoration:underline;cursor:pointer;padding:0;margin-top:5px}
+    .finance label{display:block;color:var(--muted);font-size:12px}
+    .finance strong{font-size:19px;color:var(--navy);margin-top:5px;display:block}
+    .finance.remaining{background:#eef8f4;border-color:#c6e6d8}
+    .finance.remaining strong{color:var(--green)}
+    .progress{margin-top:4px;height:8px;background:#e8eef1;border-radius:99px;overflow:hidden}
+    .progress i{display:block;height:100%;background:#1b8a67;border-radius:99px}
+    .detail-note{padding:12px;background:#f7fafc;border-radius:7px;color:#536b7b;font-size:12px;line-height:1.6}
+    .modal-footer{display:flex;justify-content:flex-end;gap:8px;padding:15px 22px;border-top:1px solid var(--line)}
+    .secondary{border:1px solid #ccd9e0;background:#fff;color:#506978;border-radius:7px;padding:9px 13px;font:inherit;cursor:pointer}
+
+    @media(max-width:1400px){.dashboard-grid{grid-template-columns:1fr 1fr}}
+    @media(max-width:1200px){.summary{grid-template-columns:repeat(3,1fr)}}
+    @media(max-width:1050px){.summary{grid-template-columns:repeat(2,1fr)}.main{padding:22px}.sidebar{width:215px;flex-basis:215px}.main{width:calc(100% - 215px)}.dashboard-grid{grid-template-columns:1fr}}
+    @media(max-width:720px){.sidebar{display:none}.main{width:100%;padding:18px}.summary{grid-template-columns:1fr 1fr}.topbar,.controls{align-items:flex-start;flex-direction:column}.search{width:100%}.filters{width:100%;flex-wrap:wrap}}
+  </style>
+</head>
+<body>
+<div class="layout">
+  <div id="sidebarRoot"></div>
+  <script>renderSidebar('annual-plan');</script>
+
+  <main class="main">
+    <header class="topbar">
+      <div><div class="crumb">แผนงานประจำปี / ปีงบประมาณ 2570</div><h1>แผนงานประจำปี</h1></div>
+      <div class="year">ปีงบประมาณ 2570 ▾</div>
+    </header>
+
+    <section class="summary">
+      <div class="card"><div class="top-row"><label>งบประมาณตามแผน</label><div class="ic" style="background:#eaf4fb;color:#0b6aab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12h18M3 6h18M3 18h18"/></svg></div></div><strong id="planCost">—</strong><div class="sub">รวม คชจ. ของรายการในตาราง</div></div>
+      <div class="card"><div class="top-row"><label>รวมค่าดำเนินการ</label><div class="ic" style="background:#eafaf5;color:#0f8a73"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H7"/></svg></div></div><strong id="operationCost">—</strong><div class="sub">รวมเฉพาะรายการในตาราง</div></div>
+      <div class="card"><div class="top-row"><label>รวมค่าเดินทาง</label><div class="ic" style="background:#fff6e8;color:#bf7800"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></div></div><strong id="travelCost">—</strong><div class="sub">รวมเฉพาะรายการในตาราง</div></div>
+      <div class="card"><div class="top-row"><label>จำนวนหลักสูตร / โครงการ</label><div class="ic" style="background:#f1edfc;color:#7865c8"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/></svg></div></div><strong id="courseCount">—</strong><div class="sub">รายการฝึกอบรมที่มีรายละเอียด</div></div>
+      <div class="card"><div class="top-row"><label>ผู้เข้าอบรมตามแผน</label><div class="ic" style="background:#fdeeea;color:#c4562f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.5 2.8-6 6.5-6s6.5 2.5 6.5 6M16.5 8.3a3 3 0 1 1 3.3 4.6M20 20c0-2.7-1.6-4.9-4-5.7"/></svg></div></div><strong id="attendeeCount">—</strong><div class="sub">รวมรายการที่แสดงในตาราง</div></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div><h2>ตารางแผนงานและหลักสูตรฝึกอบรม</h2><p>เพิ่ม / แก้ไข / ลบรายการได้โดยตรงจากหน้านี้ — ข้อมูลจะถูกบันทึกกลับ Google Sheets ทันที</p></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <button class="btn-add-plan" onclick="openAddPlanModal()">＋ เพิ่มรายการ</button>
+          <span class="count-chip" id="headCount">— รายการ</span>
+        </div>
+      </div>
+      <div class="controls">
+        <div class="filters">
+          <input id="search" class="search" placeholder="ค้นหาชื่อหลักสูตร / กลุ่มเป้าหมาย" oninput="render()">
+          <select id="typeFilter" onchange="render()"><option value="">ทุกประเภท</option><option value="Core">Core</option><option value="QW">QW</option><option value="TN">TN</option></select>
+          <select id="formatFilter" onchange="render()"><option value="">ทุกรูปแบบ</option><option value="onsite">Onsite</option><option value="online">Online</option><option value="onsite+online">Onsite + Online</option><option value="Public Training">Public Training</option><option value="Workshop & OJT">Workshop & OJT</option></select>
+          <div class="owner-lock" title="ระบบแสดงเฉพาะหลักสูตรของกองฝึกอบรมภูมิภาค 1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>ผู้จัด: <b>กฝภ.1</b></div>
+        </div>
+        <span id="resultLabel" style="color:#637786;font-size:12px"></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>ลำดับ</th><th>หลักสูตร / โครงการ</th><th>ประเภท</th><th>กลุ่มเป้าหมาย</th>
+            <th>ผู้เข้าอบรม<br><span style="font-weight:400;opacity:.78">(คน)</span></th>
+            <th>รูปแบบ</th><th>กำหนดการ</th>
+            <th>ค่าดำเนินการ<br><span style="font-weight:400;opacity:.78">(บาท)</span></th>
+            <th>ค่าเดินทาง<br><span style="font-weight:400;opacity:.78">(บาท)</span></th>
+            <th>งบประมาณตามแผน<br><span style="font-weight:400;opacity:.78">รวม คชจ. (บาท)</span></th>
+            <th>อนุมัติ<br><span style="font-weight:400;opacity:.78">(บาท)</span></th>
+            <th>ใช้จริง<br><span style="font-weight:400;opacity:.78">(บาท)</span></th>
+            <th>เลขที่หลักสูตร</th><th>รายละเอียด</th><th>จัดการ</th>
+          </tr></thead>
+          <tbody id="planRows"><tr><td colspan="15" class="empty"></td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="dashboard-grid" aria-label="สรุปงบประมาณ">
+      <article class="chart-card">
+        <div class="chart-head"><h3>งบประมาณตามแผน จำแนกตามประเภทหลักสูตร</h3></div>
+        <div class="chart-container"><canvas id="typeChart"></canvas></div>
+      </article>
+      <article class="chart-card">
+        <div class="chart-head"><h3>สัดส่วนงบประมาณตามแผน จำแนกตามไตรมาส</h3></div>
+        <div class="chart-container"><canvas id="quarterChart"></canvas></div>
+      </article>
+      <article class="chart-card span-2-rows">
+        <div class="chart-head"><h3>ช่วงเดือนที่จัดอบรม</h3><span class="chart-note">ปีงบประมาณ 2570</span></div>
+        <div class="month-grid-wrap">
+          <div id="monthGridHead" class="mg-head"></div>
+          <div id="monthGridBody" class="mg-body"></div>
+        </div>
+        <div class="mg-legend">
+          <span class="mg-legend-item"><i class="core"></i> Core</span>
+          <span class="mg-legend-item"><i class="qw"></i> QW</span>
+          <span class="mg-legend-item"><i class="tn"></i> TN</span>
+        </div>
+      </article>
+      <article class="chart-card">
+        <div class="chart-head"><h3>ผู้เข้าอบรมแยกตามรูปแบบการจัด</h3><span class="chart-note">หน่วย : คน</span></div>
+        <div class="chart-container"><canvas id="formatChart"></canvas></div>
+      </article>
+      <article class="chart-card">
+        <div class="chart-head"><h3>สรุปงบประมาณตามแผน จำแนกตามหัวข้อ</h3><span class="chart-note">หน่วย : ล้านบาท</span></div>
+        <div class="chart-container"><canvas id="programChart"></canvas></div>
+      </article>
+    </section>
+  </main>
+</div>
+
+<!-- ═══════════════════════════════════════
+     MODAL รายละเอียด — read-only (ไม่มีปุ่มแก้ไข แก้ผ่าน Google Sheets เท่านั้น)
+════════════════════════════════════════ -->
+<div id="detailModal" class="modal-backdrop" onclick="backdrop(event,this)">
+  <div class="modal">
+    <div class="modal-head"><div><h3>รายละเอียดงบประมาณ</h3><p id="detailTitle"></p></div><button class="close" onclick="closeModal('detailModal')">×</button></div>
+    <div class="modal-body">
+      <div class="finance-grid">
+        <div class="finance"><label>ค่าดำเนินการ</label><strong id="operation">—</strong></div>
+        <div class="finance"><label>ค่าเดินทาง</label><strong id="travel">—</strong></div>
+        <div class="finance"><label>งบประมาณตามแผน (รวม คชจ.)</label><strong id="planned">—</strong></div>
+        <div class="finance"><label>งบประมาณที่ได้รับอนุมัติ</label><strong id="approved">—</strong></div>
+        <div class="finance"><label>ใช้จริง</label><strong id="actual">—</strong></div>
+        <div class="finance remaining"><label>คงเหลือ</label><strong id="remaining">—</strong><div class="progress"><i id="usageBar"></i></div></div>
+      </div>
+      <div style="margin-bottom:14px">
+        <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:700">รุ่นที่จัดอบรมจริง (ผูกกับแผนนี้)</label>
+        <div id="detailLinkedCourses"></div>
+      </div>
+      <div class="detail-note" id="detailNote"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="secondary" onclick="closeModal('detailModal')">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     MODAL เพิ่ม / แก้ไข รายการแผนงานประจำปี
+════════════════════════════════════════ -->
+<div id="planModal" class="modal-backdrop" onclick="backdrop(event,this)">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-head">
+      <div><h3 id="planModalTitle">เพิ่มรายการแผนงาน</h3><p>ปีงบประมาณ <span id="planModalYear">2570</span></p></div>
+      <button class="close" onclick="closePlanModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="pf_planId">
+
+      <div class="plan-form-grid">
+        <div class="plan-field">
+          <label>ปีงบประมาณ *</label>
+          <select id="pf_year" onchange="refreshPlanIdPreview()">
+            <option value="2570">2570</option>
+            <option value="2569">2569</option>
+          </select>
+        </div>
+        <div class="plan-field">
+          <label>เลขที่แผน (planId — ระบบตั้งให้อัตโนมัติ)</label>
+          <input type="text" id="pf_planIdDisplay" disabled>
+        </div>
+
+        <div class="plan-field plan-wide">
+          <label>หมวด (program) *</label>
+          <div style="display:flex;gap:6px">
+            <select id="pf_program_select" onchange="onProgramSelectChange()" style="flex:1"></select>
+            <button type="button" class="plan-inline-btn" onclick="toggleNewProgram(true)">＋ หมวดใหม่</button>
+          </div>
+          <input type="text" id="pf_program_new" placeholder="พิมพ์ชื่อหมวดใหม่" style="display:none;margin-top:2px">
+          <button type="button" id="pf_program_cancel" class="plan-cancel-link" style="display:none" onclick="toggleNewProgram(false)">ยกเลิก ใช้หมวดที่มีอยู่แล้ว</button>
+        </div>
+
+        <div class="plan-field plan-wide">
+          <label>กลุ่มย่อย (section) *</label>
+          <div style="display:flex;gap:6px">
+            <select id="pf_section_select" onchange="onSectionSelectChange()" style="flex:1"></select>
+            <button type="button" class="plan-inline-btn" onclick="toggleNewSection(true)">＋ กลุ่มใหม่</button>
+          </div>
+          <input type="text" id="pf_section_new" placeholder="พิมพ์ชื่อกลุ่มใหม่" style="display:none;margin-top:2px">
+          <button type="button" id="pf_section_cancel" class="plan-cancel-link" style="display:none" onclick="toggleNewSection(false)">ยกเลิก ใช้กลุ่มที่มีอยู่แล้ว</button>
+        </div>
+
+        <div class="plan-field plan-wide">
+          <label>ชื่อหลักสูตร / โครงการ *</label>
+          <input type="text" id="pf_name" placeholder="ระบุชื่อหลักสูตร">
+        </div>
+
+        <div class="plan-field">
+          <label>ประเภท</label>
+          <select id="pf_type"><option value="">— ไม่ระบุ —</option><option value="Core">Core</option><option value="QW">QW</option><option value="TN">TN</option></select>
+        </div>
+        <div class="plan-field">
+          <label>กลุ่มเป้าหมาย</label>
+          <input type="text" id="pf_target" placeholder="เช่น เจ้าหน้าที่ระดับ 4-6">
+        </div>
+
+        <div class="plan-field">
+          <label>ผู้เข้าอบรมตามแผน (คน)</label>
+          <input type="number" id="pf_people" value="0" min="0">
+        </div>
+        <div class="plan-field">
+          <label>รูปแบบการจัด</label>
+          <select id="pf_form">
+            <option value="onsite">Onsite</option>
+            <option value="online">Online</option>
+            <option value="onsite+online">Onsite + Online</option>
+            <option value="Public Training">Public Training</option>
+            <option value="Workshop & OJT">Workshop &amp; OJT</option>
+          </select>
+        </div>
+
+        <div class="plan-field">
+          <label>ไตรมาสที่จัด</label>
+          <select id="pf_quarter"><option value="1">ไตรมาส 1</option><option value="2">ไตรมาส 2</option><option value="3">ไตรมาส 3</option><option value="4">ไตรมาส 4</option></select>
+        </div>
+        <div class="plan-field">
+          <label>จำนวนครั้ง</label>
+          <input type="number" id="pf_times" value="1" min="1">
+        </div>
+
+        <div class="plan-field">
+          <label>จำนวนวัน / รุ่น</label>
+          <input type="number" id="pf_days" value="1" min="1">
+        </div>
+        <div class="plan-field">
+          <label>ค่าดำเนินการ (บาท)</label>
+          <input type="number" id="pf_operation" value="0" min="0" oninput="syncPlanTotalPreview()">
+        </div>
+
+        <div class="plan-field">
+          <label>ค่าเดินทาง (บาท)</label>
+          <input type="number" id="pf_travel" value="0" min="0" oninput="syncPlanTotalPreview()">
+        </div>
+        <div class="plan-field">
+          <label>งบประมาณตามแผนรวม (อัตโนมัติ)</label>
+          <input type="text" id="pf_planTotalDisplay" disabled>
+        </div>
+
+        <div class="plan-field plan-wide">
+          <label>หมายเหตุ</label>
+          <textarea id="pf_note" rows="2"></textarea>
+        </div>
+      </div>
+
+      <div id="planFormMsg" class="inline-msg-plan" style="display:none;margin-top:12px;font-size:12.5px;padding:9px 13px;border-radius:7px;background:#fdeeea;color:#c0364f;border:1px solid #f3c7cf"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="secondary" onclick="closePlanModal()">ยกเลิก</button>
+      <button class="btn-add-plan" id="btnSavePlan" onclick="savePlanItem()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   STATE — โหลดจาก Google Sheet เท่านั้น (annual_plan + courses + getPlanSummary)
+   หน้านี้เป็น read-only ตามข้อตกลง: แก้ไขข้อมูลผ่าน Google Sheets โดยตรงเท่านั้น
+   ============================================================ */
+let allPlans = [];
+let planIdToCourses = {};
+let current = null;
+let typeChartInstance=null,quarterChartInstance=null,formatChartInstance=null,programChartInstance=null;
+
+const fmt = n => new Intl.NumberFormat('th-TH').format(Math.round(n||0));
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+
+/* ── normalizeGroupText — แก้บั๊กพิมพ์ภาษาไทยที่ตาเห็นเหมือนกันแต่เป็นคนละอักขระ:
+   "เเ" (สระเอ 2 ตัวติดกัน, U+0E40 ซ้อน) มักถูกพิมพ์แทน "แ" (สระแอ ตัวเดียว, U+0E41)
+   ฟอนต์ส่วนใหญ่ render ออกมาเหมือนกันเป๊ะจนแยกด้วยตาไม่ได้ ทำให้ program/section ที่ผู้ใช้
+   มองว่า "พิมพ์เหมือนกัน" กลับเทียบ string ไม่ตรงกัน (!==) แล้วขึ้นหัวข้อกลุ่มซ้ำในตาราง —
+   ใช้ normalize ก่อนเทียบ "กลุ่มเดียวกันหรือไม่" ทุกจุด (ไม่ใช้ raw string เทียบตรงๆ อีกต่อไป)
+   และ normalize ก่อนบันทึกข้อมูลใหม่ด้วย กันปัญหาเกิดซ้ำในอนาคต ── */
+const normalizeGroupText = s => String(s??'').trim().replace(/\s+/g,' ').replace(/เเ/g,'แ');
+
+/* ── numeric coercion กันเหนียว (gotcha 6.4 — Sheets มักส่งเลขมาเป็น string/มี ' นำหน้า) ── */
+function numify(v){ const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+function intify(v){ const n = parseInt(v, 10); return isNaN(n) ? 0 : n; }
+
+/* ============================================================
+   LOAD — ดึงแผนงาน (annual_plan) + สรุปยอดอนุมัติ/ใช้จริง (getPlanSummary)
+   + รายชื่อรุ่นที่ผูก planId ไว้ (courses) มา join กันฝั่ง client
+   ============================================================ */
+async function loadAnnualPlanData(){
+  showGsLoader('📥 กำลังโหลดข้อมูลแผนงานประจำปี');
+
+  const [planList, summary, coursesResult] = await Promise.all([
+    gsApi('getAnnualPlan'),
+    gsApi('getPlanSummary'),
+    gsApi('getCourses'),
+  ]);
+
+  // gsApi คืน null เมื่อเชื่อมต่อ/เรียก API ไม่สำเร็จ (swallow-return-null, ไม่ throw)
+  if (planList === null) {
+    hideGsLoader();
+    document.getElementById('planRows').innerHTML =
+      '<tr><td colspan="15" class="empty">⚠️ เชื่อมต่อไม่สำเร็จ ' +
+      '<button onclick="loadAnnualPlanData()" style="border:0;background:transparent;color:#0b6aab;text-decoration:underline;cursor:pointer;font:inherit">ลองใหม่</button></td></tr>';
+    return;
+  }
+
+  // จับคู่ no -> planId จากชีต courses (เฉพาะแถวที่ผูก planId ไว้แล้ว)
+  planIdToCourses = {};
+  const courseRows = (coursesResult && coursesResult.courses) || [];
+  courseRows.forEach(cr=>{
+    const pid = String(cr.planId||'').trim();
+    if(!pid) return;
+    if(!planIdToCourses[pid]) planIdToCourses[pid] = [];
+    planIdToCourses[pid].push(cr);
+  });
+
+  const summaryMap = summary || {};
+
+  // ── มาตรฐาน: "ใช้จริงทั้งหมด" ต้องใช้ actualGrand (จาก actual07) ไม่ใช่ actualGorLoan
+  //    (actualGorLoan คือเฉพาะเงินยืม ไม่รวมวิทยากรภายใน/ประธานในพิธี — ดู gotcha 6.1) ──
+  allPlans = (planList||[]).map(p=>{
+    const pid = String(p.planId||'').trim();
+    const s = pid ? summaryMap[pid] : null;
+    const linked = pid ? (planIdToCourses[pid] || []) : [];
+    const operation = numify(p.operation);
+    const travel = numify(p.travel);
+    return {
+      planId  : pid,
+      year    : String(p.year || '').trim() || (pid.length >= 4 ? pid.slice(0,4) : ''),
+      program : p.program || '(ไม่ระบุโครงการ)',
+      section : p.section || '(ไม่ระบุหมวด)',
+      name    : p.name || '(ไม่มีชื่อหลักสูตร)',
+      type    : p.type || '',
+      target  : p.target || '',
+      people  : intify(p.people),
+      form    : p.form || '',
+      q       : intify(p.quarter),
+      times   : intify(p.times) || 1,
+      days    : intify(p.days),
+      operation,
+      travel,
+      plan    : numify(p.plan) || (operation + travel),
+      note    : p.note || '',
+      linkedCourses: linked,
+      approved: s ? numify(s.approvedGrand) : 0,
+      actual  : s ? numify(s.actualGrand)   : 0,
+      runsTotal: s ? intify(s.runsTotal) : 0,
+      runsDone : s ? intify(s.runsDone)  : 0,
+    };
+  });
+
+  render();
+  hideGsLoader();
+}
+
+/* ============================================================
+   RENDER TABLE + SUMMARY CARDS
+   ============================================================ */
+/* ── groupStableSort — ดึงแถวที่หมวด (program) / กลุ่ม (section) เดียวกันมาอยู่ติดกันเสมอ
+   ก่อนส่งให้ render() วาดหัวข้อกลุ่ม (แก้ปัญหา: แถวใหม่ที่กด "+ เพิ่มรายการ" ถูกเขียนต่อท้าย
+   Google Sheet จริงๆ เสมอ (physical append) แม้จะเลือกหมวด/กลุ่มเดิมที่มีอยู่แล้วก็ตาม ทำให้อยู่
+   ห่างจากกลุ่มเดิมทางกายภาพ และ render() แบบเดิมที่จัดกลุ่มแบบ "ติดกันเท่านั้นถึงนับเป็นกลุ่มเดียว"
+   จะขึ้นหัวข้อกลุ่มซ้ำ) — ใช้ normalizeGroupText() เทียบเหมือน render() เพื่อความสอดคล้องกัน
+   ยังคง "ลำดับหมวด/กลุ่มที่ปรากฏครั้งแรก" ไว้เหมือนเดิม (ไม่จัดเรียงตามตัวอักษรใหม่ทั้งหมด) และคง
+   ลำดับสัมพัทธ์เดิมของแถวภายในกลุ่มเดียวกันไว้ (stable sort) ── */
+function groupStableSort(rows){
+  const progOrder = new Map(), secOrder = new Map();
+  rows.forEach(c=>{
+    const np = normalizeGroupText(c.program);
+    if(!progOrder.has(np)) progOrder.set(np, progOrder.size);
+    const key = np+'␟'+normalizeGroupText(c.section);
+    if(!secOrder.has(key)) secOrder.set(key, secOrder.size);
+  });
+  return rows
+    .map((c,i)=>({c,i}))
+    .sort((a,b)=>{
+      const pa = progOrder.get(normalizeGroupText(a.c.program));
+      const pb = progOrder.get(normalizeGroupText(b.c.program));
+      if(pa!==pb) return pa-pb;
+      const sa = secOrder.get(normalizeGroupText(a.c.program)+'␟'+normalizeGroupText(a.c.section));
+      const sb = secOrder.get(normalizeGroupText(b.c.program)+'␟'+normalizeGroupText(b.c.section));
+      if(sa!==sb) return sa-sb;
+      return a.i-b.i; // รักษาลำดับเดิมของแถวภายในกลุ่มเดียวกันไว้ (stable)
+    })
+    .map(x=>x.c);
+}
+
+function render(){
+  const term=document.getElementById('search').value.toLowerCase(),
+        type=document.getElementById('typeFilter').value,
+        format=document.getElementById('formatFilter').value;
+  const filtered=allPlans.filter(c=>(!type||c.type===type)&&(!format||c.form===format)&&Object.values(c).join(' ').toLowerCase().includes(term));
+  const shown=groupStableSort(filtered);
+
+  let out='',lastP='',lastS='',idx=0;
+  shown.forEach(c=>{
+    const nProgram = normalizeGroupText(c.program), nSection = normalizeGroupText(c.section);
+    if(nProgram!==lastP){out+=`<tr class="program"><td colspan="15">${esc(nProgram)}</td></tr>`;lastP=nProgram;lastS=''}
+    if(nSection!==lastS){out+=`<tr class="section"><td colspan="15">${esc(nSection)}</td></tr>`;lastS=nSection}
+    idx++;
+
+    const codesHtml = c.linkedCourses.length
+      ? c.linkedCourses.map(cr=>esc(cr.no)).join(', ') +
+        (c.runsTotal ? `<div style="font-size:10px;color:#8098a8;margin-top:2px">จัดแล้ว ${c.runsDone}/${c.runsTotal} รุ่น</div>` : '')
+      : '<span style="color:#b7c0c8">ยังไม่ผูกรุ่น</span>';
+
+    out+=`<tr>
+      <td class="center">${idx}</td>
+      <td class="course">${esc(c.name)}</td>
+      <td class="center">${c.type ? `<span class="badge ${c.type.toLowerCase()}">${esc(c.type)}</span>` : '—'}</td>
+      <td class="target">${esc(c.target)}</td>
+      <td class="number center">${fmt(c.people)}</td>
+      <td class="center"><span class="format">${esc(c.form)}</span></td>
+      <td class="center"><div class="schedule"><span class="q-pill"><b>Q${c.q||'-'}</b></span><span class="times-pill">${c.times} ครั้ง</span><span class="days-pill">${c.days} วัน</span></div></td>
+      <td class="money">${fmt(c.operation)}</td>
+      <td class="money">${fmt(c.travel)}</td>
+      <td class="money" style="font-weight:700;color:#092c4c">${fmt(c.plan)}</td>
+      <td class="money" style="color:${c.approved?'#0b6aab':'#b7c0c8'}">${c.approved?fmt(c.approved):'—'}</td>
+      <td class="money" style="color:${c.actual?'#197a5d':'#b7c0c8'}">${c.actual?fmt(c.actual):'—'}</td>
+      <td class="center" style="white-space:normal;min-width:120px">${codesHtml}</td>
+      <td><div class="actions">
+        <button title="รายละเอียดงบประมาณ" class="icon-btn view" onclick="openDetail('${esc(c.planId)}')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg></button>
+      </div></td>
+      <td><div class="actions">
+        <button title="แก้ไขรายการ" class="icon-btn edit" onclick="openEditPlanModal('${esc(c.planId)}')"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+        <button title="ลบรายการ" class="icon-btn del" onclick="deletePlanItem('${esc(c.planId)}')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
+      </div></td>
+    </tr>`;
+  });
+
+  document.getElementById('planRows').innerHTML=out||'<tr><td colspan="15" class="empty">ไม่พบข้อมูลที่ค้นหา</td></tr>';
+  document.getElementById('resultLabel').textContent=`แสดง ${shown.length} จาก ${allPlans.length} รายการ`;
+  document.getElementById('headCount').textContent=fmt(allPlans.length)+' รายการ';
+  document.getElementById('courseCount').textContent=fmt(allPlans.length)+' รายการ';
+  document.getElementById('attendeeCount').textContent=fmt(allPlans.reduce((a,c)=>a+c.people,0))+' คน';
+  document.getElementById('planCost').textContent=(allPlans.reduce((a,c)=>a+c.plan,0)/1e6).toFixed(3)+' ลบ.';
+  document.getElementById('operationCost').textContent=(allPlans.reduce((a,c)=>a+(c.operation||0),0)/1e6).toFixed(3)+' ลบ.';
+  document.getElementById('travelCost').textContent=(allPlans.reduce((a,c)=>a+(c.travel||0),0)/1e6).toFixed(3)+' ลบ.';
+  updateCharts(shown);
+}
+
+function updateCharts(data){
+  if(typeof Chart==='undefined')return;
+
+  // --- 1) budget by type (grouped bar) ---
+  const types=['Core','QW','TN'];
+  const opData=types.map(t=>data.filter(c=>c.type===t).reduce((s,c)=>s+c.operation,0));
+  const trData=types.map(t=>data.filter(c=>c.type===t).reduce((s,c)=>s+c.travel,0));
+  if(typeChartInstance)typeChartInstance.destroy();
+  typeChartInstance=new Chart(document.getElementById('typeChart'),{
+    type:'bar',
+    data:{labels:types,datasets:[
+      {label:'ค่าดำเนินการ',data:opData,backgroundColor:'#0b6aab',borderRadius:6,maxBarThickness:80,barPercentage:1,categoryPercentage:0.8},
+      {label:'ค่าเดินทาง',data:trData,backgroundColor:'#bf7800',borderRadius:6,maxBarThickness:80,barPercentage:1,categoryPercentage:0.8}
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      layout:{padding:{top:26}},
+      plugins:{
+        legend:{position:'top',align:'end',labels:{boxWidth:11,boxHeight:11,usePointStyle:true,pointStyle:'circle',font:{family:'Prompt',size:12}}},
+        tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmt(c.raw)} บาท`}},
+        datalabels:{
+          anchor:'end',align:'top',offset:4,color:'#4a6072',
+          font:{family:'Prompt',weight:'600',size:10.5},
+          formatter:v=>v?(v/1e6).toFixed(2)+' ลบ.':''
+        }
+      },
+      scales:{
+        x:{grid:{display:false},border:{display:false},ticks:{font:{family:'Prompt',weight:'600'}}},
+        y:{beginAtZero:true,grace:'12%',grid:{display:false},border:{display:false},ticks:{font:{family:'Prompt'},callback:v=>(v/1e6).toFixed(1)+' ลบ.'}}
+      }
+    }
+  });
+
+  // --- 2) budget by quarter (doughnut) ---
+  const quarters=[1,2,3,4];
+  const quarterData=quarters.map(q=>data.filter(c=>c.q===q).reduce((s,c)=>s+c.plan,0));
+  const qColors=['#0b6aab','#197a5d','#bf7800','#7865c8'];
+  const qTotal=quarterData.reduce((s,n)=>s+n,0);
+  if(quarterChartInstance)quarterChartInstance.destroy();
+  quarterChartInstance=new Chart(document.getElementById('quarterChart'),{
+    type:'doughnut',
+    data:{labels:quarters.map(q=>'ไตรมาส '+q),datasets:[{data:quarterData,backgroundColor:qColors,borderColor:'#fff',borderWidth:4,hoverOffset:8}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,cutout:'62%',
+      plugins:{
+        legend:{position:'bottom',labels:{padding:14,usePointStyle:true,pointStyle:'circle',boxWidth:10,boxHeight:10,font:{family:'Prompt',size:12}}},
+        tooltip:{callbacks:{label:c=>` ${c.label}: ${fmt(c.raw)} บาท (${qTotal?((c.raw/qTotal)*100).toFixed(1):0}%)`}},
+        datalabels:{
+          color:'#fff',font:{family:'Prompt',weight:'700',size:11},
+          formatter:v=>v&&qTotal?`${((v/qTotal)*100).toFixed(0)}%`:''
+        }
+      }
+    },
+    plugins:[donutCenter]
+  });
+
+  // --- 3) attendees by format (horizontal bar) ---
+  const formLabels=['onsite','online','onsite+online','Public Training','Workshop & OJT'];
+  const formNice={onsite:'Onsite',online:'Online','onsite+online':'Onsite + Online','Public Training':'Public Training','Workshop & OJT':'Workshop & OJT'};
+  const formRanked=formLabels
+    .map(f=>({label:formNice[f],value:data.filter(c=>c.form===f).reduce((s,c)=>s+c.people,0)}))
+    .sort((a,b)=>b.value-a.value);
+  if(formatChartInstance)formatChartInstance.destroy();
+  formatChartInstance=new Chart(document.getElementById('formatChart'),{
+    type:'bar',
+    data:{labels:formRanked.map(r=>r.label),datasets:[{data:formRanked.map(r=>r.value),backgroundColor:'#0d547f',borderRadius:5,maxBarThickness:16}]},
+    options:{
+      indexAxis:'y',
+      responsive:true,maintainAspectRatio:false,
+      layout:{padding:{right:30}},
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:c=>` ${fmt(c.raw)} คน`}},
+        datalabels:{
+          anchor:'end',align:'right',color:'#4a6072',
+          font:{family:'Prompt',weight:'600',size:10},
+          formatter:v=>fmt(v)
+        }
+      },
+      scales:{
+        x:{beginAtZero:true,grid:{color:'#eef2f5'},border:{display:false},ticks:{font:{family:'Prompt',size:10.5}}},
+        y:{grid:{display:false},border:{display:false},ticks:{font:{family:'Prompt',size:10.5}}}
+      }
+    }
+  });
+
+  // --- 4) budget by main section (stacked bar: operation bottom + travel top) ---
+  const sectionOrder=[];
+  data.forEach(c=>{ const ns=normalizeGroupText(c.section); if(!sectionOrder.includes(ns)) sectionOrder.push(ns); });
+  const sectionCode=s=>{ const m=s.match(/^\s*([\d.]+)/); return m?m[1]:s; };
+  const secLabels=sectionOrder.map(s=>sectionCode(s));
+  const secFull=sectionOrder.map(s=>s);
+  const secOpData=sectionOrder.map(s=>data.filter(c=>normalizeGroupText(c.section)===s).reduce((sum,c)=>sum+(c.operation||0),0));
+  const secTrData=sectionOrder.map(s=>data.filter(c=>normalizeGroupText(c.section)===s).reduce((sum,c)=>sum+(c.travel||0),0));
+  if(programChartInstance)programChartInstance.destroy();
+  programChartInstance=new Chart(document.getElementById('programChart'),{
+    type:'bar',
+    data:{labels:secLabels,datasets:[
+      {label:'ค่าดำเนินการ',data:secOpData,backgroundColor:'#0b6aab',stack:'s',borderRadius:{topLeft:0,topRight:0,bottomLeft:6,bottomRight:6},maxBarThickness:26,barPercentage:0.85,categoryPercentage:0.75},
+      {label:'ค่าเดินทาง',data:secTrData,backgroundColor:'#bf7800',stack:'s',borderRadius:{topLeft:6,topRight:6,bottomLeft:0,bottomRight:0},maxBarThickness:26,barPercentage:0.85,categoryPercentage:0.75}
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'bottom',labels:{padding:12,usePointStyle:true,pointStyle:'circle',boxWidth:10,boxHeight:10,font:{family:'Prompt',size:11.5}}},
+        tooltip:{callbacks:{title:items=>secFull[items[0].dataIndex],label:c=>` ${c.dataset.label}: ${fmt(c.raw)} บาท`}},
+        datalabels:{
+          display:c=>c.dataset.data[c.dataIndex]>0,
+          color:'#fff',font:{family:'Prompt',weight:'600',size:9.5},
+          formatter:v=>v?(v/1e6).toFixed(2):''
+        }
+      },
+      scales:{
+        x:{grid:{display:false},border:{display:false},ticks:{font:{family:'Prompt',size:10.5}}},
+        y:{beginAtZero:true,grid:{display:false},border:{display:false},ticks:{font:{family:'Prompt'},callback:v=>(v/1e6).toFixed(1)+' ลบ.'}}
+      }
+    }
+  });
+
+  // --- 5) training months (contribution-style grid, fiscal year Oct-Sep) ---
+  renderMonthGrid(data);
+}
+
+const THAI_FISCAL_MONTHS=['ต.ค.','พ.ย.','ธ.ค.','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.'];
+const Q_TO_MONTH_IDX={1:[0,1,2],2:[3,4,5],3:[6,7,8],4:[9,10,11]};
+const typeCls={Core:'core',QW:'qw',TN:'tn'};
+
+function shortCourseLabel(name){
+  let s = String(name || '');
+  s = s.replace(/\([^)]*\)/g, '').trim();               // ตัดวงเล็บท้าย/แทรก
+  if (s.includes(':')) s = s.split(':')[0].trim();       // เหลือหัวข้อหลักก่อนเครื่องหมาย :
+  else if (s.includes('：')) s = s.split('：')[0].trim();
+  s = s.replace(/^หลักสูตร(ลงทะเบียนภายนอก)?(สำหรับ)?/, '').trim(); // ตัดคำนำทั่วไป
+  if (!s) s = String(name || '');
+  return s;
+}
+
+function renderMonthGrid(data){
+  const head=document.getElementById('monthGridHead');
+  const body=document.getElementById('monthGridBody');
+  if(!head||!body)return;
+  const sorted=[...data].sort((a,b)=>a.q-b.q || a.name.localeCompare(b.name)); // Q1 ขึ้นก่อน ไล่ลงไป Q4
+  head.innerHTML='<div class="mg-label"></div>'+THAI_FISCAL_MONTHS.map(m=>`<div class="mg-month">${m}</div>`).join('');
+  body.innerHTML=sorted.map(c=>{
+    const active=Q_TO_MONTH_IDX[c.q]||[];
+    const cells=THAI_FISCAL_MONTHS.map((m,i)=>{
+      const on=active.includes(i);
+      const cls=on?`mg-cell on ${typeCls[c.type]||''}`:'mg-cell';
+      const title=on?`${esc(c.name)} · ${esc(m)} · Q${c.q}`:'';
+      return `<div class="${cls}" title="${title}"></div>`;
+    }).join('');
+    return `<div class="mg-row"><div class="mg-label" title="${esc(c.name)}">${esc(shortCourseLabel(c.name))}</div>${cells}</div>`;
+  }).join('') || '<div class="empty">ไม่พบข้อมูลที่ค้นหา</div>';
+}
+
+const donutCenter={id:'donutCenter',afterDraw(chart){
+  if(chart.canvas.id!=='quarterChart')return;
+  const total=chart.data.datasets[0].data.reduce((s,n)=>s+n,0),area=chart.chartArea,ctx=chart.ctx,x=(area.left+area.right)/2,y=(area.top+area.bottom)/2;
+  ctx.save();ctx.textAlign='center';
+  ctx.fillStyle='#092c4c';ctx.font='700 19px Prompt';ctx.fillText((total/1e6).toFixed(3),x,y-3);
+  ctx.fillStyle='#627587';ctx.font='500 10px Prompt';ctx.fillText('ล้านบาท',x,y+15);
+  ctx.restore();
+}};
+if(typeof Chart!=='undefined')Chart.register(ChartDataLabels);
+
+/* ============================================================
+   DETAIL MODAL (read-only) — key ด้วย planId แทนเลขลำดับเดิม
+   ============================================================ */
+function openDetail(planId){
+  current=allPlans.find(c=>c.planId===planId);
+  if(!current)return;
+  document.getElementById('detailTitle').textContent=current.name;
+  document.getElementById('operation').textContent=fmt(current.operation)+' บาท';
+  document.getElementById('travel').textContent=fmt(current.travel)+' บาท';
+  document.getElementById('planned').textContent=fmt(current.plan)+' บาท';
+  document.getElementById('approved').textContent=current.approved ? fmt(current.approved)+' บาท' : 'ยังไม่มีข้อมูล';
+  document.getElementById('actual').textContent=current.actual ? fmt(current.actual)+' บาท' : 'ยังไม่มีข้อมูล';
+
+  const base=current.approved||current.plan;
+  const balance=base-current.actual;
+  document.getElementById('remaining').textContent=fmt(balance)+' บาท';
+  document.getElementById('usageBar').style.width=Math.min(100,base>0?(current.actual/base*100):0)+'%';
+
+  const linkEl=document.getElementById('detailLinkedCourses');
+  linkEl.innerHTML = current.linkedCourses.length
+    ? current.linkedCourses.map(cr=>`<span class="badge core" style="margin:2px 4px 2px 0;display:inline-block">${esc(cr.no)}${cr.batch?' · รุ่น '+esc(cr.batch):''}</span>`).join('')
+    : '<span style="color:#8098a8;font-size:12px">ยังไม่ผูกกับรุ่นที่จัดอบรมจริง (ผูกได้จากหน้า "หลักสูตรการฝึกอบรม" ตอนเพิ่มหลักสูตร/รุ่นใหม่)</span>';
+
+  document.getElementById('detailNote').textContent = current.note || 'ไม่มีหมายเหตุเพิ่มเติม';
+  document.getElementById('detailModal').classList.add('show');
+}
+
+/* ============================================================
+   เพิ่ม / แก้ไข / ลบ รายการแผนงานประจำปี — เขียนกลับ Google Sheet "annual_plan"
+   ผ่าน action saveAnnualPlan/deleteAnnualPlan (Code.gs) คีย์หลักคือ planId
+   ============================================================ */
+let _planEditingId = null; // null = โหมดเพิ่มใหม่, ไม่ null = กำลังแก้ไข planId นี้
+const PLAN_PLACEHOLDER_PROGRAM = '(ไม่ระบุโครงการ)';
+const PLAN_PLACEHOLDER_SECTION = '(ไม่ระบุหมวด)';
+
+function getDistinctPrograms(){
+  const set = new Set();
+  allPlans.forEach(p=>{ if(p.program && p.program!==PLAN_PLACEHOLDER_PROGRAM) set.add(normalizeGroupText(p.program)); });
+  return Array.from(set).sort((a,b)=>a.localeCompare(b,'th'));
+}
+function getDistinctSections(program){
+  const set = new Set();
+  const nProgram = program ? normalizeGroupText(program) : '';
+  allPlans.forEach(p=>{
+    if(!p.section || p.section===PLAN_PLACEHOLDER_SECTION) return;
+    if(nProgram && normalizeGroupText(p.program)!==nProgram) return;
+    set.add(normalizeGroupText(p.section));
+  });
+  return Array.from(set).sort((a,b)=>a.localeCompare(b,'th'));
+}
+
+function populateProgramSelect(selected){
+  const sel = document.getElementById('pf_program_select');
+  const progs = getDistinctPrograms();
+  const nSel = normalizeGroupText(selected);
+  sel.innerHTML = progs.length
+    ? progs.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('')
+    : '<option value="">— ยังไม่มีหมวด กด "หมวดใหม่" —</option>';
+  if(nSel && progs.includes(nSel)) sel.value = nSel;
+}
+function populateSectionSelect(program, selected){
+  const sel = document.getElementById('pf_section_select');
+  const secs = getDistinctSections(program);
+  const nSel = normalizeGroupText(selected);
+  sel.innerHTML = secs.length
+    ? secs.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('')
+    : '<option value="">— ยังไม่มีกลุ่ม กด "กลุ่มใหม่" —</option>';
+  if(nSel && secs.includes(nSel)) sel.value = nSel;
+}
+function onProgramSelectChange(){
+  populateSectionSelect(document.getElementById('pf_program_select').value, '');
+}
+function onSectionSelectChange(){ /* เผื่อขยายในอนาคต — ตอนนี้ไม่ต้องทำอะไรเพิ่ม */ }
+
+function toggleNewProgram(show){
+  document.getElementById('pf_program_select').style.display = show ? 'none' : '';
+  document.getElementById('pf_program_new').style.display    = show ? '' : 'none';
+  document.getElementById('pf_program_cancel').style.display = show ? '' : 'none';
+  if(show){ document.getElementById('pf_program_new').value=''; document.getElementById('pf_program_new').focus(); }
+  else onProgramSelectChange();
+}
+function toggleNewSection(show){
+  document.getElementById('pf_section_select').style.display = show ? 'none' : '';
+  document.getElementById('pf_section_new').style.display    = show ? '' : 'none';
+  document.getElementById('pf_section_cancel').style.display = show ? '' : 'none';
+  if(show){ document.getElementById('pf_section_new').value=''; document.getElementById('pf_section_new').focus(); }
+}
+
+function getEffectiveProgram(){
+  const newEl = document.getElementById('pf_program_new');
+  return newEl.style.display !== 'none' ? newEl.value.trim() : document.getElementById('pf_program_select').value.trim();
+}
+function getEffectiveSection(){
+  const newEl = document.getElementById('pf_section_new');
+  return newEl.style.display !== 'none' ? newEl.value.trim() : document.getElementById('pf_section_select').value.trim();
+}
+
+/* ── planId auto-run: "<ปี พ.ศ. 4 หลัก><เลขรัน 3 หลัก>" เช่น 2570001, 2570002
+   คำนวณจากข้อมูลที่โหลดมาในหน่วยความจำ (allPlans) เท่านั้น ไม่ยิง API แยกขอเลข —
+   ยอมรับความเสี่ยงเลขซ้ำถ้ามีคนกดเพิ่มพร้อมกันตรงเป๊ะ (ตกลงกันไว้แล้วว่าไม่กังวลจุดนี้) ── */
+function computeNextPlanId(year){
+  const yr = String(year);
+  let maxSeq = 0;
+  allPlans.forEach(p=>{
+    const pid = String(p.planId||'');
+    if(pid.startsWith(yr) && pid.length === yr.length + 3){
+      const seq = parseInt(pid.slice(yr.length), 10);
+      if(!isNaN(seq)) maxSeq = Math.max(maxSeq, seq);
+    }
+  });
+  return yr + String(maxSeq + 1).padStart(3,'0');
+}
+
+function refreshPlanIdPreview(){
+  const year = document.getElementById('pf_year').value;
+  document.getElementById('planModalYear').textContent = year;
+  document.getElementById('pf_planIdDisplay').value = _planEditingId || computeNextPlanId(year);
+}
+
+function syncPlanTotalPreview(){
+  const op = parseFloat(document.getElementById('pf_operation').value)||0;
+  const tr = parseFloat(document.getElementById('pf_travel').value)||0;
+  document.getElementById('pf_planTotalDisplay').value = fmt(op+tr) + ' บาท';
+}
+
+function resetPlanForm(){
+  document.getElementById('pf_planId').value = '';
+  document.getElementById('pf_name').value = '';
+  document.getElementById('pf_type').value = '';
+  document.getElementById('pf_target').value = '';
+  document.getElementById('pf_people').value = 0;
+  document.getElementById('pf_form').value = 'onsite';
+  document.getElementById('pf_quarter').value = '1';
+  document.getElementById('pf_times').value = 1;
+  document.getElementById('pf_days').value = 1;
+  document.getElementById('pf_operation').value = 0;
+  document.getElementById('pf_travel').value = 0;
+  document.getElementById('pf_note').value = '';
+  toggleNewProgram(false);
+  toggleNewSection(false);
+  document.getElementById('planFormMsg').style.display = 'none';
+  syncPlanTotalPreview();
+}
+
+function openAddPlanModal(){
+  _planEditingId = null;
+  resetPlanForm();
+  document.getElementById('planModalTitle').textContent = 'เพิ่มรายการแผนงาน';
+  document.getElementById('pf_year').disabled = false;
+  document.getElementById('pf_year').value = '2570';
+  populateProgramSelect('');
+  populateSectionSelect('', '');
+  refreshPlanIdPreview();
+  document.getElementById('planModal').classList.add('show');
+}
+
+function openEditPlanModal(planId){
+  const p = allPlans.find(x=>x.planId===planId);
+  if(!p) return;
+  _planEditingId = planId;
+  resetPlanForm();
+  document.getElementById('planModalTitle').textContent = 'แก้ไขรายการแผนงาน';
+  document.getElementById('pf_planId').value = planId;
+  document.getElementById('pf_year').value = p.year || planId.slice(0,4) || '2570';
+  document.getElementById('pf_year').disabled = true; // เปลี่ยนปีของรายการเดิมไม่ได้ (planId ผูกปีไว้แล้วตั้งแต่สร้าง)
+  populateProgramSelect(p.program!==PLAN_PLACEHOLDER_PROGRAM ? p.program : '');
+  populateSectionSelect(p.program, p.section!==PLAN_PLACEHOLDER_SECTION ? p.section : '');
+  document.getElementById('pf_name').value = p.name!=='(ไม่มีชื่อหลักสูตร)' ? p.name : '';
+  document.getElementById('pf_type').value = p.type || '';
+  document.getElementById('pf_target').value = p.target || '';
+  document.getElementById('pf_people').value = p.people || 0;
+  document.getElementById('pf_form').value = p.form || 'onsite';
+  document.getElementById('pf_quarter').value = String(p.q||1);
+  document.getElementById('pf_times').value = p.times || 1;
+  document.getElementById('pf_days').value = p.days || 0;
+  document.getElementById('pf_operation').value = p.operation || 0;
+  document.getElementById('pf_travel').value = p.travel || 0;
+  document.getElementById('pf_note').value = p.note || '';
+  syncPlanTotalPreview();
+  refreshPlanIdPreview();
+  document.getElementById('planModal').classList.add('show');
+}
+
+function closePlanModal(){
+  document.getElementById('planModal').classList.remove('show');
+}
+
+async function savePlanItem(){
+  const program = normalizeGroupText(getEffectiveProgram());
+  const section = normalizeGroupText(getEffectiveSection());
+  const name    = document.getElementById('pf_name').value.trim();
+  const msgEl   = document.getElementById('planFormMsg');
+  const showErr = (t) => { msgEl.textContent = t; msgEl.style.display='block'; };
+
+  if(!program){ showErr('⚠️ กรุณาระบุหมวด (program)'); return; }
+  if(!section){ showErr('⚠️ กรุณาระบุกลุ่มย่อย (section)'); return; }
+  if(!name){ showErr('⚠️ กรุณาระบุชื่อหลักสูตร/โครงการ'); return; }
+  msgEl.style.display = 'none';
+
+  const year      = document.getElementById('pf_year').value;
+  const planId    = _planEditingId || document.getElementById('pf_planIdDisplay').value;
+  const operation = parseFloat(document.getElementById('pf_operation').value)||0;
+  const travel    = parseFloat(document.getElementById('pf_travel').value)||0;
+
+  const payload = {
+    planId, year: String(year),
+    program, section, name,
+    type: document.getElementById('pf_type').value || '',
+    target: document.getElementById('pf_target').value.trim(),
+    people: parseInt(document.getElementById('pf_people').value)||0,
+    form: document.getElementById('pf_form').value,
+    quarter: parseInt(document.getElementById('pf_quarter').value)||1,
+    times: parseInt(document.getElementById('pf_times').value)||1,
+    days: parseInt(document.getElementById('pf_days').value)||0,
+    operation, travel,
+    plan: operation + travel,
+    note: document.getElementById('pf_note').value.trim(),
+    savedAt: new Date().toISOString(),
+  };
+
+  const btn = document.getElementById('btnSavePlan');
+  btn.disabled = true; btn.textContent = '⏳ กำลังบันทึก...';
+  showGsLoader('💾 กำลังบันทึกแผนงาน');
+  const result = await gsApi('saveAnnualPlan', payload);
+  hideGsLoader();
+  btn.disabled = false; btn.textContent = '💾 บันทึก';
+
+  if(!result){
+    showErr('❌ บันทึกไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่');
+    return;
+  }
+
+  closePlanModal();
+  showGsStatus('✅ บันทึกรายการแผนงานสำเร็จ', 'ok');
+  await loadAnnualPlanData();
+}
+
+async function deletePlanItem(planId){
+  const p = allPlans.find(x=>x.planId===planId);
+  if(!p) return;
+
+  if(p.linkedCourses && p.linkedCourses.length){
+    const list = p.linkedCourses.map(c=>c.no).join(', ');
+    alert('⚠️ ไม่สามารถลบได้ เพราะแผนนี้มีรุ่นหลักสูตรผูกอยู่แล้ว (เลขที่หลักสูตร: ' + list + ')\n\n'
+      + 'กรุณาไปที่หน้า "หลักสูตรการฝึกอบรม" แล้วเปลี่ยน "ผูกกับแผนงานประจำปี" ของรุ่นเหล่านั้นเป็น '
+      + '"— ไม่ผูกกับแผน —" ก่อน แล้วค่อยกลับมาลบรายการนี้อีกครั้ง');
+    return;
+  }
+
+  if(!confirm('ยืนยันลบรายการ "'+p.name+'" (เลขที่แผน '+planId+') ใช่หรือไม่?\n\nการลบนี้ไม่สามารถย้อนกลับได้')) return;
+
+  showGsLoader('🗑️ กำลังลบรายการ');
+  const result = await gsApi('deleteAnnualPlan', { planId });
+  hideGsLoader();
+
+  if(!result){
+    alert('❌ ลบไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่');
+    return;
+  }
+  showGsStatus('✅ ลบรายการสำเร็จ', 'ok');
+  await loadAnnualPlanData();
+}
+
+function closeModal(id){document.getElementById(id).classList.remove('show')}
+function backdrop(e,x){if(e.target===x)closeModal(x.id)}
+/* toggleSidebar() มาจาก js/sidebar.js แล้ว (โมดูลกลาง) — ไม่ต้องประกาศซ้ำในไฟล์นี้อีก */
+
+/* ============================================================
+   INIT
+   ============================================================ */
+loadAnnualPlanData();
+loadCurrentUser();
+</script>
+</body>
+</html>
