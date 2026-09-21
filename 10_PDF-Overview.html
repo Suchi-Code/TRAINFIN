@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>รายงาน PDF - กองฝึกอบรมภูมิภาค 1</title>
+
+    <!-- Google Fonts: Prompt -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap');
+        :root{--navy:#092c4c;--blue:#0b6aab;--sky:#eaf4fb;--line:#dce5ec;--ink:#1b2a38;--muted:#627587;--green:#197a5d;--amber:#bf7800;--purple:#7865c8;--teal:#0f8a83;--coral:#c4562f;--bg:#f3f6f8}
+        *{box-sizing:border-box}
+        body{margin:0;background:var(--bg);color:var(--ink);font-family:"Prompt","Segoe UI",Tahoma,Arial,sans-serif;font-size:14px}
+        .layout{display:flex;min-height:100vh}
+
+        /* ===== Sidebar ===== */
+        .sidebar{position:sticky;top:0;align-self:flex-start;height:100vh;width:260px;flex:0 0 260px;background:var(--navy);color:#dce8f2;padding:20px 16px;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;transition:width .22s ease,flex-basis .22s ease,padding .22s ease}
+        .sidebar::-webkit-scrollbar{width:5px}
+        .sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:99px}
+        .sidebar-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:0 6px 20px;border-bottom:1px solid rgba(255,255,255,.15);margin-bottom:0}
+        .brand{display:flex;align-items:center;gap:11px;min-width:0;overflow:hidden}
+        .mark{height:37px;width:37px;flex:0 0 37px;border-radius:10px;object-fit:cover;background:#fff}
+        .brand-text{min-width:0}
+        .brand b{display:block;color:#fff;font-size:15px;white-space:nowrap}
+        .brand span{font-size:11px;color:#a9c3d6;white-space:nowrap}
+        .nav{padding-top:20px}
+        .nav-label{font-size:11px;letter-spacing:.08em;color:#82a4bd;padding:0 12px 10px;white-space:nowrap;overflow:hidden}
+        .nav a{display:flex;align-items:center;gap:12px;text-decoration:none;color:#c9dae7;padding:12px;border-radius:8px;margin:3px 0;transition:.15s;white-space:nowrap;overflow:hidden}
+        .nav a:hover{background:rgba(255,255,255,.08)}
+        .nav a.active{background:#1275b4;color:#fff;font-weight:700;box-shadow:inset 3px 0 #91d8ff}
+        .nav svg{width:19px;height:19px;flex:0 0 19px;fill:none;stroke:currentColor;stroke-width:1.8}
+        .user{margin-top:auto;background:rgba(255,255,255,.07);padding:13px;border-radius:9px;font-size:12px;overflow:hidden;white-space:nowrap;flex:0 0 auto}
+        .user b{color:#fff;display:block;margin-bottom:3px}
+        .user span{color:#a9c3d6}
+
+        .sidebar-toggle{flex:0 0 26px;width:26px;height:26px;background:transparent;border:0;color:#cfe0ee;cursor:pointer;display:grid;place-items:center;transition:.15s;margin-top:2px;padding:0}
+        .sidebar-toggle:hover{color:#fff}
+        .sidebar-toggle svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.2;transition:transform .22s ease}
+        .sidebar-toggle.collapsed svg{transform:rotate(180deg)}
+
+        .sidebar.collapsed{width:76px;flex-basis:76px;padding-left:12px;padding-right:12px}
+        .sidebar.collapsed .sidebar-head{flex-direction:column;align-items:center;gap:12px;padding-left:0;padding-right:0}
+        .sidebar.collapsed .brand{justify-content:center}
+        .sidebar.collapsed .brand-text,.sidebar.collapsed .nav-label,.sidebar.collapsed .user{display:none}
+        .sidebar.collapsed .nav a{justify-content:center;padding-left:8px;padding-right:8px}
+        .sidebar.collapsed .nav a span{display:none}
+
+        /* ── รายการแบบขั้นบันได (breadcrumb hierarchy ในเมนู) ── */
+        .nav .step-1{padding-left:12px}
+        .nav .step-2{padding-left:28px;font-size:13px}
+        .nav .step-2 svg{width:16px;height:16px;flex:0 0 16px}
+        .nav .step-3{padding-left:44px;font-size:13px}
+        .nav .step-3 svg{width:15px;height:15px;flex:0 0 15px}
+        .sidebar.collapsed .nav .step-1,.sidebar.collapsed .nav .step-2,.sidebar.collapsed .nav .step-3{padding-left:8px;padding-right:8px}
+
+        .main{width:calc(100% - 260px);max-width:calc(100% - 260px);padding:30px 34px 42px;min-width:0;transition:width .22s ease,max-width .22s ease;overflow-x:hidden}
+        .main.wide{width:calc(100% - 76px);max-width:calc(100% - 76px)}
+
+        .topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:25px;flex-wrap:wrap}
+        .crumb{font-size:12px;color:var(--muted);margin-bottom:5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+        .crumb .sep{color:#a9bac6}
+        .crumb .current{color:var(--blue);font-weight:600}
+        .topbar h1{font-size:25px;margin:0;color:var(--navy);letter-spacing:-.4px}
+        .meta-line{font-size:13px;font-weight:600;color:#0b6aab;margin-top:4px}
+        .back-btn{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:9px 14px;font:inherit;font-weight:600;color:#43596b;cursor:pointer;transition:.15s;white-space:nowrap}
+        .back-btn:hover{background:#eaf4fb;color:#0b6aab;border-color:#cfe4f0}
+        .back-btn svg{width:15px;height:15px;stroke:currentColor;stroke-width:2.3}
+
+        .status-line{font-size:12px;color:var(--muted);margin-bottom:16px}
+
+        .panel{background:#fff;border:1px solid #e0e8ed;border-radius:11px;overflow:hidden;padding:20px}
+
+        .pdf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+        .pdf-card{position:relative;display:flex;flex-direction:column;gap:8px;border-radius:14px;padding:16px;border:1px solid var(--line);text-decoration:none;transition:.2s ease;background:#fff}
+        .pdf-card.has-file{cursor:pointer}
+        .pdf-card.has-file:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(11,106,171,.15);border-color:#9fc6e0}
+        .pdf-card.empty{opacity:.65;background:#fafcfd}
+        .pdf-card .row-top{display:flex;align-items:flex-start;justify-content:space-between}
+        .pdf-card .icon{font-size:22px}
+        .pdf-card .chip{font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+        .pdf-card .chip.ok{background:#e3f7ee;color:#178a5c;border:1px solid #bfe9d4}
+        .pdf-card .chip.no{background:#f1f4f6;color:#7c8ea0;border:1px solid #e2e8ec}
+        .pdf-card .title{font-size:15px;font-weight:700;color:var(--navy);line-height:1.4}
+        .pdf-card.empty .title{color:#7c8ea0}
+        .pdf-card .sub{font-size:11.5px;color:var(--muted)}
+
+        @media(max-width:1050px){.main{padding:22px}.sidebar{width:215px;flex-basis:215px}.main{width:calc(100% - 215px)}}
+        @media(max-width:720px){.sidebar{display:none}.main{width:100%;padding:18px}.topbar{flex-direction:column}}
+    </style>
+
+    <!-- ── Shared modules (ต้องเรียงลำดับนี้เสมอ: config -> supabase SDK -> auth/date/gas-api) ── -->
+    <script src="js/config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/date-th.js"></script>
+    <script src="js/gas-api.js"></script>
+    <script src="js/sidebar.js"></script>
+    <script>checkAuth();</script>
+</head>
+<body>
+<div class="layout">
+  <div id="sidebarRoot"></div>
+  <script>
+    renderSidebar('training', [
+      { cls: 'step-1',        href: 'training_courses_gfr1.html', title: 'หลักสูตรการฝึกอบรม', icon: SIDEBAR_STEP_ICON.training },
+      { cls: 'step-2',        href: '01_Main-Reports.html',       title: 'รายละเอียดหลักสูตร',  icon: SIDEBAR_STEP_ICON.chevron },
+      { cls: 'step-3 active', href: '#',                          title: 'รายงาน PDF',          icon: SIDEBAR_STEP_ICON.chevron }
+    ]);
+  </script>
+
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <div class="crumb">
+          <span>หลักสูตรการฝึกอบรม</span><span class="sep">/</span>
+          <span>รายละเอียดหลักสูตร</span><span class="sep">/</span>
+          <span class="current">รายงาน PDF</span>
+        </div>
+        <h1 id="f_course_name">กำลังโหลดข้อมูล...</h1>
+        <div id="f_meta_line1" class="meta-line"></div>
+      </div>
+      <button class="back-btn" onclick="history.back()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        ย้อนกลับ
+      </button>
+    </header>
+
+    <div id="pdf-status" class="status-line">กำลังโหลด...</div>
+
+    <section class="panel">
+      <div id="pdf-grid" class="pdf-grid">
+        <!-- การ์ดถูกสร้างด้วย JS จาก PDF_REPORTS ด้านล่าง -->
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     รายการรายงาน PDF ที่ต้องแสดง — สีและไอคอนล้อตาม REPORTS array ในไฟล์ 01
+     "key" คือชื่อคอลัมน์ที่เก็บลิงก์ PDF ไว้ในชีต courses (บันทึกตอนกด "บันทึก PDF"
+     ในไฟล์รายงานแต่ละไฟล์ ผ่าน gsApi('updateCourseField', {no, [key]: publicUrl}))
+═══════════════════════════════════════════════════════ -->
+<script>
+    const PDF_REPORTS = [
+        { key: 'pdf05', name: 'ประมาณการค่าใช้จ่าย',      icon: '⭐' },
+        { key: 'pdf06', name: 'สรุปค่าใช้จ่ายจริง',        icon: '📋' },
+        { key: 'pdf07', name: 'สรุปฯ (ใบปะหน้า)',          icon: '📝' },
+        { key: 'pdf08', name: 'ใบหักล้างยืมเงิน (บง.27)',  icon: '🧾' },
+        { key: 'pdf09', name: 'ค่าใช้จ่ายตาม ว.119', icon: '⏱️' },
+    ];
+
+    function renderPdfCards(course) {
+        const grid = document.getElementById('pdf-grid');
+        grid.innerHTML = PDF_REPORTS.map(r => {
+            const url = course && course[r.key] ? String(course[r.key]).trim() : '';
+            const savedKey = r.key + 'SavedAt';
+            const savedAt  = course && course[savedKey] ? course[savedKey] : '';
+
+            if (url) {
+                return `
+                <a href="${url}" target="_blank" rel="noopener" class="pdf-card has-file">
+                    <div class="row-top">
+                        <span class="icon">${r.icon}</span>
+                        <span class="chip ok">มีไฟล์</span>
+                    </div>
+                    <span class="title">${r.name}</span>
+                    <span class="sub">${savedAt ? 'บันทึกเมื่อ ' + fmtSavedAt(savedAt) : 'เปิดไฟล์ PDF ↗'}</span>
+                </a>`;
+            }
+
+            return `
+                <div class="pdf-card empty">
+                    <div class="row-top">
+                        <span class="icon">${r.icon}</span>
+                        <span class="chip no">ยังไม่มีไฟล์</span>
+                    </div>
+                    <span class="title">${r.name}</span>
+                    <span class="sub">ยังไม่เคยกดบันทึก PDF จากรายงานนี้</span>
+                </div>`;
+        }).join('');
+    }
+
+    function fmtSavedAt(iso) {
+        try {
+            const d = new Date(iso);
+            if (isNaN(d)) return '';
+            return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) +
+                   ' ' + d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+        } catch (e) { return ''; }
+    }
+
+    // แสดงโครงการ์ดแบบ "ยังไม่มีข้อมูล" ไว้ก่อนระหว่างรอโหลดจริง
+    renderPdfCards(null);
+</script>
+
+<!-- ═══════════════════════════════════════════════════════
+     ดึงข้อมูลหลักสูตรจาก Google Sheet — ใช้ js/gas-api.js กลาง (shared กับทุกไฟล์) แทน
+     GAS_URL/gsApi() ท้องถิ่นที่เคยก็อปวางซ้ำอยู่ที่นี่
+     ⚠️ gsApi ของ shared เป็นแบบ swallow-return-null (คืน null เมื่อผิดพลาด ไม่ throw) —
+     จุดเรียกใช้ด้านล่างเช็ค `if (gsRow === null)` แทน .catch() แบบเดิม
+═══════════════════════════════════════════════════════ -->
+<script>
+    function setCourseFields(cr) {
+        document.getElementById('f_course_name').textContent = cr.course || 'ยังไม่พบข้อมูลหลักสูตร';
+        const parts = [];
+        if (cr.batch) parts.push(`รุ่นที่ ${cr.batch}`);
+        if (cr.no)    parts.push(`เลขที่หลักสูตร ${cr.no}`);
+        document.getElementById('f_meta_line1').textContent = parts.join(' · ');
+    }
+
+    async function loadPdfOverview(no, attempt) {
+        attempt = attempt || 1;
+        const statusEl = document.getElementById('pdf-status');
+        statusEl.textContent = attempt === 1 ? 'กำลังโหลด...' : `กำลังลองใหม่ (${attempt}/3)...`;
+        showGsLoader(attempt === 1 ? '📥 กำลังโหลดข้อมูล' : `📥 กำลังลองใหม่ (${attempt}/3)...`);
+
+        const gsRow = await gsApi('getByNo', null, no);
+
+        if (gsRow === null) {
+            if (attempt < 3) {
+                setTimeout(() => loadPdfOverview(no, attempt + 1), 1200);
+            } else {
+                hideGsLoader();
+                statusEl.innerHTML = '⚠️ เชื่อมต่อไม่สำเร็จ <button onclick="loadPdfOverview(\'' + no + '\')" style="border:0;background:transparent;color:#0b6aab;text-decoration:underline;cursor:pointer;font:inherit;padding:0;margin-left:4px">ลองใหม่</button>';
+            }
+            return;
+        }
+
+        const cr = (gsRow && gsRow.course) || {};
+        if (cr && cr.course) {
+            setCourseFields({ ...cr, no });
+            try { sessionStorage.setItem('courseData', JSON.stringify({ ...cr, no })); } catch (e) {}
+        }
+        renderPdfCards(cr);
+        hideGsLoader();
+        statusEl.textContent = 'เชื่อมต่อสำเร็จ';
+    }
+
+    (function initPdfOverview() {
+        let courseData = null;
+        try {
+            const raw = sessionStorage.getItem('courseData');
+            if (raw) courseData = JSON.parse(raw);
+        } catch (e) { courseData = null; }
+
+        let no = (courseData && courseData.no) ? String(courseData.no).trim() : '';
+        if (!no) {
+            const params = new URLSearchParams(window.location.search);
+            no = params.get('no') || params.get('run') || '';
+        }
+
+        if (no) {
+            setCourseFields(courseData && courseData.no === no ? courseData : { no });
+            loadPdfOverview(no);
+        } else {
+            document.getElementById('f_course_name').textContent = 'ไม่พบเลขที่หลักสูตร';
+            document.getElementById('f_meta_line1').textContent = 'กรุณาเข้าหน้านี้ผ่านปุ่ม "ภาพรวมทั้งหมด" จากหน้ารายละเอียดหลักสูตร';
+            document.getElementById('pdf-status').textContent = '';
+        }
+    })();
+
+    loadCurrentUser();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════
+     ควบคุมการยืด/หด sidebar (เหมือนไฟล์ annual-plan)
+═══════════════════════════════════════════════════════ -->
+<!-- toggleSidebar() มาจาก js/sidebar.js แล้ว (โมดูลกลาง) — ไม่ต้องประกาศซ้ำในไฟล์นี้อีก -->
+</body>
+</html>

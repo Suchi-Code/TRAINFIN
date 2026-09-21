@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ค่าใช้จ่ายตาม ว.119 — กฝภ.1</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+<!-- ── Shared modules (ต้องเรียงลำดับนี้เสมอ: config -> supabase SDK -> auth/date/gas-api/schema) ── -->
+<script src="js/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/auth.js"></script>
+<script src="js/date-th.js"></script>
+<script src="js/gas-api.js"></script>
+<script src="js/schema.js"></script>
+<script src="js/print-layout.js"></script>
+<script>checkAuth();</script>
+<style>
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',sans-serif;background:#f3f4f6;color:#1e2533;font-size:14px;line-height:1.5}
+
+/* ============================================================
+   SITE HEADER
+   ============================================================ */
+.site-header{background:#0f2744;color:#fff;position:sticky;top:0;z-index:200;box-shadow:0 2px 12px rgba(0,0,0,.25)}
+.header-inner{max-width:1060px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.header-title{display:flex;align-items:center;gap:12px}
+.header-icon{width:38px;height:38px;background:#e8a020;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.header-text h1{font-size:15px;font-weight:600;margin:0}
+.header-text p{font-size:11px;color:rgba(255,255,255,.55);margin:2px 0 0}
+.btn-back{padding:6px 14px;border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.8);background:transparent;border-radius:6px;font-family:'Sarabun',sans-serif;font-size:12px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+.btn-back:hover{background:rgba(255,255,255,.1)}
+.btn-print-hdr{padding:6px 16px;background:#e8a020;color:#0f2744;border:none;border-radius:6px;font-family:'Sarabun',sans-serif;font-size:12px;font-weight:700;cursor:pointer}
+.btn-print-hdr:hover{background:#f5c842}
+
+/* ============================================================
+   MAIN LAYOUT
+   ============================================================ */
+.page{max-width:1060px;margin:0 auto;padding:20px 24px 60px}
+
+/* ============================================================
+   INPUT PANEL (like file 08)
+   ============================================================ */
+#input-panel{
+  background:#f0f4f8;border:2px solid #1d5fa8;border-radius:12px;
+  padding:18px 22px;margin-bottom:20px;
+}
+#input-panel h3{margin:0 0 14px;font-size:15px;color:#0f2744;border-bottom:1px solid #c0d0e0;padding-bottom:8px;display:flex;align-items:center;gap:8px}
+.ip-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px 18px}
+.ip-field{display:flex;flex-direction:column;gap:3px}
+.ip-field.wide{grid-column:span 2}
+.ip-field.full{grid-column:span 3}
+.ip-field label{font-size:11px;font-weight:700;color:#4a5568;text-transform:uppercase;letter-spacing:.04em}
+.ip-field input,.ip-field select{
+  padding:6px 10px;border:1.5px solid #c0d0e0;border-radius:6px;
+  font-family:'Sarabun',sans-serif;font-size:14px;background:#fff;color:#1e2533
+}
+.ip-field input:focus,.ip-field select:focus{outline:none;border-color:#1d5fa8}
+.ip-section-title{font-size:13px;font-weight:700;color:#0f2744;margin:14px 0 8px;border-left:3px solid #1d5fa8;padding-left:8px}
+
+/* ============================================================
+   DOCUMENT CONTENT (screen display + print)
+   ============================================================ */
+.doc-wrap{font-family:'Sarabun',sans-serif;font-size:13px;line-height:1.5;color:#000;}
+.doc-title{text-align:center;margin-bottom:0}
+.doc-meta{font-size:13px;line-height:1.7;text-align:center;margin-bottom:12px}
+.hdr-inp{
+  border:none;border-bottom:1px dotted #999;background:transparent;
+  font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;color:#000;
+  text-align:center;padding:1px 4px;outline:none;width:100%;display:block;line-height:1.7;
+}
+.hdr-inp:focus{border-bottom-color:#1d5fa8;background:#f0f7ff}
+@media print{.hdr-inp{border-bottom:none!important;background:transparent!important}}
+.doc-table{width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:10px;table-layout:fixed}
+.doc-table th,.doc-table td{border:1px solid #000;padding:5px 7px;vertical-align:top;word-wrap:break-word;overflow-wrap:break-word}
+.doc-table th{background:#e8ecf5;font-weight:700;text-align:center;white-space:normal}
+.doc-table td.tc{text-align:center}
+.doc-table td.tr{text-align:right;white-space:nowrap}
+.doc-table td.tl{text-align:left}
+.row-cat td{font-weight:700}
+.row-sub td{font-weight:700;padding-left:16px!important}
+.row-sub2 td{font-weight:600;padding-left:28px!important}
+.row-grand td{font-weight:700;background:#d9e1f2}
+/* ── แบ่งหน้าตามความสูงจริง (PaginateTH) — ไม่มียกยอด/เลขหน้า ── */
+.doc-page{page-break-after:always}
+.doc-page:last-child{page-break-after:avoid}
+.doc-table tbody tr{page-break-inside:avoid}
+
+/* ============================================================
+   PRINT MEDIA
+   ============================================================ */
+@page{size:A4 portrait;margin:0.5in 0.47in 0 0.47in}
+@media print{
+  .site-header,#input-panel{display:none!important}
+  body{background:#fff!important}
+  .page{max-width:100%!important;padding:0!important;margin:0!important}
+  #doc-display{padding:0!important;border:none!important;border-radius:0!important;background:transparent!important}
+}
+#doc-display{background:#fff;border:1px solid #dde1e9;border-radius:10px;padding:16px 24px;margin-top:4px}
+.btn-save-pdf{background:#1a7a4a;color:#fff;border:none;border-radius:6px;padding:7px 20px;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit}
+.btn-save-pdf:hover{background:#22a05e}
+</style>
+<!-- html2canvas/jsPDF ถูกลบออก — เปลี่ยนไปสร้าง PDF ผ่าน Puppeteer server ฝั่ง backend แทน (ดู savePdf()) -->
+</head>
+<body>
+
+<!-- ============================================================
+     SITE HEADER
+     ============================================================ -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-title">
+      <div class="header-icon">📄</div>
+      <div class="header-text">
+        <h1>ค่าใช้จ่ายตาม ว.119</h1>
+        <p>การประปาส่วนภูมิภาค (กปภ.) · กองฝึกอบรมภูมิภาค 1</p>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <a class="btn-back" href="01_Main-Reports.html">← ย้อนกลับ</a>
+      <button class="btn-print-hdr" onclick="window.print()">🖨 พิมพ์แบบฟอร์ม</button>
+      <button class="btn-save-pdf" onclick="savePdf(this)">💾 บันทึก PDF</button>
+    </div>
+  </div>
+</header>
+
+<div class="page">
+
+<!-- ============================================================
+     INPUT PANEL (read-only display of course info)
+     ============================================================ -->
+<div id="input-panel">
+  <h3>📝 ข้อมูลหลักสูตร</h3>
+
+  <div class="ip-grid">
+    <div class="ip-field wide">
+      <label>ชื่อหลักสูตร</label>
+      <input type="text" id="f_title" placeholder="" readonly>
+    </div>
+    <div class="ip-field">
+      <label>รุ่นที่</label>
+      <input type="text" id="f_run" placeholder="" readonly>
+    </div>
+    <div class="ip-field">
+      <label>เลขที่รุ่นหลักสูตร</label>
+      <input type="text" id="f_runno" placeholder="" readonly>
+    </div>
+    <div class="ip-field">
+      <label>วันที่อบรม (เริ่ม)</label>
+      <input type="date" id="f_date" readonly>
+    </div>
+    <div class="ip-field">
+      <label>วันที่อบรม (สิ้นสุด)</label>
+      <input type="date" id="f_date_end" readonly>
+    </div>
+    <div class="ip-field full">
+      <label>สถานที่</label>
+      <input type="text" id="f_location" placeholder="ระบุสถานที่" readonly>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     DOCUMENT DISPLAY (แสดงตัวอย่างพิมพ์ทันที — ดึงจาก sec=2)
+     ============================================================ -->
+<div id="doc-display"></div>
+
+</div><!-- end .page -->
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+/* ============================================================
+   HELPERS
+   ============================================================ */
+/* วันที่ไทย — logic ย้ายไปรวมที่ js/date-th.js แล้ว (DateTH.normalize/format/formatRange ใช้
+   getUTCHours()/getUTCFullYear() เท่านั้น ชดเชย timezone +7 ให้ถูกต้องเสมอ ไม่ขึ้นกับ timezone
+   ของเครื่อง/เบราว์เซอร์ผู้ใช้) — ของเดิม toISODate() ใช้ Date methods แบบ local (getFullYear/
+   getMonth/getDate) เสี่ยงวันที่เพี้ยนไป 1 วันตาม timezone เครื่อง (ดู gotcha 6.5 ในคู่มือ)
+   เก็บชื่อฟังก์ชันเดิมไว้เป็น wrapper บางๆ กันไม่ต้องแก้จุดเรียกใช้ทั้งไฟล์ (ไม่มีจุดใดใช้ short=true) */
+function fmtDate(d, short){
+  return DateTH.format(d, { month: short ? 'short' : 'long' });
+}
+function fmtDateRange(s, e){
+  return DateTH.formatRange(s, e);
+}
+function fmtMoney(n){
+  const v = parseFloat(n)||0;
+  return v.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function fmtMoney2(n){
+  const v = parseFloat(n)||0;
+  return v===0 ? '-' : v.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+const gv = id => (document.getElementById(id)?.value?.trim()||'');
+
+function toISODate(v){
+  return DateTH.normalize(v);
+}
+
+/* ============================================================
+   ROWS STATE (data only — ไม่มี editable DOM table อีกต่อไป)
+   ============================================================ */
+let editRows = [];   // [{seq,doc,name,branch,taxid,addr1,tambon,amphoe,province,zip,date,acct,val,vat,wht,total}, ...]
+
+/* ============================================================
+   ที่อยู่แบบยืดหยุ่น (ตัดขึ้นบรรทัดใหม่ + รองรับกรุงเทพฯ แขวง/เขต) — พอร์ตมาจาก
+   ไฟล์ 06 (sumBuildDoc) ทั้งชุด แทนที่ buildAddr() เดิมที่รวมทุกอย่างบรรทัดเดียว
+   คืนค่าเป็น array ของบรรทัด (1-3 บรรทัด) ให้ผู้เรียกใช้ต่อเป็น <div> ต่อบรรทัดเอง
+   ============================================================ */
+function buildAddrLines(r){
+  const isBkk = /กทม|กรุงเทพ/.test(r.province || '');
+  const subDistLabel = isBkk ? 'แขวง' : 'ต.';
+  const distLabel     = isBkk ? 'เขต'  : 'อ.';
+  const provPart       = r.province ? (isBkk ? r.province : 'จ.' + r.province) : '';
+
+  const addr1Text = r.addr1 || '';
+  const tambonText = r.tambon ? subDistLabel + r.tambon : '';
+  const amphoeText = r.amphoe ? distLabel + r.amphoe : '';
+  const provZipText = [provPart, r.zip].filter(Boolean).join(' ');
+  const addr1TambonCombined = [addr1Text, tambonText].filter(Boolean).join(' ');
+  const tambonAmphoeCombined = [tambonText, amphoeText].filter(Boolean).join(' ');
+
+  const addrLines = [];
+  if (addr1TambonCombined.length <= 30) {
+    if (addr1TambonCombined) addrLines.push(addr1TambonCombined);
+    const line2 = [amphoeText, provZipText].filter(Boolean).join(' ');
+    if (line2) addrLines.push(line2);
+  } else {
+    if (addr1Text) addrLines.push(addr1Text);
+    if (tambonAmphoeCombined.length <= 30) {
+      const line2 = [tambonAmphoeCombined, provZipText].filter(Boolean).join(' ');
+      if (line2) addrLines.push(line2);
+    } else {
+      if (tambonAmphoeCombined) addrLines.push(tambonAmphoeCombined);
+      if (provZipText) addrLines.push(provZipText);
+    }
+  }
+  return addrLines;
+}
+
+/* ============================================================
+   แปลงตัวเลขทั้งหมดในโหนดที่กำหนดเป็นเลขไทย (ตัวหนังสือ/ตัวเลขในตาราง) —
+   ก็อปมาจากไฟล์ 06 (convertToThaiNumerals) ทั้งฟังก์ชัน ไม่มีการปรับ logic
+   ============================================================ */
+function convertToThaiNumerals(node) {
+  const thaiNums = ['๐','๑','๒','๓','๔','๕','๖','๗','๘','๙'];
+
+  if (node.nodeType === 3) { // Text Node
+    node.nodeValue = node.nodeValue.replace(/\d/g, d => thaiNums[d]);
+  } else if (node.nodeType === 1) {
+    if (node.tagName === 'INPUT' && node.type === 'number') return;
+
+    if (node.tagName === 'INPUT' || node.tagName === 'TEXTAREA') {
+      if (node.placeholder) node.placeholder = node.placeholder.replace(/\d/g, d => thaiNums[d]);
+      if (node.type !== 'number' && node.value) {
+        node.value = node.value.replace(/\d/g, d => thaiNums[d]);
+      }
+    } else {
+      for (let child of node.childNodes) {
+        convertToThaiNumerals(child);
+      }
+    }
+  }
+}
+
+function esc(s){
+  return String(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ============================================================
+   GOOGLE SHEET API — gsApi/showGsLoader/hideGsLoader/showGsStatus
+   ย้ายไปรวมที่ js/gas-api.js แล้ว (shared กับทุกไฟล์)
+   ⚠️ gsApi ของ shared เป็นแบบ swallow-return-null (คืน null เมื่อผิดพลาด ไม่ throw)
+   จุดเรียกใช้ด้านล่างเช็ค `if (!gsRow)` อยู่แล้ว ใช้ pattern เดียวกันได้เลยไม่ต้องแก้
+   ============================================================ */
+
+/* ============================================================
+   หมวดรายการ — ย้ายไปใช้ SchemaTH (js/schema.js) แล้ว แทนก้อน SEC_OPTS/DYNAMIC_SEC_ORDER
+   ที่เคยก็อปวางซ้ำจากไฟล์ 06 (แก้บั๊กสำคัญ: ของเดิมใช้รหัสหมวดแบบเก่า '1'/'2'/'3'/'4'
+   ซึ่งไม่ตรงกับที่ไฟล์ 06 เขียนจริงหลัง refactor (SchemaTH.SEC.OFFICE='office' ฯลฯ) ทำให้
+   แถวหมวดวัสดุสำนักงาน/วัสดุเบ็ดเตล็ด/อาหาร/เดินทางเจ้าหน้าที่ที่ติ๊ก ว.119 ไม่เคยถูกดึงมา
+   แสดงเลยอย่างเงียบๆ — ดู bug ledger #11/#12 ที่แก้จุดเดียวกันในไฟล์ 07 ไปแล้ว)
+   ============================================================ */
+const SEC_OPTS          = SchemaTH.SEC_OPTS;
+const DYNAMIC_SEC_ORDER = SchemaTH.DYNAMIC_SEC_ORDER;
+
+/* ============================================================
+   เลขข้อหมวดใหญ่ "1., 2., 3..." — เดิมล้อตามหมวดที่ "ตั้งงบประมาณไว้" ในไฟล์ 05 ทั้งหมด (ให้ตรง
+   เลขข้อกับรายงาน 06/07) เปลี่ยนตามที่ยืนยันแล้ว: นับเฉพาะหมวดที่มีรายการติ๊ก ว.119 จริงในรายงาน
+   นี้เท่านั้น เรียงตามลำดับ DYNAMIC_SEC_ORDER แบบต่อเนื่องไม่กระโดดข้ามหมวดที่ไม่มี ว.119 เลย
+   (แม้หมวดนั้นจะมีงบตั้งไว้ในไฟล์ 05 ก็ตาม) — ไม่ต้องพึ่ง budget/toggles จากไฟล์ 05 อีกต่อไป
+   ============================================================ */
+function computeW119SectionNumbers(w119Rows){
+  const present = new Set((w119Rows||[]).map(r=>r.sec));
+  const nums = {};
+  let n = 0;
+  DYNAMIC_SEC_ORDER.forEach(sec=>{
+    if(present.has(sec)){ n++; nums[sec] = String(n); }
+  });
+  return nums;
+}
+
+// เลขข้อของแต่ละหมวด คำนวณครั้งเดียวตอนโหลดข้อมูล (key = sec, value = "1"/"2"/...)
+let SECTION_NUMS = {};
+
+/* ============================================================
+   LEGACY CODE MIGRATION — actual06.rowsJson ของคอร์สที่บันทึกไว้ "ก่อน" ไฟล์ 06 ย้ายไปใช้
+   SchemaTH ยังเป็นรหัสหมวดแบบเก่า ('1','2','3','4') — แปลงตอนอ่านเข้ามาเท่านั้น (lazy migration
+   แบบเดียวกับ migrateLegacyRow06/07 ไม่ batch-migrate ข้อมูลใน Sheet จริง) ก่อนนำไปกรอง/นับหมวด
+   09 ใช้แค่ sec สำหรับจัดกลุ่ม/หาเลขข้อ ไม่ได้ใช้ sub เลย จึงไม่ต้อง map sub เหมือน 07
+   ============================================================ */
+const LEGACY_SEC09_MAP = {
+  '1': SchemaTH.SEC.OFFICE, '2': SchemaTH.SEC.MISC, '3': SchemaTH.SEC.FOOD, '4': SchemaTH.SEC.STAFF_TRAVEL,
+};
+// ⚠️ เพิ่มใหม่: เดิม 09 ใช้แค่ sec ไม่ได้ใช้ sub เลย (ดูคอมเมนต์เดิม) แต่ตอนนี้ต้องใช้ sub เพื่อ
+// แสดงหัวข้อย่อย (เช่น "ค่าเครื่องเขียนแบบพิมพ์"/"ค่าถ่ายเอกสารและเข้าเล่ม") แบบเดียวกับไฟล์ 06/07
+// จึงต้อง migrate รหัสเก่า→ใหม่ของ sub ด้วย (คัดลอกจาก LEGACY_SUB07_MAP ทั้งชุด)
+const LEGACY_SUB09_MAP = {
+  '1_1': SchemaTH.SUB.OFFICE_STATIONERY, '1_2': SchemaTH.SUB.OFFICE_COPY,
+  'venue_meet': SchemaTH.SUB.VENUE_MEETING, 'venue_vip': SchemaTH.SUB.VENUE_VIP_LODGING, 'venue_staff': SchemaTH.SUB.VENUE_STAFF_LODGING,
+  '3_12': SchemaTH.SUB.FOOD_LUNCH_SNACK, '3_dinner': SchemaTH.SUB.FOOD_DINNER, '3_3': SchemaTH.SUB.FOOD_SPEAKER_DINNER,
+  '4_1': SchemaTH.SUB.STAFF_ALLOWANCE, '4_2': SchemaTH.SUB.STAFF_LODGING, '4_3': SchemaTH.SUB.STAFF_TRANSPORT,
+  'ext_honor': SchemaTH.SUB.EXT_HONORARIUM, 'ext_lodging': SchemaTH.SUB.EXT_LODGING, 'ext_travel': SchemaTH.SUB.EXT_TRAVEL,
+  'int_honor': SchemaTH.SUB.INT_HONORARIUM,
+  'int_lodging': '', 'int_travel': '', // ตัดออกจาก schema แล้ว — ไม่มีปลายทางให้ map
+};
+function migrateLegacyRow09(r){
+  if (r && r.sec && LEGACY_SEC09_MAP[r.sec] !== undefined) r.sec = LEGACY_SEC09_MAP[r.sec];
+  if (r && r.sub && LEGACY_SUB09_MAP[r.sub] !== undefined) r.sub = LEGACY_SUB09_MAP[r.sub];
+  return r;
+}
+
+/* ============================================================
+   โหลดข้อมูลจาก Google Sheet — key คือ "เลขที่หลักสูตร" (no)
+   ============================================================ */
+async function loadFromGSheet09(no){
+  if(!no){
+    document.getElementById('doc-display').innerHTML =
+      '<div style="text-align:center;padding:40px;color:#888">⚠️ ไม่พบเลขที่หลักสูตร กรุณาเข้าจากหน้ารายการหลักสูตร</div>';
+    return;
+  }
+  showGsLoader('📥 กำลังโหลดข้อมูล');
+  try{
+    const gsRow = await gsApi('getByNo', null, no);
+    console.log('[09] gsRow:', gsRow);
+    if(!gsRow){
+      hideGsLoader();
+      showGsStatus('⚠️ ไม่พบข้อมูลสำหรับเลขที่ ' + no, 'warn');
+      document.getElementById('doc-display').innerHTML =
+        '<div style="text-align:center;padding:40px;color:#888">⚠️ ไม่พบข้อมูลสำหรับเลขที่หลักสูตร ' + esc(no) + '</div>';
+      return;
+    }
+
+    const cr = gsRow.course   || {};
+    const g6 = gsRow.actual06 || {};
+
+    // ── เติมข้อมูลหลักสูตรลง input-panel (read-only display) ──
+    // วันที่: รองรับหลายตำแหน่งที่อาจมาจาก backend (cr.dateStart/dateEnd เป็นหลัก
+    // แต่กันเหนียวกรณี backend ส่งมาที่ระดับบนสุดของ gsRow หรือใน actual06 แทน)
+    const title    = cr.course    || '';
+    const run      = cr.batch     || '';
+    const runno    = cr.no        || no;
+    const dateS    = toISODate(cr.dateStart || gsRow.dateStart || g6.dateStart || '');
+    const dateE    = toISODate(cr.dateEnd   || gsRow.dateEnd   || g6.dateEnd   || '');
+    const location = cr.location  || '';
+
+    if(document.getElementById('f_title'))    document.getElementById('f_title').value    = title;
+    if(document.getElementById('f_run'))      document.getElementById('f_run').value       = run;
+    if(document.getElementById('f_runno'))    document.getElementById('f_runno').value     = runno;
+    if(document.getElementById('f_date'))     document.getElementById('f_date').value      = dateS;
+    if(document.getElementById('f_date_end')) document.getElementById('f_date_end').value  = dateE;
+    if(document.getElementById('f_location')) document.getElementById('f_location').value  = location;
+
+    // ── กรองเฉพาะรายการที่ติ๊ก "ค่าใช้จ่ายตาม ว.119" (w119) จาก actual06.rowsJson ──
+    // หมายเหตุ: ไฟล์ 06 บันทึกคอลัมน์ "rowsJson" เป็น JSON string (ไม่ใช่ "rows")
+    // ต้อง parse ก่อนใช้งาน และรองรับกรณี backend คืนมาเป็น array อยู่แล้ว
+    let allRows = [];
+    const rawRows = g6.rowsJson ?? g6.rows ?? [];
+    if(typeof rawRows === 'string'){
+      try{ allRows = JSON.parse(rawRows || '[]'); }catch(e){ allRows = []; console.warn('[09] rowsJson parse error:', e); }
+    } else if(Array.isArray(rawRows)){
+      allRows = rawRows;
+    }
+    // normalize รหัสหมวดเก่า→ใหม่ (LEGACY_SEC09_MAP) ก่อนใช้งานเสมอ — เผื่อคอร์สนี้ยังไม่เคย
+    // ถูกบันทึกซ้ำด้วยไฟล์ 06 เวอร์ชันใหม่ (ดู bug ledger #12)
+    allRows = allRows.map(migrateLegacyRow09);
+
+    // กรองเฉพาะรายการที่ติ๊ก ว.119 ก่อน แล้วค่อยคำนวณเลขข้อจากหมวดที่ "มีจริง" ในชุดนี้เท่านั้น
+    // (เปลี่ยนจากเดิมที่คำนวณจาก allRows ทั้งหมดโดยอิงงบที่ตั้งไว้ในไฟล์ 05 — ดูคอมเมนต์ที่
+    // computeW119SectionNumbers() ด้านบน)
+    const w119Rows = allRows.filter(r=>r.w119===true || r.w119==='true');
+    SECTION_NUMS = computeW119SectionNumbers(w119Rows);
+
+    editRows = w119Rows.map(r=>{
+      // กันเหนียว: ใช้ staff เฉพาะตอนเป็นหมวดค่าเดินทางเจ้าหน้าที่เท่านั้น
+      // ป้องกัน bug เดิมจากไฟล์ 06 ที่ select เจ้าหน้าที่ติดค่า default มาทุกแถว
+      const nameVal = r.name || (r.sec === SchemaTH.SEC.STAFF_TRAVEL ? (r.staff||'') : '');
+      const secLabel = (SEC_OPTS.find(s=>s.v===r.sec)?.l) || '';
+      return {
+        sec   : r.sec    || '',
+        sub   : r.sub    || '',
+        secNum: SECTION_NUMS[r.sec] || '',
+        secLabel,
+        doc   : r.doc    || '',
+        name  : nameVal,
+        branch: r.branch || '',
+        // ⚠️ เก็บฟิลด์ที่อยู่แบบแยกส่วน (ไม่รวมเป็นสตริงเดียวแบบ buildAddr() เดิม) เพื่อให้
+        // buildDocHtml() คำนวณการตัดบรรทัดที่อยู่แบบยืดหยุ่นได้ (ดู buildAddrLines())
+        addr1   : r.addr1   || '',
+        tambon  : r.tambon  || '',
+        amphoe  : r.amphoe  || '',
+        province: r.province|| '',
+        zip     : r.zip     || '',
+        taxid : r.taxid  || '',
+        date  : r.date   || '',
+        acct  : r.acct   || '',
+        val   : parseFloat(r.val)   || 0,
+        vat   : parseFloat(r.vat)   || 0,
+        wht   : parseFloat(r.wht)   || 0,
+        total : parseFloat(r.total) || ((parseFloat(r.val)||0)+(parseFloat(r.vat)||0)-(parseFloat(r.wht)||0)),
+      };
+    });
+
+    hideGsLoader();
+    if(editRows.length===0){
+      showGsStatus('⚠️ ไม่พบรายการ "ค่าใช้จ่ายตาม ว.119"', 'warn');
+    } else {
+      showGsStatus('✅ โหลดข้อมูลสำเร็จ', 'ok');
+    }
+
+    renderDocDisplay();
+  }catch(e){
+    hideGsLoader();
+    showGsStatus('❌ โหลดไม่สำเร็จ: ' + e.message, 'error');
+    console.error('[09] loadFromGSheet09 error:', e);
+  }
+}
+
+/* ============================================================
+   AUTO-LOAD ON PAGE ENTER — key จาก sessionStorage (ไฟล์ 01 ส่งมา)
+   ============================================================ */
+function autoLoadFromFile01(){
+  let slot={};
+  try{
+    const raw = sessionStorage.getItem('budgetSlotData') || localStorage.getItem('budgetSlotData');
+    if(raw) slot = JSON.parse(raw);
+    else slot = JSON.parse(sessionStorage.getItem('courseData')||'{}');
+  }catch(e){}
+
+  const no = slot.no || slot.courseNo || '';
+  loadFromGSheet09(no);
+}
+
+/* ============================================================
+   BUILD PRINT DOCUMENT HTML
+   ============================================================ */
+function buildDocHtml(){
+  const title    = gv('f_title');
+  const run      = gv('f_run');
+  const runno    = gv('f_runno');
+  const dateStr  = fmtDateRange(gv('f_date'), gv('f_date_end'));
+  const location = gv('f_location');
+
+  // จัดเรียงแถวตามลำดับหมวดของ DYNAMIC_SEC_ORDER ก่อน (ให้กลุ่มหมวดเรียงตรงกับรายงานสรุป)
+  // แล้วค่อยเลขลำดับที่ต่อเนื่องกันทั้งชุด
+  const secOrderIdx = sec => { const i = DYNAMIC_SEC_ORDER.indexOf(sec); return i===-1 ? 999 : i; };
+  const sortedRows = [...editRows].sort((a,b)=> secOrderIdx(a.sec)-secOrderIdx(b.sec));
+
+  const rows = sortedRows.map((r,i)=>({
+    seq   : i+1,
+    sec   : r.sec||'',
+    sub   : r.sub||'',
+    secNum: r.secNum||'',
+    secLabel: r.secLabel||'',
+    doc   : r.doc||'',
+    name  : r.name||'',
+    branch: r.branch||'',
+    addr1   : r.addr1||'',
+    tambon  : r.tambon||'',
+    amphoe  : r.amphoe||'',
+    province: r.province||'',
+    zip     : r.zip||'',
+    taxid : r.taxid||'',
+    date  : r.date||'',
+    acct  : r.acct||'',
+    val   : r.val||0,
+    vat   : r.vat||0,
+    wht   : r.wht||0,
+    total : r.total||0,
+  }));
+
+  // ✅ หัวข้อย่อย (ไม่มีเลขนำหน้า) — ล้อ pattern เดียวกับไฟล์ 06 (sumBuildDoc): บางหมวด
+  // (วัสดุสำนักงาน/วัสดุเบ็ดเตล็ด) ต้องขึ้นหัวข้อย่อยทันทีหลังหัวข้อหมวดใหญ่เสมอ (subAlways=true)
+  // หมวดอื่นไม่มีหัวข้อย่อยจริง ใช้ secLabel เดิมแทน (subAlways=false) ทุกแถวในไฟล์นี้เป็น
+  // ว.119 อยู่แล้ว (กรองมาก่อนหน้านี้) จึงต่อ "(ว.119)" ท้ายทุกหัวข้อเสมอเหมือนพฤติกรรมเดิม
+  rows.forEach(r=>{
+    if (r.sec === SchemaTH.SEC.MISC) {
+      r.subLabel = 'ค่าใช้จ่ายอื่นๆ';
+      r.subAlways = true;
+    } else if (r.sec === SchemaTH.SEC.OFFICE && r.sub) {
+      r.subLabel = r.sub === SchemaTH.SUB.OFFICE_STATIONERY ? 'ค่าเครื่องเขียนแบบพิมพ์'
+        : (r.sub === SchemaTH.SUB.OFFICE_COPY ? 'ค่าถ่ายเอกสารและเข้าเล่ม' : r.secLabel);
+      r.subAlways = true;
+    } else {
+      r.subLabel = r.secLabel;
+      r.subAlways = false;
+    }
+    r.segKey = `${r.sec}|${r.subLabel}`;
+  });
+
+  let gVal=0,gVat=0,gWht=0,gTotal=0;
+  rows.forEach(r=>{gVal+=r.val;gVat+=r.vat;gWht+=r.wht;gTotal+=r.total;});
+
+  // ซ่อนคอลัมน์ "ภาษีหัก ณ ที่จ่าย" ทั้งคอลัมน์ ถ้าไม่มีรายการใดมีค่าเลย (0 หรือไม่ระบุ)
+  const hasWht = rows.some(r => (parseFloat(r.wht)||0) > 0);
+  const colCount = hasWht ? 7 : 6;
+  const itemColWidth = hasWht ? 44 : 54;
+
+  const theadHtml = `
+    <thead>
+      <tr>
+        <th style="width:6%">ลำดับที่</th>
+        <th style="width:${itemColWidth}%" class="tl">รายการ</th>
+        <th style="width:10%">รหัสบัญชี</th>
+        <th style="width:10%">มูลค่าสินค้า</th>
+        <th style="width:10%">ภาษีมูลค่าเพิ่ม</th>
+        ${hasWht ? '<th style="width:10%">ภาษีหัก ณ ที่จ่าย</th>' : ''}
+        <th style="width:10%">จำนวนเงิน</th>
+      </tr>
+    </thead>`;
+
+  /* ---- แถวข้อมูลของ "หนึ่งชุด" (chunk = rows.slice(startIdx,endIdx)) ----
+     แทรกหัวข้อหมวดใหญ่/หัวข้อย่อยใหม่ตามปกติ — รีเซ็ต lastSec/currentSegKey ทุกครั้งที่ขึ้น
+     หน้าใหม่ (เหมือนไฟล์ 06) เพื่อให้หมวดที่ต่อเนื่องข้ามหน้าขึ้นหัวข้อซ้ำอีกครั้ง อ่านง่ายไม่ต้อง
+     เปิดย้อนไปหน้าก่อน — ไฟล์นี้ไม่มี "ยกยอดมา/ยกยอดไป" และไม่มีเลขหน้า ตามที่ตกลงกันไว้ */
+  function renderRowsHtml(startIdx, endIdx, isFirstChunk){
+    let out = '';
+    if(isFirstChunk) out += `<tr class="row-cat"><td colspan="${colCount}">ก. ค่าดำเนินการฝึกอบรม</td></tr>`;
+
+    if(rows.length===0){
+      out += `<tr><td colspan="${colCount}" style="text-align:center;padding:16px;color:#888;font-style:italic;">ไม่มีรายการ</td></tr>`;
+      return out;
+    }
+
+    let lastSec = null;
+    let currentSegKey = null;
+    rows.slice(startIdx, endIdx).forEach(r=>{
+      if(r.sec !== lastSec){
+        const num = r.secNum ? r.secNum + '. ' : '';
+        // ✅ ถ้าหมวดนี้มีหัวข้อย่อยแสดงอยู่แล้ว (subAlways) ไม่ต้องซ้ำ "(ว.119)" ที่หัวข้อหมวดใหญ่
+        // — ติดป้าย (ว.119) ที่หัวข้อหมวดใหญ่เฉพาะหมวดที่ไม่มีหัวข้อย่อยเลยเท่านั้น (ทุกแถวในไฟล์
+        // นี้เป็น ว.119 อยู่แล้วเสมอ จึงเข้าเงื่อนไข "บิลทุกใบเป็น ว.119 ทั้งหมด" โดยอัตโนมัติ)
+        const mainW119Tag = r.subAlways ? '' : ' (ว.119)';
+        out += `<tr class="row-sub"><td colspan="${colCount}">${num}${r.secLabel}${mainW119Tag}</td></tr>`;
+        lastSec = r.sec;
+        currentSegKey = null;
+      }
+      if (r.segKey !== currentSegKey && (r.subAlways || currentSegKey !== null)) {
+        out += `<tr><td colspan="${colCount}" style="padding-left:20px;font-weight:bold;font-style:normal;">&nbsp;&nbsp;&nbsp;${r.subLabel} (ว.119)</td></tr>`;
+      }
+      currentSegKey = r.segKey;
+
+      const detailLines=[];
+      if(r.doc)    detailLines.push(r.doc);
+      if(r.name)   detailLines.push(r.name);
+      if(r.branch) detailLines.push(r.branch);
+      if(r.taxid)  detailLines.push('เลขประจำตัวผู้เสียภาษี '+r.taxid);
+      buildAddrLines(r).forEach(l => detailLines.push(l));
+      if(r.date)   detailLines.push('ลงวันที่ '+fmtDate(r.date));
+
+      out += `<tr>
+        <td class="tc">${r.seq}</td>
+        <td class="tl" style="line-height:1.55">${detailLines.map(l=>`<div>${l}</div>`).join('')}</td>
+        <td class="tc">${r.acct}</td>
+        <td class="tr">${fmtMoney(r.val)}</td>
+        <td class="tr">${fmtMoney2(r.vat)}</td>
+        ${hasWht ? `<td class="tr">${fmtMoney2(r.wht)}</td>` : ''}
+        <td class="tr">${fmtMoney(r.total)}</td>
+      </tr>`;
+    });
+    return out;
+  }
+
+  /* ---- ตารางของ "หนึ่งหน้า" — thead ซ้ำทุกหน้า, แถวรวมท้ายตาราง (row-grand) แสดงเฉพาะ
+     หน้าสุดท้ายเท่านั้น (isLast=true) ---- */
+  function renderPageHtml(startIdx, endIdx, isLast){
+    let pg = `<table class="doc-table">${theadHtml}<tbody>`;
+    pg += renderRowsHtml(startIdx, endIdx, startIdx === 0);
+    if(isLast){
+      pg += `<tr class="row-grand">
+        <td colspan="3" class="tc">รวมค่าใช้จ่ายตาม ว.119 ทั้งสิ้น</td>
+        <td class="tr">${fmtMoney(gVal)}</td>
+        <td class="tr">${fmtMoney2(gVat)}</td>
+        ${hasWht ? `<td class="tr">${fmtMoney2(gWht)}</td>` : ''}
+        <td class="tr">${fmtMoney(gTotal)}</td>
+      </tr>`;
+    }
+    pg += `</tbody></table>`;
+    return pg;
+  }
+
+  /* ---- แบ่งหน้าโดยวัดความสูงจริง (PaginateTH, js/print-layout.js) แทนการปล่อยให้เบราว์เซอร์
+     ตัดหน้าเอง — พื้นที่พิมพ์อ้างอิงจาก @page{size:A4 portrait;margin:0.5in 0.47in 0 0.47in}
+     ของไฟล์นี้ (กว้าง 210-11.94*2≈186.1mm, สูง 297-12.7-0≈284.3mm)
+     ระหว่าง "ลอง" วัดความสูง ให้ render เสมือนเป็นหน้าสุดท้าย (รวมแถว row-grand ด้วย) เพื่อเผื่อ
+     พื้นที่แถวสรุปท้ายตารางไว้ล่วงหน้าเสมอ กันหน้าสุดท้ายล้นพอดี (ไม่มียกยอด/เลขหน้าให้ต้องคำนวณ
+     เพิ่มแบบไฟล์ 06 จึงไม่ต้องมี "รอบวัด" กับ "รอบ render จริง" แยกความหมายกันเหมือนไฟล์นั้น) ---- */
+  const PAGE_W_PX = PaginateTH.mmToPx(186.1);
+  const PAGE_H_PX = PaginateTH.mmToPx(284.3);
+  const measure = (html) => PaginateTH.measureHeight(html, PAGE_W_PX);
+  const chunks = rows.length
+    ? PaginateTH.paginateByHeight({
+        totalItems: rows.length,
+        renderChunk: (s, e) => renderPageHtml(s, e, true),
+        measure,
+        budgetPx: PAGE_H_PX,
+      })
+    : [{ start: 0, end: 0 }];
+
+  let tablesHtml = '';
+  chunks.forEach((c, idx) => {
+    const isLast = idx === chunks.length - 1;
+    tablesHtml += `<div class="doc-page">${renderPageHtml(c.start, c.end, isLast)}</div>`;
+  });
+
+  return `<div class="doc-wrap">
+<div class="doc-title">
+  <div class="hdr-inp" id="ph_title1" contenteditable="true"></div>
+  <div class="hdr-inp" id="ph_title2" contenteditable="true">รายละเอียดค่าใช้จ่ายกรณีจัดซื้อ / จัดจ้างพัสดุ</div>
+  <div class="hdr-inp" id="ph_title3" contenteditable="true">ที่เกี่ยวกับค่าใช้จ่ายในการบริหารงานที่มีวงเงินฯ ครั้งละไม่เกิน 10,000 บาท</div>
+</div>
+<div class="doc-meta">
+  <div class="hdr-inp" id="ph_line1" contenteditable="true">หลักสูตร "${title}" รุ่นที่ ${run}</div>
+  <div class="hdr-inp" id="ph_line2" contenteditable="true">เลขที่รุ่นหลักสูตร ${runno}${dateStr?' ในวันที่ '+dateStr:''}</div>
+  <div class="hdr-inp" id="ph_line3" contenteditable="true">${location?'ณ '+location:''}</div>
+  <div class="hdr-inp" id="ph_line4" contenteditable="true"></div>
+</div>
+${tablesHtml}
+</div>`;
+}
+
+function rebuildPreview(){
+  renderDocDisplay();
+}
+
+/* ============================================================
+   RENDER DOCUMENT DIRECTLY ON PAGE (ไม่ต้องกดปุ่มดูตัวอย่าง)
+   ============================================================ */
+function renderDocDisplay(){
+  document.getElementById('doc-display').innerHTML = buildDocHtml();
+  // ✅ แปลงเป็นเลขไทยเฉพาะหัวเอกสาร (title/meta ตรงกลางด้านบนของตาราง) เท่านั้น — ตัวเลขในตาราง
+  // ทั้งหมด (ลำดับที่/รหัสบัญชี/เลขผู้เสียภาษี/จำนวนเงิน ฯลฯ) ต้องคงเป็นเลขอาราบิคเสมอ
+  // (ต่างจากไฟล์ 06 ที่แปลงทั้งก้อน — ยืนยันแล้วว่าไฟล์นี้ต้องการแค่ส่วนหัวเป็นเลขไทย)
+  const docTitleEl = document.querySelector('#doc-display .doc-title');
+  const docMetaEl  = document.querySelector('#doc-display .doc-meta');
+  if (docTitleEl) convertToThaiNumerals(docTitleEl);
+  if (docMetaEl)  convertToThaiNumerals(docMetaEl);
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+document.addEventListener('DOMContentLoaded', function(){
+  autoLoadFromFile01();
+});
+
+/* ── SAVE PDF (ผ่าน Puppeteer server ฝั่ง backend — รูปแบบเดียวกับไฟล์ 05/06/07/08) ──
+   PDF_SERVER_URL / Supabase client / อัปโหลด PDF — ย้ายไปรวมที่ js/gas-api.js แล้ว
+   (ใช้ saveReportPdf(courseNo, 'pdf09', blob) ซึ่งอัปโหลดแบบ versioning
+   (pdf09-v1.pdf, pdf09-v2.pdf, ... แยกโฟลเดอร์ตามเลขที่หลักสูตร ไม่ทับของเก่า) และเขียนลิงก์
+   ล่าสุดกลับ Sheet คอลัมน์ pdf09/pdf09SavedAt ให้อัตโนมัติในตัว — แทนที่ html2canvas+jsPDF เดิม
+   ที่ดาวน์โหลดลงเครื่องอย่างเดียว ไม่เคยมีการอัปโหลดขึ้น Supabase หรือเขียนลิงก์กลับ Sheet เลย */
+async function savePdf(btn){
+  const el = document.getElementById('doc-display');
+  if(!el || !el.innerHTML.trim()){ alert('ไม่พบข้อมูลเอกสาร'); return; }
+
+  const title  = gv('f_title') || 'ค่าใช้จ่ายตาม ว.119';
+  const run    = gv('f_run')   || '';
+  const runno  = gv('f_runno') || '';
+  const safe   = s => s.replace(/[/\\:*?"<>|]/g,'_').trim();
+  const fname  = safe(`ค่าใช้จ่ายตาม ว.119_${title}_รุ่น${run}_${runno}`) || 'sec2_misc';
+
+  btn.disabled = true; btn.textContent = '⏳ กำลังสร้าง...';
+
+  try {
+    const clone = el.cloneNode(true);
+
+    /* เอากรอบเทาจาง/padding/background ของ #doc-display (สำหรับแสดงผลบนหน้าจอ) ออก
+       ไม่ให้ติดไปในเอกสารที่ส่งให้ Puppeteer render */
+    clone.style.border       = 'none';
+    clone.style.borderRadius = '0';
+    clone.style.background   = 'transparent';
+    clone.style.padding      = '0';
+    clone.style.margin       = '0';
+    clone.style.boxShadow    = 'none';
+
+    /* แปลง input.hdr-inp (หัวเอกสารที่แก้ไขได้) → div ข้อความนิ่งๆ ก่อนส่งไป render
+       (เก็บ inline style เดิมไว้ — ปรับ text-align/weight ให้ล้อของเดิม) */
+    // ✅ หัวเอกสาร (ph_title1-3/ph_line1-4) ตอนนี้เป็น <div contenteditable> แล้ว (ไม่ใช่ <input>
+    // อีกต่อไป — ดู buildDocHtml) แค่ถอด attribute contenteditable ออกก่อนส่ง render พอ เนื้อหา
+    // ที่ผู้ใช้แก้ไขอยู่ใน DOM node เองอยู่แล้วเพราะเป็น contenteditable จริง ไม่ต้อง sync .value
+    // แยกเหมือนตอนเคยเป็น input (ล้อวิธีของไฟล์ 06 ทุกประการ)
+    clone.querySelectorAll('[contenteditable]').forEach(el2 => {
+      el2.removeAttribute('contenteditable');
+      el2.style.outline = 'none';
+    });
+
+    // ✅ ดึง CSS หลักของหน้าเว็บทั้งดวง (นิยาม .doc-table, .row-cat, .row-sub, .row-grand ฯลฯ)
+    // ไปแนบด้วย — ตารางจะได้เส้นขอบ/จัดหน้าตามที่ตั้งใจจาก Puppeteer render จริง (ไม่ต้องจำลอง
+    // border/canvas-slicing แบบที่ html2canvas เดิมต้องทำ)
+    const originalStyles = Array.from(document.querySelectorAll('style'))
+      .map(s => s.innerHTML).join('\n');
+
+    // ประกอบเป็นเอกสาร HTML ฉบับสมบูรณ์ ส่งให้ฝั่งเซิร์ฟเวอร์ (Puppeteer) เปิดแล้ว render เป็น PDF จริง
+    const fullHtml = `<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+${originalStyles}
+</style>
+<style>
+  /* Override เฉพาะสำหรับไฟล์ PDF (มาทีหลัง จึงมีลำดับความสำคัญสูงกว่า CSS หลักด้านบน) */
+  * { box-sizing: border-box; }
+  html,body { margin:0; padding:0; background:#fff; font-family:'Sarabun',sans-serif; color:#000; }
+</style>
+</head>
+<body>${clone.outerHTML}</body>
+</html>`;
+
+    const res = await fetch(APP_CONFIG.PDF_SERVER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        html: fullHtml,
+        filename: fname,
+        // ✅ pdfOptions เฉพาะของไฟล์ 09 — ล้อ @page{size:A4 portrait;margin:0.5in 0.47in 0 0.47in} เดิมของไฟล์นี้
+        pdfOptions: {
+          format: 'A4',
+          landscape: false,
+          margin: { top: '12.7mm', right: '11.9mm', bottom: '5mm', left: '11.9mm' },
+          preferCSSPageSize: true,
+          printBackground: true,
+        },
+      })
+    });
+    if(!res.ok){
+      const errText = await res.text().catch(()=>res.statusText);
+      throw new Error(`เซิร์ฟเวอร์สร้าง PDF ผิดพลาด (${res.status}): ${errText}`);
+    }
+
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = fname + '.pdf';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+
+    // อัปโหลดขึ้น Supabase Storage แบบ versioning ผ่าน saveReportPdf() (js/gas-api.js) —
+    // เก็บทุกเวอร์ชันไว้ (pdf09-v1.pdf, pdf09-v2.pdf, ...) ไม่ทับของเก่า และเขียนลิงก์ล่าสุด
+    // กลับ Sheet คอลัมน์ pdf09/pdf09SavedAt ให้เองในตัว (ไม่ต้องเรียก gsApi ซ้ำเอง)
+    btn.textContent = '⏳ กำลังอัปโหลด...';
+    const courseNo = runno;
+    const uploadResult = courseNo ? await saveReportPdf(courseNo, 'pdf09', blob) : null;
+    if (uploadResult) {
+      console.log('อัปโหลด PDF ขึ้น Supabase และบันทึกลิงก์กลับ Sheet สำเร็จ:', uploadResult.publicUrl, '(v' + uploadResult.version + ')');
+    } else if (!courseNo) {
+      showGsStatus('✅ ดาวน์โหลด PDF สำเร็จ (⚠️ ไม่พบเลขที่หลักสูตร จึงไม่ได้อัปโหลดขึ้น Supabase)', 'warn');
+    } else {
+      showGsStatus('⚠️ ดาวน์โหลด PDF สำเร็จ แต่อัปโหลดเก็บถาวรไม่สำเร็จ', 'warn');
+    }
+
+  } catch(err){
+    console.error('savePdf09 error:', err);
+    alert('สร้าง PDF ไม่สำเร็จ: ' + err.message + '\n\nตรวจสอบว่าเซิร์ฟเวอร์ Puppeteer เปิดใช้งานอยู่');
+  } finally {
+    btn.disabled = false; btn.textContent = '💾 บันทึก PDF';
+  }
+}
+</script>
+</body>
+</html>
