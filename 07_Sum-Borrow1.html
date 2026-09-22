@@ -210,6 +210,7 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:1px solid #000;verti
 <script src="js/date-th.js"></script>
 <script src="js/gas-api.js"></script>
 <script src="js/schema.js"></script>
+<script src="js/print-layout.js"></script>
 <script>checkAuth();</script>
 </head>
 <body>
@@ -552,10 +553,10 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:1px solid #000;verti
   
   <div class="report-container" id="report-container-07">
     <div class="header-area">
-      <h1><input class="rpt-edit hdr-edit" type="text" id="r_title" value="สรุปค่าใช้จ่ายการดำเนินการฝึกอบรม" style="width:100%;text-align:center;font-size:inherit;font-weight:inherit;color:inherit;font-family:inherit;border-bottom:1px dotted #aaa;padding:2px 4px;"></h1>
-      <p><input class="rpt-edit hdr-edit" type="text" id="r_hdr1" style="width:100%;text-align:center;font-size:inherit;font-weight:inherit;color:inherit;font-family:inherit;border-bottom:1px dotted #aaa;padding:2px 4px;"></p>
-      <p><input class="rpt-edit hdr-edit" type="text" id="r_hdr2" style="width:100%;text-align:center;font-size:inherit;font-weight:inherit;color:inherit;font-family:inherit;border-bottom:1px dotted #aaa;padding:2px 4px;"></p>
-      <p><input class="rpt-edit hdr-edit" type="text" id="r_hdr3" style="width:100%;text-align:center;font-size:inherit;font-weight:inherit;color:inherit;font-family:inherit;border-bottom:1px dotted #aaa;padding:2px 4px;"></p>
+      <h1><div class="rpt-edit hdr-edit" contenteditable="true" id="r_title" style="width:100%;text-align:center;font-size:inherit;font-weight:inherit;color:inherit;font-family:inherit;background:transparent;border:none;outline:none;padding:2px 4px;">สรุปค่าใช้จ่ายการดำเนินการฝึกอบรม</div></h1>
+      <p><div class="rpt-edit hdr-edit" contenteditable="true" id="r_hdr1" style="width:100%;text-align:center;font-size:inherit;font-weight:inherit;color:inherit;font-family:inherit;background:transparent;border:none;outline:none;padding:2px 4px;"></div></p>
+      <p><div class="rpt-edit hdr-edit" contenteditable="true" id="r_hdr2" style="width:100%;text-align:center;font-size:inherit;font-weight:inherit;color:inherit;font-family:inherit;background:transparent;border:none;outline:none;padding:2px 4px;"></div></p>
+      <p><div class="rpt-edit hdr-edit" contenteditable="true" id="r_hdr3" style="width:100%;text-align:center;font-size:inherit;font-weight:inherit;color:inherit;font-family:inherit;background:transparent;border:none;outline:none;padding:2px 4px;"></div></p>
     </div>
     <div id="rpt_wrap"></div>
   </div>
@@ -1665,9 +1666,9 @@ function buildTable(){
 
 /* ── SHOW / BACK ── */
 function showReport(doPrint){
-  document.getElementById('r_hdr1').value=`หลักสูตร "${document.getElementById('f_courseName').value}" รุ่นที่ ${document.getElementById('f_batch').value}`;
-  document.getElementById('r_hdr2').value=`เลขที่รุ่นหลักสูตร ${document.getElementById('f_courseNo').value} ในวันที่ ${document.getElementById('f_date').value}`;
-  document.getElementById('r_hdr3').value=`ณ ${document.getElementById('f_location').value}`;
+  document.getElementById('r_hdr1').textContent=`หลักสูตร "${document.getElementById('f_courseName').value}" รุ่นที่ ${document.getElementById('f_batch').value}`;
+  document.getElementById('r_hdr2').textContent=`เลขที่รุ่นหลักสูตร ${document.getElementById('f_courseNo').value} ในวันที่ ${document.getElementById('f_date').value}`;
+  document.getElementById('r_hdr3').textContent=`ณ ${document.getElementById('f_location').value}`;
   document.getElementById('rpt_wrap').innerHTML=buildTable();
 
   /* ── บันทึกค่างบประมาณลง sessionStorage ให้ 01_Main-Reports.html ดึงใช้ ── */
@@ -1719,7 +1720,7 @@ function showReport(doPrint){
   document.getElementById('report-view').style.display='block';
   const hdr07 = document.querySelector('.site-header'); if(hdr07) hdr07.style.display='none';
   const ftr07 = document.querySelector('footer'); if(ftr07) ftr07.style.display='none';
-  applyRowSpacing();
+  rowSpacing07.init();
   window.scrollTo(0,0);
   if(doPrint) setTimeout(()=>window.print(),300);
 }
@@ -1735,46 +1736,16 @@ function backToForm(){
    ระยะห่างระหว่างบรรทัดของตารางรายงาน (เฉพาะ table.rpt)
    ระดับ: 0=แน่น 1=กระชับ 2=ปกติ(ค่าเริ่มต้น) 3=กว้าง 4=กว้างมาก
 ───────────────────────────────────────────────────── */
-const ROW_SPACING_LEVELS = [
-  {label:'แน่น',      pad:'2px'},
-  {label:'กระชับ',    pad:'3.5px'},
-  {label:'ปกติ',      pad:'5px'},
-  {label:'กว้าง',     pad:'7px'},
-  {label:'กว้างมาก',  pad:'9px'},
-];
-const ROW_SPACING_DEFAULT = 2; // index ของ "ปกติ"
-let rowSpacingIdx = ROW_SPACING_DEFAULT;
-
-function applyRowSpacing(){
-  const lvl = ROW_SPACING_LEVELS[rowSpacingIdx];
-  const rc = document.querySelector('.report-container');
-  if(rc) rc.style.setProperty('--row-pad-v', lvl.pad);
-  const lblEl = document.getElementById('sp_level');
-  if(lblEl) lblEl.textContent = lvl.label;
-  const decBtn = document.getElementById('sp_dec');
-  const incBtn = document.getElementById('sp_inc');
-  if(decBtn) decBtn.disabled = (rowSpacingIdx === 0);
-  if(incBtn) incBtn.disabled = (rowSpacingIdx === ROW_SPACING_LEVELS.length - 1);
-  try{ sessionStorage.setItem('rpt07_rowSpacing', String(rowSpacingIdx)); }catch(e){}
-}
-
-function adjustRowSpacing(dir){
-  const next = rowSpacingIdx + dir;
-  if(next < 0 || next >= ROW_SPACING_LEVELS.length) return;
-  rowSpacingIdx = next;
-  applyRowSpacing();
-}
-
-// โหลดค่าระยะห่างที่เคยตั้งไว้ใน session นี้ (ถ้ามี)
-(function initRowSpacing(){
-  try{
-    const saved = sessionStorage.getItem('rpt07_rowSpacing');
-    if(saved !== null){
-      const idx = parseInt(saved, 10);
-      if(!isNaN(idx) && idx >= 0 && idx < ROW_SPACING_LEVELS.length) rowSpacingIdx = idx;
-    }
-  }catch(e){}
-})();
+// ✅ ปุ่มปรับระยะห่างบรรทัด (ย้าย logic ไป PaginateTH.makeRowSpacingControl ใน js/print-layout.js
+// แล้ว — ไฟล์นี้แค่ผูก selector/id ของตัวเองเข้ากับ control ที่ใช้ร่วมกับ 05/06) คงชื่อฟังก์ชัน
+// adjustRowSpacing(dir) ไว้เหมือนเดิม เพราะ onclick ในหน้า HTML เรียกชื่อนี้อยู่แล้ว
+const rowSpacing07 = PaginateTH.makeRowSpacingControl({
+  containerSelector: '.report-container',
+  sessionKey: 'rpt07_rowSpacing',
+  labelId: 'sp_level', decId: 'sp_dec', incId: 'sp_inc',
+});
+function adjustRowSpacing(dir){ rowSpacing07.adjust(dir); }
+rowSpacing07.init();
 
 function convertToThaiNumerals(node) {
   const thaiNums = ['๐','๑','๒','๓','๔','๕','๖','๗','๘','๙'];
@@ -1996,7 +1967,7 @@ async function savePdf07(btn){
   const safe = s => s.replace(/[/\\:*?"<>|]/g,'_').trim();
   const slot = _currentSlot;
   const fname = safe('สรุปค่าใช้จ่าย_07_' + (slot&&slot.course||'') + '_รุ่น' + (slot&&slot.batch||'')) || 'sum_07';
-  const pdfScale07 = (parseInt(document.getElementById('pdf_scale_07')?.value, 10) || 75) / 100;
+  const pdfScale07 = PaginateTH.getPdfScale('pdf_scale_07', 75);
   btn.disabled = true; btn.textContent = '⏳ กำลังสร้าง...';
 
   try {
@@ -2028,6 +1999,10 @@ async function savePdf07(btn){
       e.style.borderBottom = 'none';
       e.style.border = 'none';
     });
+    /* ✅ หัวเอกสาร 4 บรรทัด (r_title/r_hdr1-3) เป็น <div contenteditable> แล้ว (ไม่ใช่ input จึงไม่โดน
+       แปลงโดย loop input→span ด้านบน) — ถอด attribute contenteditable ออกก่อนส่ง กันเบราว์เซอร์
+       ปลายทางแสดงเคอร์เซอร์แก้ไขได้ในไฟล์ PDF ที่ควรจะนิ่งแล้ว */
+    clone.querySelectorAll('[contenteditable]').forEach(e => e.removeAttribute('contenteditable'));
 
     /* ✅ ดึง CSS หลักของหน้าเว็บทั้งดวง (ที่นิยาม .report-container, table.rpt, .header-area ฯลฯ)
        เพื่อแนบไปกับ HTML ที่ส่งให้ Puppeteer — เดิมไม่ได้แนบไปเลย ทำให้ฝั่ง Server
