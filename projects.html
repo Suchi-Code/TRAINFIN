@@ -665,7 +665,11 @@ function renderSpeakers(b, a7, a6){
   if(b.spkJson){
     try{ speakers = typeof b.spkJson === 'string' ? JSON.parse(b.spkJson) : b.spkJson; }catch(e){ speakers = null; }
   }
-  const list = (speakers && Array.isArray(speakers.EXT)) ? speakers.EXT : [];
+  // ⚠️ ไฟล์ 05 push entry เปล่า ({name:'',...}) เข้า spk.EXT เสมอตอนโหลดหน้า ไม่ว่าจะติ๊ก
+  // "มีวิทยากรภายนอก" หรือไม่ก็ตาม — ถ้าไม่เช็ค speakers.hasExternal ก่อน entry เปล่านี้จะ
+  // ติดไปกับ speakersExtra.EXT ที่บันทึกลง Sheet ด้วยเสมอ ทำให้ขึ้นการ์ด "(ไม่ระบุชื่อ)" ทั้งที่
+  // หลักสูตรนั้นไม่มีวิทยากรภายนอกเลย
+  const list = (speakers && speakers.hasExternal && Array.isArray(speakers.EXT)) ? speakers.EXT : [];
   const isLump = speakers && speakers.payType === 'lump';
 
   let actualByName = {};
