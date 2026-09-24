@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>โครงการ | PWA Academy</title>
+<title>โครงการ | PWA RTD1</title>
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
@@ -193,7 +193,7 @@ table.brk tbody tr.grand td{background:var(--gray-100);font-weight:700;color:var
   <main class="main">
     <header class="topbar">
       <div>
-        <div class="crumb">โครงการ / กองฝึกอบรมภูมิภาค 1</div>
+        <div class="crumb">กองฝึกอบรมภูมิภาค 1 / โครงการ</div>
         <h1>โครงการ</h1>
       </div>
       <div class="year-dd" id="yearDD">
@@ -330,8 +330,8 @@ const CATS = [
   // ⚠️ budget.secInternal = เฉพาะยอดเดินทาง (เบี้ยเลี้ยง+ที่พัก+พาหนะ = in1+in2+in3 จากไฟล์ 05)
   // ค่าสมนาคุณที่จ่ายผ่าน Payroll เก็บแยกคอลัมน์ budget.in_payroll เสมอ — ต้องรวมทั้งสองเข้าด้วยกัน
   // ให้ตรงกับฝั่งใช้จริง (a_in_1+a_in_2+a_in_3+a_in_payroll ก็แยกคอลัมน์แบบเดียวกันและรวมครบอยู่แล้ว)
-  { key:'internal',    label:'ค่าสมนาคุณวิทยากรภายใน',                         b:b=>numify(b.secInternal)+numify(b.in_payroll), a:(a)=>a ? numify(a.a_in_1)+numify(a.a_in_2)+numify(a.a_in_3)+numify(a.a_in_payroll) : 0 },
-  { key:'pres',        label:'ค่าเดินทางประธานในพิธี',                         b:b=>numify(b.secPres),   a:(a)=>a ? numify(a.a_pres_1)+numify(a.a_pres_2)+numify(a.a_pres_3) : 0 },
+  { key:'internal',    label:'ก. ค่าสมนาคุณวิทยากรภายใน',                         b:b=>numify(b.secInternal)+numify(b.in_payroll), a:(a)=>a ? numify(a.a_in_1)+numify(a.a_in_2)+numify(a.a_in_3)+numify(a.a_in_payroll) : 0 },
+  { key:'pres',        label:'ก. ค่าเดินทางประธานในพิธี',                         b:b=>numify(b.secPres),   a:(a)=>a ? numify(a.a_pres_1)+numify(a.a_pres_2)+numify(a.a_pres_3) : 0 },
   { key:'kor',         label:'ข. ค่าเดินทางผู้เข้ารับการฝึกอบรม',              b:b=>numify(b.bb1)+numify(b.bb2)+numify(b.bb3), a:(a)=>a ? numify(a.a_b1)+numify(a.a_b2)+numify(a.a_b3) : 0 },
 ];
 
@@ -595,7 +595,7 @@ function renderDetailCharts(b, a7){
       { label:'ใช้จริง',   data: active.map(c=>c.a), backgroundColor:'#0b6aab', borderRadius:4, barPercentage:.9, categoryPercentage:.8, datalabels:dlBase },
     ]},
     options:{
-      responsive:true, maintainAspectRatio:false, layout:{padding:{top:18}},
+      responsive:true, maintainAspectRatio:false, layout:{padding:{top:25}},
       plugins:{ legend:{ position:'top', align:'end', labels:{ boxWidth:10, boxHeight:10, usePointStyle:true, pointStyle:'circle', font:{family:'Prompt',size:10.5} } } },
       scales:{
         x:{ grid:{display:false}, ticks:{ font:{family:'Prompt',size:9.5}, maxRotation:35, minRotation:0 } },
