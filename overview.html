@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ภาพรวม | PWA Academy</title>
+<title>ภาพรวม | PWA RTD1</title>
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
@@ -202,7 +202,7 @@ td{padding:11px 10px;border-bottom:1px solid #e7edf1;font-size:12.5px;color:#384
 
   <main class="main">
     <header class="topbar">
-      <div><div class="crumb">ภาพรวม / กองฝึกอบรมภูมิภาค 1</div><h1>ภาพรวม</h1></div>
+      <div><div class="crumb">กองฝึกอบรมภูมิภาค 1 / ภาพรวม</div><h1>ภาพรวม</h1></div>
       <div class="year-dd" id="yearDD">
         <button class="year-btn" type="button" onclick="toggleYearMenu(event)">
           <span>ปีงบประมาณ <span id="yearLabel">2570</span></span> ▾
@@ -247,7 +247,7 @@ td{padding:11px 10px;border-bottom:1px solid #e7edf1;font-size:12.5px;color:#384
     <!-- ===== ตารางสถานะหลักสูตร ===== -->
     <section class="panel">
       <div class="panel-head">
-        <div><h2>สถานะแผนงานรายรายการ<span class="info-note" onclick="toggleNote(this,event)" tabindex="0">ⓘ<span class="tip">เทียบแผนกับผลการดำเนินงานจริง เรียงตามลำดับที่ปรากฏใน annual_plan</span></span></h2></div>
+        <div><h2>รายการแต่ละหลักสูตร<span class="info-note" onclick="toggleNote(this,event)" tabindex="0">ⓘ<span class="tip">เทียบแผนกับผลการดำเนินงานจริง เรียงตามลำดับที่ปรากฏใน Google sheets</span></span></h2></div>
         <span class="count-chip" id="tableCount">— รายการ</span>
       </div>
       <div class="table-wrap">
@@ -265,7 +265,7 @@ td{padding:11px 10px;border-bottom:1px solid #e7edf1;font-size:12.5px;color:#384
     <!-- ===== รายละเอียดหลักสูตรรายการ (การ์ด) ===== -->
     <section class="panel">
       <div class="panel-head">
-        <div><h2>รายละเอียดแผนงานรายการ<span class="info-note" onclick="toggleNote(this,event)" tabindex="0">ⓘ<span class="tip">การ์ดสีหมายถึงจัดครบตามแผนแล้ว, การ์ดสีเทาหมายถึงยังไม่จัด/เลยกำหนด</span></span></h2></div>
+        <div><h2>สถานะหลักสูตรตามรายการแผนงาน<span class="info-note" onclick="toggleNote(this,event)" tabindex="0">ⓘ<span class="tip">การ์ดสีหมายถึงจัดครบตามแผนแล้ว, การ์ดสีเทาหมายถึงยังไม่จัด/เลยกำหนด</span></span></h2></div>
         <span class="count-chip" id="cardCount">— รายการ</span>
       </div>
       <div class="cards-filters">
@@ -440,7 +440,7 @@ async function loadOverviewData(){
   });
 
   hideGsLoader();
-  statusEl.textContent = 'เชื่อมต่อสำเร็จ · อัปเดตล่าสุดตอนโหลดหน้านี้';
+  statusEl.textContent = 'เชื่อมต่อสำเร็จ';
   buildRowsForYear(currentYear);
 }
 
@@ -550,14 +550,14 @@ function renderKPI(){
 
   document.getElementById('kpiRow').innerHTML = `
     <div class="card">
-      <div class="top-row"><label>งบตามแผน</label>
+      <div class="top-row"><label>งบประมาณตามแผน</label>
         <div class="ic" style="background:#eaf4fb;color:#0b6aab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12h18M3 6h18M3 18h18"/></svg></div>
       </div>
       <strong>${fmtM(totalPlan)}</strong>
-      <div class="sub">รวมจากตาราง annual_plan ปีงบ ${currentYear}</div>
+
     </div>
     <div class="card">
-      <div class="top-row"><label>งบที่ได้รับอนุมัติ</label>
+      <div class="top-row"><label>งบประมาณที่ได้รับอนุมัติ</label>
         <div class="ic" style="background:#f1edfc;color:#7865c8"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 12l2 2 4-4M12 3l8 4v5c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V7z"/></svg></div>
       </div>
       <strong>${fmtM(totalApproved)}</strong>
@@ -578,11 +578,11 @@ function renderKPI(){
       <div class="mini-bar"><i style="width:${rows.length ? (startedCount/rows.length*100).toFixed(0) : 0}%"></i></div>
     </div>
     <div class="card">
-      <div class="top-row"><label>ผู้เข้าอบรม</label>
+      <div class="top-row"><label>จำนวนผู้เข้าอบรม</label>
         <div class="ic" style="background:#fdeeea;color:#c4562f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.5 2.8-6 6.5-6s6.5 2.5 6.5 6M16.5 8.3a3 3 0 1 1 3.3 4.6M20 20c0-2.7-1.6-4.9-4-5.7"/></svg></div>
       </div>
       <strong>${fmt(totalPeoplePlanned)} คน</strong>
-      <div class="sub">${totalPeopleActual ? 'จริง ' + fmt(totalPeopleActual) + ' คน' : 'ตามแผน — ยังไม่มียอดจริง (ดูหมายเหตุ #2)'}</div>
+      <div class="sub">${totalPeopleActual ? 'จริง ' + fmt(totalPeopleActual) + ' คน' : ''}</div>
     </div>
   `;
 }
