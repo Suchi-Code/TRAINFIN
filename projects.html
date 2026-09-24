@@ -599,7 +599,7 @@ function renderDetailCharts(b, a7){
       plugins:{ legend:{ position:'top', align:'end', labels:{ boxWidth:10, boxHeight:10, usePointStyle:true, pointStyle:'circle', font:{family:'Prompt',size:10.5} } } },
       scales:{
         x:{ grid:{display:false}, ticks:{ font:{family:'Prompt',size:9.5}, maxRotation:35, minRotation:0 } },
-        y:{ beginAtZero:true, grid:{color:'#eef2f5'}, ticks:{ font:{family:'Prompt',size:10}, callback:v=>fmt(v) } }
+        y:{ beginAtZero:true,grace:'10%', grid:{color:'#eef2f5'}, ticks:{ font:{family:'Prompt',size:10}, callback:v=>fmt(v) } }
       }
     }
   });
