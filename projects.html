@@ -14,6 +14,7 @@
 <script src="js/auth.js"></script>
 <script src="js/date-th.js"></script>
 <script src="js/gas-api.js"></script>
+<script src="js/sidebar.js"></script>
 <script>checkAuth();</script>
 
 <style>
@@ -186,26 +187,8 @@ table.brk tbody tr.grand td{background:var(--gray-100);font-weight:700;color:var
 <body>
 
 <div class="layout">
-  <aside class="sidebar">
-    <div class="sidebar-head">
-      <div class="brand">
-        <img class="mark" src="https://res.cloudinary.com/daytjjgll/image/upload/fl_preserve_transparency/v1786810067/iuss72yvmfk5i0hndhdy.jpg?_s=public-apps" alt="Logo">
-        <div class="brand-text"><b>PWA RTD1</b><span>ระบบติดตามงบประมาณและหลักสูตรฝึกอบรม</span></div>
-      </div>
-      <button id="sidebarToggle" class="sidebar-toggle" type="button" onclick="toggleSidebar()" title="ยืด / หด เมนู">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
-      </button>
-    </div>
-    <nav class="nav">
-      <div class="nav-label">เมนูหลัก</div>
-      <a href="overview.html" title="ภาพรวม"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1zM9 21v-6h6v6"/></svg><span>ภาพรวม</span></a>
-      <a href="annual-plan.html" title="แผนงานประจำปี"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10"/></svg><span>แผนงานประจำปี</span></a>
-      <a href="training_courses_gfr1.html" title="หลักสูตรการฝึกอบรม"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/></svg><span>หลักสูตรการฝึกอบรม</span></a>
-      <a class="active" href="#" title="โครงการ"><svg viewBox="0 0 24 24"><path d="M4 7h16v13H4zM8 7V4h8v3M8 12h8"/></svg><span>โครงการ</span></a>
-      <a href="settings.html" title="ตั้งค่า"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.04 2.04-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V20h-2.88v-.09a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06-2.04-2.04.06-.06A1.7 1.7 0 0 0 7.3 14.8a1.7 1.7 0 0 0-1.56-1.03H5.6v-2.88h.14A1.7 1.7 0 0 0 7.3 9.86 1.7 1.7 0 0 0 6.96 8l-.06-.06L8.94 5.9 9 5.96a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1.03-1.56V4.6h2.88v.14a1.7 1.7 0 0 0 1.03 1.56A1.7 1.7 0 0 0 17.7 5.96l.06-.06 2.04 2.04-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.56 1.03h.14v2.88h-.14A1.7 1.7 0 0 0 19.4 15z"/></svg><span>ตั้งค่า</span></a>
-    </nav>
-    <div class="user"><b id="userName">กำลังโหลด...</b><span id="userSub">เจ้าหน้าที่ฝึกอบรม</span></div>
-  </aside>
+  <div id="sidebarRoot"></div>
+  <script>renderSidebar('projects');</script>
 
   <main class="main">
     <header class="topbar">
@@ -357,7 +340,7 @@ const PDF_REPORTS = [
   { key:'pdf06', name:'สรุปค่าใช้จ่ายจริง' },
   { key:'pdf07', name:'สรุปฯ (ใบปะหน้า)' },
   { key:'pdf08', name:'ใบหักล้างยืมเงิน' },
-  { key:'pdf09', name:'ค่าใช้จ่ายตาม ว.119' },
+  { key:'pdf09', name:'ค่าวัสดุเบ็ดเตล็ด' },
 ];
 
 /* ============================================================
@@ -711,7 +694,7 @@ function renderSpeakers(b, a7, a6){
   });
   internalOrder.forEach(name => {
     html += `<div class="spk-card-mini">
-      <div class="spk-name">💷 ${name}</div>
+      <div class="spk-name">🏢 ${name}</div>
       <div class="spk-row"><span>ประเภท</span><b>วิทยากรภายใน</b></div>
       <div class="spk-row"><span>ใช้จริง</span><b>${fmt(internalByName[name])} บาท</b></div>
     </div>`;
@@ -758,13 +741,7 @@ function selectYear(y){
   buildProjectsForYear(y);
 }
 
-/* ============================================================
-   SIDEBAR TOGGLE
-   ============================================================ */
-function toggleSidebar(){
-  const sidebar=document.querySelector('.sidebar'),main=document.querySelector('.main'),button=document.getElementById('sidebarToggle');
-  sidebar.classList.toggle('collapsed');main.classList.toggle('wide');button.classList.toggle('collapsed');
-}
+/* toggleSidebar() มาจาก js/sidebar.js แล้ว (โมดูลกลาง) — ไม่ต้องประกาศซ้ำในไฟล์นี้อีก */
 
 /* ============================================================
    INIT
