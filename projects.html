@@ -340,7 +340,7 @@ const PDF_REPORTS = [
   { key:'pdf06', name:'สรุปค่าใช้จ่ายจริง' },
   { key:'pdf07', name:'สรุปฯ (ใบปะหน้า)' },
   { key:'pdf08', name:'ใบหักล้างยืมเงิน' },
-  { key:'pdf09', name:'ค่าวัสดุเบ็ดเตล็ด' },
+  { key:'pdf09', name:'ค่าใช้จ่ายตาม ว.119' },
 ];
 
 /* ============================================================
@@ -694,7 +694,7 @@ function renderSpeakers(b, a7, a6){
   });
   internalOrder.forEach(name => {
     html += `<div class="spk-card-mini">
-      <div class="spk-name">🏢 ${name}</div>
+      <div class="spk-name">💷 ${name}</div>
       <div class="spk-row"><span>ประเภท</span><b>วิทยากรภายใน</b></div>
       <div class="spk-row"><span>ใช้จริง</span><b>${fmt(internalByName[name])} บาท</b></div>
     </div>`;
