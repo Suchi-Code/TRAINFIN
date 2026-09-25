@@ -59,7 +59,7 @@
       const raw = sessionStorage.getItem('currentUser');
       if (raw) {
         const cu = JSON.parse(raw);
-        if (cu && cu.name) {
+        if (cu && cu.name && cu.role) {
           setSidebarUser(cu.name, cu.empId ? ('รหัส ' + cu.empId) : 'เจ้าหน้าที่ฝึกอบรม');
           return;
         }
@@ -75,15 +75,16 @@
 
       const { data: profile } = await client
         .from('profiles')
-        .select('full_name, emp_id')
+        .select('full_name, emp_id, role')
         .eq('id', user.id)
         .single();
 
       const name = (profile && profile.full_name) || user.email || 'ผู้ใช้งาน';
       const sub  = (profile && profile.emp_id) ? ('รหัส ' + profile.emp_id) : 'เจ้าหน้าที่ฝึกอบรม';
+      const role = (profile && profile.role) || 'viewer';
       setSidebarUser(name, sub);
 
-      try { sessionStorage.setItem('currentUser', JSON.stringify({ empId: (profile && profile.emp_id) || '', name })); } catch (e) {}
+      try { sessionStorage.setItem('currentUser', JSON.stringify({ empId: (profile && profile.emp_id) || '', name, role })); } catch (e) {}
     } catch (e) {
       console.error('loadCurrentUser error:', e);
       setSidebarUser('ผู้ใช้งาน', 'เจ้าหน้าที่ฝึกอบรม');
