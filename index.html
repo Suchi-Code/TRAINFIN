@@ -300,23 +300,27 @@
         btn.classList.remove('loading');
         btn.style.background = 'linear-gradient(135deg,#1e7d5a,#27ae7a)';
 
-        // ── ดึงชื่อ-นามสกุลจากตาราง profiles (ตาราง lookup ที่ผูกกับ auth user) ──
+        // ── ดึงชื่อ-นามสกุล + สิทธิ์ผู้ใช้ จากตาราง profiles (ตาราง lookup ที่ผูกกับ auth user) ──
         let displayName = empId; // ค่าเริ่มต้น เผื่อยังไม่มีข้อมูลชื่อในตาราง
+        let userRole = 'viewer'; // ค่าเริ่มต้นปลอดภัยไว้ก่อน เผื่อยังไม่มี role ในตาราง
         try {
           const { data: profile, error: profileErr } = await supabaseClient
             .from('profiles')
-            .select('full_name')
+            .select('full_name, role')
             .eq('id', data.user.id)
             .single();
           if (!profileErr && profile && profile.full_name) {
             displayName = profile.full_name;
+          }
+          if (!profileErr && profile && profile.role) {
+            userRole = profile.role;
           }
         } catch (pe) {
           console.warn('ไม่พบข้อมูลชื่อผู้ใช้ใน profiles:', pe.message);
         }
 
         try {
-          sessionStorage.setItem('currentUser', JSON.stringify({ empId, name: displayName }));
+          sessionStorage.setItem('currentUser', JSON.stringify({ empId, name: displayName, role: userRole }));
         } catch (se) {}
 
         setTimeout(() => { 
