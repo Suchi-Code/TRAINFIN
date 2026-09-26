@@ -88,6 +88,17 @@
     const role = getCurrentRole();
     if (canEditThisPage(role)) return;
 
+    // ถ้าเรียกจาก <script> ใน <head> (ตามวิธีใช้ที่แนะนำ) document.body ยังไม่มี
+    // ณ จุดนี้ — ต้องรอ DOMContentLoaded ก่อน ไม่งั้น document.body.classList
+    // ด้านล่างจะ throw แล้วทำให้ทั้งฟังก์ชันไม่ทำงานเลยแบบเงียบๆ
+    if (!document.body) {
+      document.addEventListener('DOMContentLoaded', applyLock, { once: true });
+      return;
+    }
+    applyLock();
+  }
+
+  function applyLock() {
     document.querySelectorAll('input, select, textarea').forEach(el => {
       if (!el.hasAttribute('readonly')) el.disabled = true;
     });
