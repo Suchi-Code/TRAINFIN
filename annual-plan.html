@@ -14,7 +14,8 @@
   <script src="js/date-th.js"></script>
   <script src="js/gas-api.js"></script>
   <script src="js/sidebar.js"></script>
-  <script>checkAuth();</script>
+  <script src="js/permissions.js"></script>
+  <script>checkAuth(); lockPageIfReadOnly();</script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap');
@@ -289,7 +290,7 @@
       <div class="panel-head">
         <div><h2>ตารางแผนงานและหลักสูตรฝึกอบรม</h2></div>
         <div style="display:flex;align-items:center;gap:10px">
-          <button class="btn-add-plan" onclick="openAddPlanModal()">＋ เพิ่มรายการ</button>
+          <button class="btn-add-plan" data-permission="write" onclick="openAddPlanModal()">＋ เพิ่มรายการ</button>
           <span class="count-chip" id="headCount">— รายการ</span>
         </div>
       </div>
@@ -490,7 +491,7 @@
     </div>
     <div class="modal-footer">
       <button class="secondary" onclick="closePlanModal()">ยกเลิก</button>
-      <button class="btn-add-plan" id="btnSavePlan" onclick="savePlanItem()">💾 บันทึก</button>
+      <button class="btn-add-plan" id="btnSavePlan" data-permission="write" onclick="savePlanItem()">💾 บันทึก</button>
     </div>
   </div>
 </div>
@@ -659,8 +660,8 @@ function render(){
         <button title="รายละเอียดงบประมาณ" class="icon-btn view" onclick="openDetail('${esc(c.planId)}')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg></button>
       </div></td>
       <td><div class="actions">
-        <button title="แก้ไขรายการ" class="icon-btn edit" onclick="openEditPlanModal('${esc(c.planId)}')"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
-        <button title="ลบรายการ" class="icon-btn del" onclick="deletePlanItem('${esc(c.planId)}')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
+        <button title="แก้ไขรายการ" class="icon-btn edit" data-permission="write" onclick="openEditPlanModal('${esc(c.planId)}')"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+        <button title="ลบรายการ" class="icon-btn del" data-permission="write" onclick="deletePlanItem('${esc(c.planId)}')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
       </div></td>
     </tr>`;
   });
