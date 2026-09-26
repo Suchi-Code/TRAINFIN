@@ -127,13 +127,23 @@
     if (document.getElementById('readonly-mode-banner')) return;
     const el = document.createElement('div');
     el.id = 'readonly-mode-banner';
+    el.title = 'บัญชีนี้ไม่มีสิทธิ์แก้ไขหน้านี้';
+    // Badge ลอยมุมขวาล่าง แทนแถบเต็มความกว้างด้านบน (ของเดิมทับ site-header/
+    // sidebar ทุกเลย์เอาต์และบังเนื้อหา) — เล็ก ไม่ดันหน้า ไม่ชนกับองค์ประกอบ
+    // อื่นที่ fixed ไว้แล้ว (เช่น .btn-add-course-float ที่ก็อยู่มุมขวาล่าง
+    // เหมือนกัน — badge นี้ z-index สูงกว่าและมี margin เผื่อไว้พอสมควร)
     el.style.cssText =
-      'position:fixed;top:0;left:0;right:0;z-index:9997;' +
-      'background:#7c2d12;color:#fff;text-align:center;padding:5px 10px;' +
-      'font-family:Sarabun,Prompt,sans-serif;font-size:12px;font-weight:700;' +
-      'letter-spacing:.02em;box-shadow:0 2px 8px rgba(0,0,0,.2);';
-    el.textContent = '🔒 โหมดดูอย่างเดียว — บัญชีนี้ไม่มีสิทธิ์แก้ไขหน้านี้';
-    document.body.prepend(el);
+      'position:fixed;bottom:18px;right:18px;z-index:9997;' +
+      'display:inline-flex;align-items:center;gap:6px;' +
+      'background:rgba(124,45,18,.94);color:#fff;padding:8px 14px;' +
+      'border-radius:999px;font-family:Sarabun,Prompt,sans-serif;' +
+      'font-size:11.5px;font-weight:700;letter-spacing:.02em;' +
+      'box-shadow:0 4px 14px rgba(0,0,0,.28);cursor:default;user-select:none;' +
+      'opacity:.88;transition:opacity .15s;';
+    el.onmouseenter = () => { el.style.opacity = '1'; };
+    el.onmouseleave = () => { el.style.opacity = '.88'; };
+    el.innerHTML = '🔒 <span>ดูอย่างเดียว</span>';
+    document.body.appendChild(el);
   }
 
   window.getCurrentRole     = getCurrentRole;
