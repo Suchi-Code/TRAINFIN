@@ -739,49 +739,60 @@ async function _autoLoadGs12(no){
   statusEl.textContent = 'กำลังโหลดข้อมูล...';
   showGsLoader('📥 กำลังโหลดข้อมูล');
 
-  const result = await gsApi('getByNo', null, no);
+  try {
+    const result = await gsApi('getByNo', null, no);
 
-  if (result === null){
-    hideGsLoader();
-    statusEl.textContent = '❌ เชื่อมต่อไม่สำเร็จ — ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่ (รีเฟรชหน้า)';
-    return;
-  }
-  if (!result.course){
-    hideGsLoader();
-    statusEl.textContent = '⚠️ ไม่พบข้อมูลหลักสูตรของเลขที่ ' + no;
-    return;
-  }
-
-  COURSE = result.course || null;
-
-  if (COURSE){
-    document.getElementById('f_course').value = COURSE.course || '';
-    document.getElementById('f_batch').value = COURSE.batch || '';
-    document.getElementById('f_no').value = COURSE.no || no;
-    document.getElementById('f_location').value = COURSE.location || '';
-    if (COURSE.dateStart){
-      document.getElementById('f_date').value = DateTH.formatRange(COURSE.dateStart, COURSE.dateEnd || '');
+    if (result === null){
+      hideGsLoader();
+      statusEl.textContent = '❌ เชื่อมต่อไม่สำเร็จ — ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่ (รีเฟรชหน้า)';
+      return;
     }
-  }
+    if (!result.course){
+      hideGsLoader();
+      statusEl.textContent = '⚠️ ไม่พบข้อมูลหลักสูตรของเลขที่ ' + no;
+      return;
+    }
 
-  // ── เติม "รายการที่จัดซื้อ/จ้าง" + "จำนวนรายการ" อัตโนมัติจากรายการที่ติ๊ก ว.119
-  // ในไฟล์ 06 (actual06.rowsJson) — ผู้ใช้ยังแก้ไขช่องนี้เองต่อได้ตามปกติ ไม่ได้ล็อก readonly
-  let rows06 = [];
-  const rawRows = result.actual06 && (result.actual06.rowsJson ?? result.actual06.rows);
-  if (rawRows) {
-    try { rows06 = typeof rawRows === 'string' ? JSON.parse(rawRows || '[]') : rawRows; }
-    catch(e) { rows06 = []; console.warn('[12] rowsJson parse error:', e); }
-  }
-  rows06 = rows06.map(r => migrateLegacyRow12({...r}));
-  const w119 = computeW119Summary(rows06);
-  if (w119.itemText) document.getElementById('f_item').value = w119.itemText;
-  document.getElementById('f_itemcount').value = w119.count || 1;
+    COURSE = result.course || null;
 
-  hideGsLoader();
-  statusEl.textContent = w119.count
-    ? '✅ โหลดข้อมูลสำเร็จ · พบ ' + w119.count + ' รายการค่าใช้จ่ายตาม ว.119'
-    : '✅ โหลดข้อมูลหลักสูตรสำเร็จ (⚠️ ไม่พบรายการที่ติ๊กค่าใช้จ่ายตาม ว.119 ในไฟล์ 06 — กรอกรายการเองได้)';
-  renderMemo();
+    if (COURSE){
+      document.getElementById('f_course').value = COURSE.course || '';
+      document.getElementById('f_batch').value = COURSE.batch || '';
+      document.getElementById('f_no').value = COURSE.no || no;
+      document.getElementById('f_location').value = COURSE.location || '';
+      if (COURSE.dateStart){
+        document.getElementById('f_date').value = DateTH.formatRange(COURSE.dateStart, COURSE.dateEnd || '');
+      }
+    }
+
+    // ── เติม "รายการที่จัดซื้อ/จ้าง" + "จำนวนรายการ" อัตโนมัติจากรายการที่ติ๊ก ว.119
+    // ในไฟล์ 06 (actual06.rowsJson) — ผู้ใช้ยังแก้ไขช่องนี้เองต่อได้ตามปกติ ไม่ได้ล็อก readonly
+    let rows06 = [];
+    const rawRows = result.actual06 && (result.actual06.rowsJson ?? result.actual06.rows);
+    if (rawRows) {
+      try {
+        const parsed = typeof rawRows === 'string' ? JSON.parse(rawRows || '[]') : rawRows;
+        rows06 = Array.isArray(parsed) ? parsed : [];
+      } catch(e) { rows06 = []; console.warn('[12] rowsJson parse error:', e); }
+    }
+    rows06 = rows06.map(r => migrateLegacyRow12({...r}));
+    const w119 = computeW119Summary(rows06);
+    if (w119.itemText) document.getElementById('f_item').value = w119.itemText;
+    document.getElementById('f_itemcount').value = w119.count || 1;
+
+    hideGsLoader();
+    statusEl.textContent = w119.count
+      ? '✅ โหลดข้อมูลสำเร็จ · พบ ' + w119.count + ' รายการค่าใช้จ่ายตาม ว.119'
+      : '✅ โหลดข้อมูลหลักสูตรสำเร็จ (⚠️ ไม่พบรายการที่ติ๊กค่าใช้จ่ายตาม ว.119 ในไฟล์ 06 — กรอกรายการเองได้)';
+    renderMemo();
+  } catch(e) {
+    // ⚠️ กันเหนียว: ไม่ว่าจะเกิด error อะไรก็ตามระหว่างประมวลผล ต้องปิด loading overlay เสมอ
+    // (บั๊กเดิม: ไม่มี try/catch ครอบทั้งฟังก์ชัน ถ้ามี exception เกิดขึ้นหลัง showGsLoader()
+    // จะไม่มีจุดไหนเรียก hideGsLoader() เลย ทำให้หน้าค้างสปินโหลดตลอดไป)
+    hideGsLoader();
+    statusEl.textContent = '❌ โหลดไม่สำเร็จ: ' + e.message;
+    console.error('[12] _autoLoadGs12 error:', e);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
