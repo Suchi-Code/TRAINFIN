@@ -11,13 +11,13 @@
   <script src="js/date-th.js"></script>
   <script src="js/gas-api.js"></script>
   <script>checkAuth();</script>
-
-
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     * {
       box-sizing: border-box;
     }
-
+ 
     html,
     body {
       margin: 0;
@@ -29,7 +29,7 @@
       font-weight: normal;
       line-height: 1.1;
     }
-
+ 
     .page {
       position: relative;
       width: 210mm;
@@ -39,15 +39,15 @@
       margin: 0 auto;
       overflow: hidden; /* ป้องกันเนื้อหาดันขอบ A4 หลุดไปหน้า 2 ในโหมดพิมพ์ */
     }
-
+ 
     /* ---------- หัวกระดาษ ---------- */
-
+ 
     .document-header {
       position: relative;
       min-height: 0.75in;
       margin: 0;
     }
-
+ 
     .header-logo {
       position: absolute;
       top: 0;
@@ -56,7 +56,7 @@
       height: auto;
       object-fit: contain;
     }
-
+ 
     .document-title {
       margin: 0;
       padding-top: 0.12in;
@@ -65,24 +65,24 @@
       font-weight: bold;
       line-height: 1;
     }
-
+ 
     /* ---------- ข้อมูลส่วนต้น ---------- */
-
+ 
     .document-info {
       width: 100%;
       margin-top: 0.12in;
     }
-
+ 
     .info-row {
       display: flex;
       align-items: baseline;
       width: 100%;
     }
-
+ 
     .unit-row {
       margin-bottom: 0.01in;
     }
-
+ 
     .field-label {
       flex: 0 0 auto;
       width: auto;
@@ -90,72 +90,72 @@
       font-weight: bold;
       white-space: nowrap;
     }
-
+ 
     .field-value {
       font-size: 16pt;
       font-weight: normal;
     }
-
+ 
     .field-line {
       display: inline-block;
       height: 0.18in;
       border-bottom: 1pt dotted #000;
       vertical-align: baseline;
     }
-
+ 
     .line-number {
       flex: none;
       min-width: 0;
       margin-right: 0;
       width: 3.0in;
     }
-
+ 
     .date-label {
       margin-left: 0;
     }
-
+ 
     .line-date {
       width: 2.5in;
       flex: 1;
     }
-
+ 
     .line-unit {
       flex: 1;
       min-width: 0;
       border-bottom: 1pt dotted #000;
       line-height: 1.1;
     }
-
+ 
     .unit-row .field-value {
       display: inline-block;
       border-bottom: 1pt dotted #000;
       line-height: 0.4;
     }
-
+ 
     .subject-row {
       display: flex;
       align-items: baseline;
       width: 100%;
       margin-top: 0.01in;
     }
-
+ 
     .line-subject {
       flex: 1;
       min-width: 0;
     }
-
+ 
     .recipient {
       margin-top: 0.08in;
       font-size: 16pt;
     }
-
+ 
     .recipient-label {
       font-size: 16pt;
       font-weight: normal;
     }
-
+ 
     /* ---------- เนื้อหา ---------- */
-
+ 
     .content {
       margin-top: 0.20in;
       font-size: 16pt;
@@ -166,14 +166,14 @@
       line-break: strict;       /* ตัดคำตามหลักภาษาอย่างเคร่งครัด */
       overflow-wrap: break-word; /* ป้องกันข้อความยาวเกินขอบกระดาษ */
     }
-
+ 
     .content p {
       margin: 0 0 0.2in;
       text-indent: 1.0in;
     }
-
+ 
     /* ---------- ลายมือชื่อผู้ขอหักล้าง ---------- */
-
+ 
     .requester-signature {
       width: 3.10in;
       margin-top: 0.02in;
@@ -181,18 +181,18 @@
       font-size: 16pt;
       text-align: center;
     }
-
+ 
     .signature-space {
       height: 0.75in;
     }
-
+ 
     .requester-signature p {
       margin: 0 !important;
       line-height: 1.2 !important;
     }
-
+ 
     /* ---------- ส่วนตรวจสอบและอนุมัติ ---------- */
-
+ 
     .review-approval-container {
       display: flex;
       justify-content: space-between;
@@ -200,42 +200,42 @@
       width: 100%;
       margin-top: 0.5in;
     }
-
+ 
     .review-box {
       width: 3.2in !important;
       font-size: 16pt;
       line-height: 1.05;
       text-align: left;
     }
-
+ 
     .review-box p {
       margin: 0 !important;
       text-align: left;
     }
-
+ 
     .review-indent {
       text-indent: 0.40in !important;
     }
-
+ 
     .reviewer-signature {
       width: 100%;
       margin-top: 0.03in;
       font-size: 16pt;
     }
-
+ 
     .reviewer-signature p {
       margin: 0 !important;
       line-height: 1.2 !important;
       text-align: center !important;
       text-indent: 0 !important;
     }
-
+ 
     .approval-box {
       width: 3.10in;
       font-size: 16pt;
       line-height: 1.8;
     }
-
+ 
     .approval-heading {
       margin: 0 !important;
       font-size: 16pt;
@@ -243,22 +243,22 @@
       margin-top: 2.2em !important;
       text-align: center;
     }
-
+ 
     .approval-signature {
       width: 100%;
       margin-top: 0.08in;
       font-size: 16pt;
     }
-
+ 
     .approval-signature p {
       margin: 0 !important;
       line-height: 1.2 !important;
       text-align: center !important;
       text-indent: 0 !important;
     }
-
+ 
     /* ---------- โลโก้ท้ายกระดาษ ---------- */
-
+ 
     .footer-logo {
       position: absolute;
       left: 50%;
@@ -268,9 +268,9 @@
       height: 0.68in;
       object-fit: contain;
     }
-
+ 
     /* ---------- การแสดงผลบนหน้าจอ ---------- */
-
+ 
     @media screen {
       /* ⚠️ เดิม body มี padding:20px ทำให้ .site-header (position:sticky) ถูกเบียดเข้ามาจากขอบซ้าย/ขวา
          20px ทุกด้าน มองดูเหมือน "ลอย"/ไม่เต็มความกว้างหน้าจอ — ย้าย padding ไปไว้ที่ #input-panel/
@@ -278,20 +278,20 @@
       body {
         background: #e6e6e6;
       }
-
+ 
       .page {
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.20);
       }
     }
-
+ 
     /* ---------- การสั่งพิมพ์ ---------- */
-
+ 
+    @page {
+      size: A4 portrait;
+      margin: 0; /* ยึดตามขนาด .page 100% โดยไม่อิง margin ของเบราว์เซอร์ */
+    }
+ 
     @media print {
-      @page {
-        size: A4 portrait;
-        margin: 0; /* ยึดตามขนาด .page 100% โดยไม่อิง margin ของเบราว์เซอร์ */
-      }
-
       html, body {
         width: 210mm;
         height: 297mm;
@@ -299,7 +299,7 @@
         padding: 0 !important;
         background: #fff;
       }
-
+ 
       .page {
         box-shadow: none;
         page-break-after: avoid;
@@ -307,7 +307,7 @@
       }
     }
   </style>
-
+ 
   <style>
     /* ============================================================
        ส่วนเสริมที่ไม่ได้อยู่ในต้นฉบับ .docx — site-header / input-panel / fillspan
@@ -324,7 +324,7 @@
     .btn-print-hdr:hover{background:#f5c842}
     .btn-save-pdf{background:#1a7a4a;color:#fff;border:none;border-radius:6px;padding:7px 20px;cursor:pointer;font-size:13px;font-weight:700;font-family:'Sarabun',sans-serif}
     .btn-save-pdf:hover{background:#22a05e}
-
+ 
     #input-panel{font-family:'Sarabun',sans-serif;background:#f0f4f8;border:2px solid #1d5fa8;border-radius:12px;padding:18px 22px;margin:20px auto;max-width:1000px}
     #input-panel h3{margin:0 0 14px;font-size:15px;color:#0f2744;border-bottom:1px solid #c0d0e0;padding-bottom:8px}
     .ip-sec-title{font-size:12.5px;font-weight:700;color:#0f2744;margin:16px 0 8px;border-left:3px solid #1d5fa8;padding-left:8px}
@@ -344,16 +344,16 @@
     .ip-sum-card.refund strong{color:#1a7a4a}
     .ip-sum-card.refund.neg strong{color:#b03030}
     #loadStatus{margin-top:10px;font-size:12px;color:#6b7280;font-family:'Sarabun',sans-serif}
-
+ 
     .fillspan {
       display: inline;
       padding: 0 3pt;
       text-align: left;              /* จัดข้อความชิดซ้าย */
       width: auto;                   /* ปรับความกว้างตามเนื้อหาข้อความ */
     }
-
+ 
     .screen-wrap{max-width:1000px;margin:0 auto}
-
+ 
     /* ============================================================
        WORD-STYLE TOOLBAR — เครื่องมือแก้ไขข้อความแบบ Word (ล้อจาก Word_Style.html)
        ให้แก้ไขเนื้อหาในเอกสาร #doc-display ได้หลังโหลดข้อมูลตัวแปรแล้ว
@@ -387,16 +387,16 @@
     }
     .word-toolbar .wt-spacing span{font-weight:700;min-width:34px;text-align:center}
     #doc-display[contenteditable="true"]:focus{outline:2px dashed #1d5fa8;outline-offset:6px}
-
+ 
     @media print{
       .site-header, #input-panel, .word-toolbar{display:none !important}
       #doc-display{outline:none !important}
     }
   </style>
 </head>
-
+ 
 <body>
-
+ 
 <header class="site-header" id="siteHeader">
   <div class="header-inner">
     <div class="header-title">
@@ -413,10 +413,10 @@
     </div>
   </div>
 </header>
-
+ 
 <div id="input-panel">
   <h3>📝 ข้อมูลสำหรับออกบันทึกข้อความ</h3>
-
+ 
   <div class="ip-sec-title">ข้อมูลหลักสูตร (ดึงอัตโนมัติจาก Google Sheet)</div>
   <div class="ip-grid">
     <div class="ip-field full">
@@ -440,7 +440,7 @@
       <input type="text" id="f_location" readonly>
     </div>
   </div>
-
+ 
   <div class="ip-sec-title">ข้อมูลหนังสือ (กรอกเอง)</div>
   <div class="ip-grid">
     <div class="ip-field">
@@ -452,7 +452,7 @@
       <input type="date" id="f_docdate" oninput="renderMemo()" onchange="renderMemo()">
     </div>
   </div>
-
+ 
   <div class="ip-sec-title">ผู้ยืมเงินทดรองจ่าย (กรอกเอง)</div>
   <div class="ip-grid">
     <div class="ip-field wide">
@@ -464,7 +464,7 @@
       <input type="text" id="f_borrower_pos" placeholder="" oninput="renderMemo()">
     </div>
   </div>
-
+ 
   <div class="ip-sec-title">ผู้ตรวจสอบ (กรอกเอง)</div>
   <div class="ip-grid">
     <div class="ip-field wide">
@@ -476,7 +476,7 @@
       <input type="text" id="f_reviewer_pos" value="หัวหน้างาน 8 งานฝึกอบรมภูมิภาค" placeholder="เช่น หัวหน้างาน 8 งานฝึกอบรมภูมิภาค" oninput="renderMemo()">
     </div>
   </div>
-
+ 
   <div class="ip-sec-title">ผู้เห็นชอบ (กรอกเอง)</div>
   <div class="ip-grid">
     <div class="ip-field wide">
@@ -488,7 +488,7 @@
       <input type="text" id="f_approver_pos" value="ผู้อำนวยการกองฝึกอบรมภูมิภาค 1" placeholder="เช่น ผู้อำนวยการกองฝึกอบรมภูมิภาค 1" oninput="renderMemo()">
     </div>
   </div>
-
+ 
   <div class="ip-sec-title">สรุปยอดเงิน (คำนวณอัตโนมัติจากไฟล์ 05/06)</div>
   <div class="ip-summary">
     <div class="ip-sum-card">
@@ -506,7 +506,7 @@
   </div>
   <div id="loadStatus"></div>
 </div>
-
+ 
 <div class="word-toolbar no-print" id="word-toolbar">
   <button type="button" class="wt-btn" onmousedown="event.preventDefault()" onclick="wtExec('undo')" title="ยกเลิก">↺</button>
   <button type="button" class="wt-btn" onmousedown="event.preventDefault()" onclick="wtExec('redo')" title="ทำซ้ำ">↻</button>
@@ -555,27 +555,27 @@
     <button type="button" class="wt-btn" style="height:24px;min-width:24px;padding:0 6px;" onmousedown="event.preventDefault()" onclick="wtLetterSpacing(0.1)">A↔+</button>
   </div>
 </div>
-
+ 
 <div class="screen-wrap">
   <main class="page" id="doc-display">
     <header class="document-header">
       <img
         class="header-logo"
-        src="https://www.pwa.co.th/images/pwalogo.gif"
+        src="https://res.cloudinary.com/daytjjgll/image/upload/fl_preserve_transparency/v1790433884/ttc3ets0vvkmvypp24ls.jpg?_s=public-apps"
         alt="โลโก้การประปาส่วนภูมิภาค"
       >
-
+ 
       <h1 class="document-title">บันทึกข้อความ</h1>
     </header>
-
+ 
     <section class="document-info">
       <div class="info-row unit-row">
         <span class="field-label">หน่วยงาน</span>
         <span class="field-value">
-          &nbsp;&nbsp;กองฝึกอบรมภูมิภาค 1 งานฝึกอบรมภูมิภาค โทร.06 1813 9808&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;กองฝึกอบรมภูมิภาค 1 งานฝึกอบรมภูมิภาค โทร.06 1813 9808&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
         </span>
       </div>
-
+ 
       <div class="info-row">
         <span class="field-label">ที่</span>
         <span class="field-line line-number" id="v_docno"></span>
@@ -583,30 +583,30 @@
         <span class="field-line line-date" id="v_docdate"></span>
       </div>
     </section>
-
+ 
     <div class="info-row unit-row">
       <span class="field-label">เรื่อง</span>
       <span class="field-value">
         &nbsp;&nbsp;ขอหักล้างเงินยืมทดรองจ่ายค่าใช้จ่ายในการดำเนินการฝึกอบรม&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
       </span>
     </div>
-
+ 
     <div class="recipient">
       <span class="recipient-label">เรียน</span>&nbsp;&nbsp;หัวหน้างานฝึกอบรมภูมิภาค
     </div>
-
+ 
     <section class="content">
       <p>
         ตามที่กองฝึกอบรมภูมิภาค ๑ (กฝภ.๑) ได้จัดการฝึกอบรมหลักสูตร
         “<span id="v_course"></span>”
         รุ่นที่ <span id="v_batch"></span> เลขที่รุ่นหลักสูตร <span id="v_no"></span> ในวันที่ <span id="v_daterange"></span>
         ณ <span id="v_location"></span>
-        โดยข้าพเจ้า <span id="v_borrower_name_1" class="fillspan"></span> ตำแหน่ง <span style="white-space: nowrap;"><span id="v_borrower_pos_1" class="fillspan"></span></span>
+        โดยข้าพเจ้า<span id="v_borrower_name_1"></span> ตำแหน่ง<span id="v_borrower_pos_1"></span>
         งานฝึกอบรมภูมิภาค ได้รับมอบหมายให้เป็นผู้ยืมเงินทดรองจ่าย
         ค่าใช้จ่ายในการดำเนินการฝึกอบรม เป็นเงิน <span id="v_gor"></span> บาท
         (<span id="v_gor_text"></span>) นั้น
       </p>
-
+ 
       <p>
         บัดนี้ การจัดฝึกอบรมหลักสูตรดังกล่าวได้เสร็จสิ้นแล้ว
         และข้าพเจ้าได้จัดทำบันทึกรายการค่าใช้จ่ายในการดำเนินการฝึกอบรม
@@ -614,34 +614,34 @@
         (<span id="v_actual_text"></span>)
         <span id="v_refund_phrase"></span>
       </p>
-
+ 
       <p>
         จึงเรียนมาเพื่อโปรดพิจารณาตรวจสอบความถูกต้องต่อไปด้วย จะขอบคุณยิ่ง
       </p>
     </section>
-
+ 
     <section class="requester-signature">
       <div class="signature-space"></div>
       <p>(<span id="v_borrower_name_sig" class="fillspan"></span>)</p>
       <p><span id="v_borrower_pos_sig" class="fillspan"></span></p>
     </section>
-
+ 
     <div class="review-approval-container">
       <div class="review-box">
         <p>เรียน ผอ.กฝภ.1</p>
         <p class="review-indent">งานฝึกอบรมภูมิภาค ตรวจสอบความถูกต้องแล้ว เห็นควรให้หักล้างเงินยืมฯ ดังกล่าวได้</p>
         <p class="review-indent">จึงเรียนมาเพื่อโปรดพิจารณา</p>
-
+ 
         <div class="reviewer-signature">
           <div class="signature-space"></div>
           <p>(<span id="v_reviewer_name" class="fillspan"></span>)</p>
           <p><span id="v_reviewer_pos" class="fillspan"></span></p>
         </div>
       </div>
-
+ 
       <div class="approval-box">
         <p class="approval-heading">เห็นชอบ</p>
-
+ 
         <div class="approval-signature">
           <div class="signature-space"></div>
           <p>(<span id="v_approver_name" class="fillspan"></span>)</p>
@@ -649,7 +649,7 @@
         </div>
       </div>
     </div>
-
+ 
     <img
       class="footer-logo"
       src="https://res.cloudinary.com/daytjjgll/image/upload/v1789616480/cd5ix1msmwzocl6nwbse.png"
@@ -657,7 +657,7 @@
     >
   </main>
 </div>
-
+ 
 <script>
 /* ============================================================
    HELPERS
@@ -669,7 +669,22 @@ function fmtSmart(n){
     ? Math.round(n).toLocaleString('th-TH')
     : n.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
-
+ 
+const THAI_DIGITS = ['๐','๑','๒','๓','๔','๕','๖','๗','๘','๙'];
+function convertToThaiNumeralsDeep(node){
+  if(!node) return;
+  if(node.nodeType === 3){ // text node
+    if(node.nodeValue && /[0-9]/.test(node.nodeValue)){
+      node.nodeValue = node.nodeValue.replace(/[0-9]/g, d => THAI_DIGITS[+d]);
+    }
+    return;
+  }
+  if(node.nodeType === 1){
+    if(node.tagName === 'INPUT' || node.tagName === 'TEXTAREA') return;
+    Array.from(node.childNodes).forEach(convertToThaiNumeralsDeep);
+  }
+}
+ 
 function ThaiBaht(n) {
   n = Math.round(n * 100) / 100;
   let textNum = ['ศูนย์', 'หนึ่ง', 'สอง', 'สาม', 'สี่', 'ห้า', 'หก', 'เจ็ด', 'แปด', 'เก้า', 'สิบ'];
@@ -678,7 +693,7 @@ function ThaiBaht(n) {
   let baht = s[0];
   let satang = s[1] || '00';
   if (satang.length === 1) satang += '0';
-
+ 
   function convert(str) {
     if (str === '0' || str === '') return '';
     let res = '';
@@ -694,37 +709,28 @@ function ThaiBaht(n) {
     }
     return res;
   }
-
+ 
   let bahtText = convert(baht);
   let satangText = convert(satang);
-
+ 
   if (bahtText === '' && satangText === '') return 'ศูนย์บาทถ้วน';
   if (bahtText !== '') bahtText += 'บาท';
   if (satangText === '') satangText = 'ถ้วน';
   else satangText += 'สตางค์';
-
+ 
   return bahtText + satangText;
 }
-
+ 
 function setText(id, val){
   const el = document.getElementById(id);
-  if (el) el.textContent = val || '';
+  if (el) el.textContent = (val || '').trim(); // ใช้ .trim() เพื่อลบ space หัว-ท้ายออก
 }
-
+ 
 function fmtDocDate(iso){
   return iso ? DateTH.format(iso) : '';
 }
-
-/* ============================================================
-   WORD-STYLE TOOLBAR — แก้ไขข้อความในเอกสาร #doc-display แบบ rich text (ล้อจาก Word_Style.html)
-   ใช้ document.execCommand() ธรรมดา ไม่แตะ/เปลี่ยนโครงสร้างหรือ CSS เดิมของเอกสารเลย —
-   เป็นแค่ความสามารถเพิ่มให้ผู้ใช้จัดรูปแบบข้อความเองหลังจากตัวแปรถูกเติมเข้าไปแล้ว
-   ============================================================ */
-/* ============================================================
-   ปักหมุดแถบเครื่องมือ (.word-toolbar) ให้อยู่ใต้ .site-header เสมอ — วัดความสูงจริงของ header
-   ด้วย JS แล้วตั้งเป็น CSS var --site-header-h แทนการเดาตัวเลขคงที่ เพราะ .header-inner ใช้
-   flex-wrap (ขึ้น 2 บรรทัดได้บนจอแคบ) ทำให้ความสูงจริงไม่คงที่เสมอไป
-   ============================================================ */
+ 
+ 
 function syncStickyOffsets(){
   const header = document.getElementById('siteHeader');
   if(!header) return;
@@ -733,19 +739,19 @@ function syncStickyOffsets(){
 window.addEventListener('load', syncStickyOffsets);
 window.addEventListener('resize', syncStickyOffsets);
 document.addEventListener('DOMContentLoaded', syncStickyOffsets);
-
+ 
 function wtEditor(){ return document.getElementById('doc-display'); }
-
+ 
 function enableDocEditing(){
   const el = wtEditor();
   if (el) el.setAttribute('contenteditable', 'true');
 }
-
+ 
 function wtExec(cmd, val){
   wtEditor()?.focus();
   document.execCommand(cmd, false, val || null);
 }
-
+ 
 // ขนาดตัวอักษรเป็น px ตรงๆ (execCommand('fontSize') รองรับแค่ 1-7 ไม่ใช่ px) —
 // ห่อข้อความที่เลือกด้วย <span style="font-size:...px"> แทน (วิธีเดียวกับ Word_Style.html)
 function wtFontSize(px){
@@ -764,20 +770,7 @@ function wtFontSize(px){
   } catch(e) {}
   wtEditor()?.focus();
 }
-
-/* ============================================================
-   ปรับระยะห่างตัวอักษร (letter-spacing) — แก้บั๊กเดิม
-   ------------------------------------------------------------
-   เดิมใช้ node.closest('span[style*="letter-spacing"]') เพียงอย่างเดียวเพื่อหา "span ที่เคยปรับ
-   ไว้แล้ว" — ปัญหาคือ closest() เจอ span นั้นได้แม้ผู้ใช้จะ "เลือกแค่บางส่วน" ของข้อความในนั้น
-   (เช่น span ครอบคำว่า "ABCDE" ทั้งก้อนไว้ แต่ผู้ใช้ลากเลือกแค่ "ABC") ผลคือ:
-   - กดปรับแล้วค่าที่แสดง/ที่ปรับจริงเป็นของทั้ง span "ABCDE" ไม่ใช่แค่ "ABC" ที่เลือกอยู่ (ปรับไม่ตรง)
-   - เลขบน label อ่านจากค่าของ span เดิมทั้งก้อน ทำให้ดูเหมือน "ค้าง" ไม่ตรงกับสิ่งที่เพิ่งลากเลือกใหม่
-   แก้โดยเช็คว่าข้อความที่เลือกอยู่ "ตรงกับเนื้อหาทั้งหมด" ของ span[letter-spacing] ที่ใกล้ที่สุด
-   หรือไม่ (findExactLetterSpacingSpan) — ถ้าตรงเป๊ะ = ผู้ใช้เลือกช่วงเดิมมาปรับต่อ ปรับ span นั้นตรงๆ
-   ถ้าไม่ตรง (เลือกใหม่ทั้งหมด หรือเลือกคาบเกี่ยวบางส่วนของ span เดิม) = ถือเป็นช่วงใหม่ เริ่มนับจาก 0
-   เสมอ แล้วห่อด้วย span ใหม่เฉพาะข้อความที่เลือกจริงเท่านั้น (ไม่ไปแตะข้อความส่วนอื่นที่ไม่ได้เลือก)
-   ============================================================ */
+ 
 function findExactLetterSpacingSpan(range){
   let node = range.commonAncestorContainer;
   if (node.nodeType === 3) node = node.parentNode;
@@ -786,12 +779,12 @@ function findExactLetterSpacingSpan(range){
   // ต้องเลือกครอบ "ทั้งก้อน" ของ span นั้นพอดี ไม่ใช่แค่บางส่วน
   return (range.toString() === span.textContent) ? span : null;
 }
-
+ 
 function getCurrentSpacingForSelection(range){
   const span = findExactLetterSpacingSpan(range);
   return span ? (parseFloat(span.style.letterSpacing) || 0) : 0;
 }
-
+ 
 // เอา span ออกแต่เก็บเนื้อหาข้างในไว้ (กันมี <span style=""> ว่างเปล่าค้างอยู่ใน DOM เมื่อปรับกลับเป็น 0)
 function unwrapSpanKeepChildren(span){
   const parent = span.parentNode;
@@ -799,18 +792,18 @@ function unwrapSpanKeepChildren(span){
   while (span.firstChild) parent.insertBefore(span.firstChild, span);
   parent.removeChild(span);
 }
-
+ 
 function wtLetterSpacing(delta) {
   const sel = window.getSelection();
   if (!sel.rangeCount || sel.isCollapsed) return;
-
+ 
   const range = sel.getRangeAt(0);
   const exactSpan = findExactLetterSpacingSpan(range);
   const cur  = exactSpan ? (parseFloat(exactSpan.style.letterSpacing) || 0) : 0;
   const next = Math.round((cur + delta) * 10) / 10;
-
+ 
   updateSpacingLabel(next);
-
+ 
   if (exactSpan) {
     // เลือกครอบพอดีทั้ง span เดิม → ปรับต่อจากค่าเดิมตรงๆ
     if (next === 0) {
@@ -839,10 +832,10 @@ function wtLetterSpacing(delta) {
       console.error(e);
     }
   }
-
+ 
   wtEditor()?.focus();
 }
-
+ 
 // ฟังก์ชันอัปเดตตัวเลขบน Label
 function updateSpacingLabel(val) {
   const lbl = document.getElementById('wt_spacing_val');
@@ -853,19 +846,18 @@ function updateSpacingLabel(val) {
     lbl.textContent = (val > 0 ? '+' : '') + val.toFixed(1) + 'px';
   }
 }
-// อัปเดตค่าตัวเลขบน Label เมื่อผู้ใช้คลิกย้ายตำแหน่งข้อความ หรือไฮไลต์ข้อความใหม่ — ใช้ตรรกะเดียวกับ
-// wtLetterSpacing() ทุกประการ (getCurrentSpacingForSelection) กันเลข label โชว์ไม่ตรงกับที่ปุ่ม +/- จะปรับจริง
+ 
 document.addEventListener('selectionchange', () => {
   const sel = window.getSelection();
   if (!sel || !sel.rangeCount || sel.isCollapsed) return;
   updateSpacingLabel(getCurrentSpacingForSelection(sel.getRangeAt(0)));
 });
-
+ 
 /* ============================================================
    STATE
    ============================================================ */
 let COURSE = null, BUDGET = null, ACTUAL06 = null;
-
+ 
 /* ============================================================
    RENDER
    ============================================================ */
@@ -877,17 +869,17 @@ function renderMemo(){
   const dateRangeTxt = (COURSE && COURSE.dateStart)
     ? DateTH.formatRange(COURSE.dateStart, COURSE.dateEnd || '')
     : '';
-
+ 
   const gorTotal = (BUDGET && parseFloat(BUDGET.gorTotal)) || 0;
   const grandTotal06 = (ACTUAL06 && parseFloat(ACTUAL06.grandTotal)) || 0;
   const refund = gorTotal - grandTotal06;
-
+ 
   document.getElementById('s_gor').textContent = fmtSmart(gorTotal) + ' บาท';
   document.getElementById('s_actual').textContent = fmtSmart(grandTotal06) + ' บาท';
   document.getElementById('s_refund').textContent = fmtSmart(Math.abs(refund)) + ' บาท';
   document.getElementById('s_refund_label').textContent = refund >= 0 ? 'เงินเหลือจ่ายส่งคืน' : 'ขอเบิกจ่ายเงินเพิ่ม (จ่ายเกิน)';
   document.getElementById('s_refund_card').classList.toggle('neg', refund < 0);
-
+ 
   const docNo   = document.getElementById('f_docno').value.trim();
   const docDate = document.getElementById('f_docdate').value;
   const borrowerName = document.getElementById('f_borrower_name').value.trim();
@@ -896,41 +888,43 @@ function renderMemo(){
   const reviewerPos  = document.getElementById('f_reviewer_pos').value.trim();
   const approverName = document.getElementById('f_approver_name').value.trim();
   const approverPos  = document.getElementById('f_approver_pos').value.trim();
-
+ 
   setText('v_docno', docNo);
   setText('v_docdate', fmtDocDate(docDate));
-
+ 
   setText('v_course', courseName);
   setText('v_batch', batch);
   setText('v_no', no);
   setText('v_daterange', dateRangeTxt);
   setText('v_location', location);
-
+ 
   setText('v_borrower_name_1', borrowerName);
   setText('v_borrower_pos_1', borrowerPos);
   setText('v_borrower_name_sig', borrowerName);
   setText('v_borrower_pos_sig', borrowerPos);
-
+ 
   setText('v_gor', fmtSmart(gorTotal));
   setText('v_gor_text', 'เงิน' + ThaiBaht(gorTotal));
   setText('v_actual', fmtSmart(grandTotal06));
   setText('v_actual_text', 'เงิน' + ThaiBaht(grandTotal06));
-
+ 
   const refundPhrase = refund >= 0
     ? `มีจำนวนเงินเหลือจ่ายส่งคืนเป็นเงิน ${fmtSmart(refund)} บาท (เงิน${ThaiBaht(Math.abs(refund))})`
     : `ข้าพเจ้าขออนุมัติเบิกจ่ายเงินเพิ่มเป็นค่าใช้จ่ายอีกเป็นเงิน ${fmtSmart(Math.abs(refund))} บาท (เงิน${ThaiBaht(Math.abs(refund))})`;
   setText('v_refund_phrase', refundPhrase);
-
+ 
   setText('v_reviewer_name', reviewerName);
   setText('v_reviewer_pos', reviewerPos);
   setText('v_approver_name', approverName);
   setText('v_approver_pos', approverPos);
-
-  // เปิดให้แก้ไขข้อความทั้งหน้าเอกสารได้ (ผ่านแถบเครื่องมือคล้าย Word ด้านบน) ทุกครั้งที่
-  // renderMemo() เติมข้อมูลตัวแปรเสร็จ — ไม่เปลี่ยนรูปแบบการแสดงผลเดิมของเอกสารเลย แค่เปิดสิทธิ์แก้ไข
+ 
+  
+  convertToThaiNumeralsDeep(wtEditor());
+ 
+  
   enableDocEditing();
 }
-
+ 
 /* ============================================================
    LOAD DATA
    ============================================================ */
@@ -945,14 +939,14 @@ function _prefillMeta11(cd){
   const disp = DateTH.formatRange(ds, de);
   if (disp) document.getElementById('f_date').value = disp;
 }
-
+ 
 async function _autoLoadGs11(no){
   const statusEl = document.getElementById('loadStatus');
   statusEl.textContent = 'กำลังโหลดข้อมูล...';
   showGsLoader('📥 กำลังโหลดข้อมูล');
-
+ 
   const result = await gsApi('getByNo', null, no);
-
+ 
   if (result === null){
     hideGsLoader();
     statusEl.textContent = '❌ เชื่อมต่อไม่สำเร็จ — ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่ (รีเฟรชหน้า)';
@@ -963,11 +957,11 @@ async function _autoLoadGs11(no){
     statusEl.textContent = '⚠️ ไม่พบข้อมูลของเลขที่ ' + no;
     return;
   }
-
+ 
   COURSE   = result.course   || null;
   BUDGET   = result.budget   || null;
   ACTUAL06 = result.actual06 || null;
-
+ 
   if (COURSE){
     document.getElementById('f_course').value = COURSE.course || '';
     document.getElementById('f_batch').value = COURSE.batch || '';
@@ -977,19 +971,12 @@ async function _autoLoadGs11(no){
       document.getElementById('f_date').value = DateTH.formatRange(COURSE.dateStart, COURSE.dateEnd || '');
     }
   }
-
+ 
   hideGsLoader();
   statusEl.textContent = '✅ โหลดข้อมูลสำเร็จ';
   renderMemo();
 }
-
-/* ============================================================
-   AUTOFILL ผู้ยืมเงินทดรองจ่าย — ดึง full_name/position ของผู้ใช้ที่ล็อกอินอยู่จาก Supabase
-   ตาราง "profiles" มาเติมให้อัตโนมัติ (สร้าง client ของตัวเอง ตาม pattern เดียวกับ
-   settings.html/auth.js — ต่างไฟล์ต่างสร้าง client เมื่อจำเป็น ไม่ได้แชร์ instance กัน)
-   เติมเฉพาะช่องที่ "ยังว่างอยู่" เท่านั้น — ไม่เขียนทับถ้าผู้ใช้พิมพ์ชื่อ/ตำแหน่งอื่นไว้เองแล้ว
-   (เผื่อกรณีบันทึกข้อความแทนคนอื่น) ไม่บล็อกการโหลดหน้าหลักถ้าจุดนี้พลาด/ไม่มีคอลัมน์ 'position'
-   ============================================================ */
+ 
 let _borrowerProfileClient = null;
 function getBorrowerProfileClient(){
   if (_borrowerProfileClient) return _borrowerProfileClient;
@@ -998,42 +985,45 @@ function getBorrowerProfileClient(){
   _borrowerProfileClient = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY);
   return _borrowerProfileClient;
 }
-
+ 
 async function autofillBorrowerFromProfile(){
   const client = getBorrowerProfileClient();
   if (!client) return;
   try {
     const { data: { user } } = await client.auth.getUser();
     if (!user) return;
-
+ 
     const { data: profile, error } = await client
       .from('profiles')
       .select('full_name, position')
       .eq('id', user.id)
       .single();
     if (error || !profile) return;
-
+ 
     const nameEl = document.getElementById('f_borrower_name');
     const posEl  = document.getElementById('f_borrower_pos');
     if (nameEl && !nameEl.value.trim() && profile.full_name) nameEl.value = profile.full_name;
     if (posEl  && !posEl.value.trim()  && profile.position)  posEl.value  = profile.position;
-
+ 
     renderMemo();
   } catch(e) {
     console.warn('autofillBorrowerFromProfile error:', e);
   }
 }
-
+ 
 document.addEventListener('DOMContentLoaded', () => {
+  
+  renderMemo();
+ 
   let cd = null;
   try { cd = JSON.parse(sessionStorage.getItem('courseData') || 'null'); } catch(e){}
-
+ 
   let no = (cd && cd.no) ? String(cd.no).trim() : '';
   if (!no){
     const params = new URLSearchParams(window.location.search);
     no = params.get('no') || params.get('run') || '';
   }
-
+ 
   if (no){
     if (cd) _prefillMeta11(cd);
     _autoLoadGs11(no);
@@ -1041,86 +1031,154 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('loadStatus').textContent = 'ℹ️ ไม่พบเลขที่หลักสูตร — กรุณาเข้าหน้านี้ผ่านปุ่ม "รายละเอียด" จากหน้าหลักสูตรการฝึกอบรม หรือเพิ่ม ?no=เลขที่หลักสูตร ต่อท้าย URL เพื่อทดสอบ';
     renderMemo();
   }
-
+ 
   autofillBorrowerFromProfile();
 });
 </script>
-
+ 
 <script>
-async function savePdf11(btn){
-  const el = document.getElementById('doc-display');
-  if(!el){ alert('ไม่พบข้อมูลเอกสาร'); return; }
-
-  const no    = document.getElementById('f_no').value || '';
-  const safe  = s => s.replace(/[/\\:*?"<>|]/g,'_').trim();
-  const fname = safe(`บันทึกขอหักล้างเงินยืม_${document.getElementById('f_course').value||''}_${no}`) || 'memo11';
-
-  btn.disabled = true; btn.textContent = '⏳ กำลังสร้าง...';
-
+async function savePdf11(btn) {
+  const targetEl = document.getElementById('doc-display');
+  if (!targetEl) { alert('ไม่พบข้อมูลเอกสาร'); return; }
+ 
+  const no = document.getElementById('f_no')?.value || '';
+  const course = document.getElementById('f_course')?.value || '';
+  const safe = s => s.replace(/[/\\:*?"<>|]/g, '_').trim();
+  const fname = safe(`บันทึกขอหักล้างเงินยืม_${course}_${no}`) || 'memo11';
+ 
+  btn.disabled = true; 
+  btn.textContent = '⏳ กำลังสร้าง PDF...';
+ 
   try {
-    const clone = el.cloneNode(true);
-
-    const originalStyles = Array.from(document.querySelectorAll('style'))
-      .map(s => s.innerHTML).join('\n');
-
-    const fullHtml = `<!DOCTYPE html>
-<html lang="th">
-<head>
-<meta charset="UTF-8">
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<style>
-${originalStyles}
-</style>
-</head>
-<body>${clone.outerHTML}</body>
-</html>`;
-
-    const res = await fetch(APP_CONFIG.PDF_SERVER_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        html: fullHtml,
-        filename: fname,
-        pdfOptions: {
-          format: 'A4',
-          landscape: false,
-          margin: { top: '0mm', right: '0mm', bottom: '0mm', left: '0mm' },
-          preferCSSPageSize: true,
-          printBackground: true,
-        },
-      })
-    });
-    if(!res.ok){
-      const errText = await res.text().catch(()=>res.statusText);
-      throw new Error(`เซิร์ฟเวอร์สร้าง PDF ผิดพลาด (${res.status}): ${errText}`);
+    // 1. รอให้ฟอนต์พร้อม
+    if (document.fonts && document.fonts.ready) {
+      await document.fonts.ready;
     }
-
-    const blob = await res.blob();
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url; a.download = fname + '.pdf';
-    document.body.appendChild(a); a.click(); a.remove();
+ 
+    // 2. Clone Element เพื่อประมวลผล
+    const clone = targetEl.cloneNode(true);
+    clone.id = 'pdf-render-clone';
+    clone.removeAttribute('contenteditable');
+    clone.style.outline = 'none';
+    clone.style.boxShadow = 'none';
+    clone.style.margin = '0';
+    
+    clone.querySelectorAll('[contenteditable]').forEach(node => {
+      node.removeAttribute('contenteditable');
+    });
+ 
+    // ⭐️ 3. [เทคนิคแก้โลโก้หายโดยไม่แตะ HTML]
+    // โหลดรูปภาพ pwalogo.gif ใน Clone แล้วแปลงเป็น Base64 แบบ Dynamic
+    const images = clone.querySelectorAll('img');
+    for (let img of images) {
+      if (img.src) {
+        try {
+          // โหลดภาพผ่าน Image Object พร้อมกำหนด crossOrigin
+          const base64Src = await new Promise((resolve) => {
+            const tempImg = new Image();
+            tempImg.crossOrigin = 'anonymous';
+            tempImg.onload = function() {
+              const cvs = document.createElement('canvas');
+              cvs.width = tempImg.naturalWidth || tempImg.width;
+              cvs.height = tempImg.naturalHeight || tempImg.height;
+              const ctx = cvs.getContext('2d');
+              ctx.drawImage(tempImg, 0, 0);
+              resolve(cvs.toDataURL('image/png'));
+            };
+            // หากเกิด CORS Error โหลดซ้ำด้วยโหมดปกติ
+            tempImg.onerror = function() {
+              resolve(null);
+            };
+            // เติม timestamp เพื่อกันเบราว์เซอร์ดึงภาพจาก Cache ตัวเดิมที่ติด CORS
+            tempImg.src = img.src + (img.src.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
+          });
+ 
+          if (base64Src) {
+            img.src = base64Src; // แทนที่ src ด้วย Base64 ใน clone
+          }
+        } catch (e) {
+          console.warn('ไม่สามารถแปลงภาพเป็น Base64:', e);
+        }
+      }
+    }
+ 
+    // วาง Clone ลงใน DOM ชั่วคราว
+    targetEl.parentNode.insertBefore(clone, targetEl.nextSibling);
+    targetEl.style.display = 'none';
+ 
+    // 4. สั่ง html2canvas แปลง Clone เป็นภาพ
+    const canvas = await html2canvas(clone, {
+      scale: 3,                 // ภาพคมชัด
+      useCORS: true,            // ยินยอมดึงรูปข้ามโดเมน
+      allowTaint: true,         // อนุญาตให้วาด Canvas ติด Taint ได้
+      logging: false,
+      backgroundColor: '#ffffff',
+      letterRendering: true
+    });
+ 
+    // แสดงผลตัวจริง และลบ Clone ออก
+    targetEl.style.display = '';
+    clone.remove();
+ 
+    // 5. แปลงเป็น PDF ขนาด A4
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    
+    const imgData = canvas.toDataURL('image/jpeg', 0.98);
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+ 
+    pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+ 
+    // 6. บันทึกลงเครื่องผู้ใช้
+    const pdfBlob = pdf.output('blob');
+    const url = URL.createObjectURL(pdfBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${fname}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
     URL.revokeObjectURL(url);
-
-    btn.textContent = '⏳ กำลังอัปโหลด...';
-    const uploadResult = no ? await saveReportPdf(no, 'pdf11', blob) : null;
+ 
+    // 7. ส่งไฟล์ไปอัปโหลดบน Supabase Cloud
+    btn.textContent = '⏳ กำลังอัปโหลดขึ้น Cloud...';
+    
+    let uploadResult = null;
+    if (no && typeof saveReportPdf === 'function') {
+      uploadResult = await saveReportPdf(no, 'pdf11', pdfBlob);
+    }
+ 
     if (uploadResult) {
       console.log('อัปโหลด PDF สำเร็จ:', uploadResult.publicUrl, '(v' + uploadResult.version + ')');
-      showGsStatus('✅ บันทึก PDF และอัปโหลดเรียบร้อยแล้ว', 'ok');
+      if (typeof showGsStatus === 'function') {
+        showGsStatus('✅ บันทึก PDF ลงเครื่องและอัปโหลดขึ้น Cloud เรียบร้อยแล้ว', 'ok');
+      } else {
+        alert('✅ บันทึก PDF ลงเครื่องและอัปโหลดขึ้น Cloud เรียบร้อยแล้ว');
+      }
     } else if (!no) {
-      showGsStatus('✅ ดาวน์โหลด PDF สำเร็จ (⚠️ ไม่พบเลขที่หลักสูตร จึงไม่ได้อัปโหลดขึ้น Supabase)', 'warn');
+      if (typeof showGsStatus === 'function') {
+        showGsStatus('✅ ดาวน์โหลด PDF สำเร็จ (⚠️ ไม่พบเลขที่หลักสูตร จึงไม่ได้อัปโหลดขึ้น Cloud)', 'warn');
+      }
     } else {
-      showGsStatus('⚠️ ดาวน์โหลด PDF สำเร็จ แต่อัปโหลดเก็บถาวรไม่สำเร็จ', 'warn');
+      if (typeof showGsStatus === 'function') {
+        showGsStatus('⚠️ ดาวน์โหลด PDF สำเร็จ แต่อัปโหลดขึ้น Cloud ไม่สำเร็จ', 'warn');
+      }
     }
-
-  } catch(err){
+ 
+  } catch (err) {
     console.error('savePdf11 error:', err);
-    alert('สร้าง PDF ไม่สำเร็จ: ' + err.message + '\n\nตรวจสอบว่าเซิร์ฟเวอร์ Puppeteer เปิดใช้งานอยู่');
+    alert('สร้าง PDF ไม่สำเร็จ: ' + err.message);
   } finally {
-    btn.disabled = false; btn.textContent = '💾 บันทึก PDF';
+    if (targetEl) targetEl.style.display = '';
+    const leftover = document.getElementById('pdf-render-clone');
+    if (leftover) leftover.remove();
+ 
+    btn.disabled = false; 
+    btn.textContent = '💾 บันทึก PDF';
   }
 }
 </script>
-
+ 
 </body>
 </html>
