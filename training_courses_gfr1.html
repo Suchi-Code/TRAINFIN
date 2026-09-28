@@ -13,7 +13,8 @@
 <script src="js/date-th.js"></script>
 <script src="js/gas-api.js"></script>
 <script src="js/sidebar.js"></script>
-<script>checkAuth();</script>
+<script src="js/permissions.js"></script>
+<script>checkAuth(); lockPageIfReadOnly();</script>
 <style>
 :root{
   --navy:#092c4c;--navy-mid:#0d547f;--blue:#0b6aab;--blue-light:#2589c5;
@@ -403,7 +404,7 @@ footer{display:none}
     </div>
     <div class="modal-foot">
       <button class="btn-cancel" onclick="closeAddCourse()">ยกเลิก</button>
-      <button class="btn-save-course" id="btnSaveCourse" onclick="saveCourse()">✅ บันทึก</button>
+      <button class="btn-save-course" id="btnSaveCourse" data-permission="write" onclick="saveCourse()">✅ บันทึก</button>
     </div>
   </div>
 </div>
@@ -478,13 +479,13 @@ footer{display:none}
     </div>
     <div class="modal-foot">
       <button class="btn-cancel" onclick="closeAddRun()">ยกเลิก</button>
-      <button class="btn-save-course" id="btnSaveRun" onclick="saveRun()">✅ บันทึกรุ่นใหม่</button>
+      <button class="btn-save-course" id="btnSaveRun" data-permission="write" onclick="saveRun()">✅ บันทึกรุ่นใหม่</button>
     </div>
   </div>
 </div>
 
 <!-- FLOATING ADD COURSE BUTTON -->
-<button class="btn-add-course-float" id="fabAddCourse" onclick="openAddCourse(currentActiveYear())">
+<button class="btn-add-course-float" id="fabAddCourse" data-permission="write" onclick="openAddCourse(currentActiveYear())">
   <span class="fab-icon">＋</span> เพิ่มหลักสูตร
 </button>
 
@@ -878,7 +879,7 @@ function buildGsCourseCard(group) {
   return `
   <div class="course-card" id="gscard-${groupKey}" data-coursenum="${head.courseNum || ''}" data-coursetitle="${(head.course||'').replace(/"/g,'&quot;')}" data-year="${yearVal}" data-planid="${planIdVal}">
     <div class="course-header">
-      <button class="btn-add-run" onclick="openAddRun('${groupKey}','${yearVal}')"><span class="icon-circle">＋</span> เพิ่มรุ่น</button>
+      <button class="btn-add-run" data-permission="write" onclick="openAddRun('${groupKey}','${yearVal}')"><span class="icon-circle">＋</span> เพิ่มรุ่น</button>
       <div class="course-no">${courseLabel}</div>
       <div class="course-title">${head.course || '(ไม่มีชื่อหลักสูตร)'}</div>
       <div class="course-meta-row">
