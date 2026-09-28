@@ -272,8 +272,10 @@
     /* ---------- การแสดงผลบนหน้าจอ ---------- */
 
     @media screen {
+      /* ⚠️ เดิม body มี padding:20px ทำให้ .site-header (position:sticky) ถูกเบียดเข้ามาจากขอบซ้าย/ขวา
+         20px ทุกด้าน มองดูเหมือน "ลอย"/ไม่เต็มความกว้างหน้าจอ — ย้าย padding ไปไว้ที่ #input-panel/
+         .word-toolbar/.screen-wrap แทน (ผ่าน margin ที่มีอยู่แล้ว) เพื่อให้ site-header ชิดขอบเต็มจอ */
       body {
-        padding: 20px;
         background: #e6e6e6;
       }
 
@@ -352,15 +354,50 @@
 
     .screen-wrap{max-width:1000px;margin:0 auto}
 
+    /* ============================================================
+       WORD-STYLE TOOLBAR — เครื่องมือแก้ไขข้อความแบบ Word (ล้อจาก Word_Style.html)
+       ให้แก้ไขเนื้อหาในเอกสาร #doc-display ได้หลังโหลดข้อมูลตัวแปรแล้ว
+       ไม่แตะ/เปลี่ยนรูปแบบการแสดงผลเริ่มต้นของเอกสารเอง — เป็นแค่แถบเครื่องมือลอยอยู่ด้านบน
+       ============================================================ */
+    .word-toolbar{
+      max-width:1000px;margin:0 auto 14px;background:#f9fafb;border:1px solid #dfe3ea;
+      border-radius:10px;padding:8px 10px;display:flex;flex-wrap:wrap;align-items:center;
+      gap:6px;font-family:'Sarabun',sans-serif;box-shadow:0 2px 6px rgba(0,0,0,.05);
+      /* ✅ ปักหมุดใต้ .site-header เสมอ — ใช้ CSS var --site-header-h ที่ JS วัดความสูงจริงของ
+         header มาตั้งให้ (ดู syncStickyOffsets() ท้ายไฟล์) กันกรณี header ขึ้น 2 บรรทัดบนจอแคบ
+         แล้ว toolbar จะไปทับ/แอบอยู่ใต้ header พอดี แทนที่จะซ้อนทับกันที่ top:0 เดียวกัน */
+      position:sticky; top:var(--site-header-h, 64px); z-index:150;
+    }
+    .word-toolbar .wt-btn{
+      display:inline-flex;align-items:center;justify-content:center;gap:4px;
+      min-width:30px;height:30px;padding:0 9px;border-radius:6px;font-size:13px;
+      color:#374151;background:#fff;border:1px solid #d1d5db;cursor:pointer;
+      user-select:none;font-family:'Sarabun',sans-serif;
+    }
+    .word-toolbar .wt-btn:hover{background:#eef1f5;border-color:#9ca3af}
+    .word-toolbar select{
+      padding:5px 6px;border-radius:6px;border:1px solid #d1d5db;background:#fff;
+      font-size:13px;font-family:'Sarabun',sans-serif;cursor:pointer;height:30px;
+    }
+    .word-toolbar input[type=color]{width:20px;height:20px;padding:0;border:0;cursor:pointer;border-radius:4px}
+    .word-toolbar .wt-sep{width:1px;height:24px;background:#d1d5db;margin:0 2px}
+    .word-toolbar .wt-spacing{
+      display:flex;align-items:center;gap:6px;background:#eaf1fb;border:1px solid #cfe0f5;
+      border-radius:7px;padding:3px 8px;font-size:12px;color:#0f2744;
+    }
+    .word-toolbar .wt-spacing span{font-weight:700;min-width:34px;text-align:center}
+    #doc-display[contenteditable="true"]:focus{outline:2px dashed #1d5fa8;outline-offset:6px}
+
     @media print{
-      .site-header, #input-panel{display:none !important}
+      .site-header, #input-panel, .word-toolbar{display:none !important}
+      #doc-display{outline:none !important}
     }
   </style>
 </head>
 
 <body>
 
-<header class="site-header">
+<header class="site-header" id="siteHeader">
   <div class="header-inner">
     <div class="header-title">
       <div class="header-icon">📄</div>
@@ -408,7 +445,7 @@
   <div class="ip-grid">
     <div class="ip-field">
       <label>เลขที่หนังสือ (ที่)</label>
-      <input type="text" id="f_docno" placeholder="เช่น มท 5528.1/-" oninput="renderMemo()">
+      <input type="text" id="f_docno" placeholder="" oninput="renderMemo()">
     </div>
     <div class="ip-field wide">
       <label>วันที่ออกหนังสือ</label>
@@ -420,11 +457,11 @@
   <div class="ip-grid">
     <div class="ip-field wide">
       <label>ชื่อ-นามสกุล (พร้อมคำนำหน้า)</label>
-      <input type="text" id="f_borrower_name" placeholder="เช่น นายปิยังกูร วงศ์ไพบูลย์สุข" oninput="renderMemo()">
+      <input type="text" id="f_borrower_name" placeholder="" oninput="renderMemo()">
     </div>
     <div class="ip-field">
       <label>ตำแหน่ง</label>
-      <input type="text" id="f_borrower_pos" placeholder="เช่น วิทยากรฝึกอบรม 6" oninput="renderMemo()">
+      <input type="text" id="f_borrower_pos" placeholder="" oninput="renderMemo()">
     </div>
   </div>
 
@@ -432,11 +469,11 @@
   <div class="ip-grid">
     <div class="ip-field wide">
       <label>ชื่อ-นามสกุลผู้ตรวจสอบ</label>
-      <input type="text" id="f_reviewer_name" placeholder="เช่น นายเจนณรงค์ ถานา" oninput="renderMemo()">
+      <input type="text" id="f_reviewer_name" value="นายเจนณรงค์ ถานา" placeholder="เช่น นายเจนณรงค์ ถานา" oninput="renderMemo()">
     </div>
     <div class="ip-field wide">
       <label>ตำแหน่งผู้ตรวจสอบ</label>
-      <input type="text" id="f_reviewer_pos" placeholder="เช่น หัวหน้างาน 8 งานฝึกอบรมภูมิภาค" oninput="renderMemo()">
+      <input type="text" id="f_reviewer_pos" value="หัวหน้างาน 8 งานฝึกอบรมภูมิภาค" placeholder="เช่น หัวหน้างาน 8 งานฝึกอบรมภูมิภาค" oninput="renderMemo()">
     </div>
   </div>
 
@@ -444,11 +481,11 @@
   <div class="ip-grid">
     <div class="ip-field wide">
       <label>ชื่อ-นามสกุลผู้เห็นชอบ</label>
-      <input type="text" id="f_approver_name" placeholder="เช่น นายคมกฤช รัตนธรรม" oninput="renderMemo()">
+      <input type="text" id="f_approver_name" value="นายคมกฤช รัตนธรรม" placeholder="เช่น นายคมกฤช รัตนธรรม" oninput="renderMemo()">
     </div>
     <div class="ip-field wide">
       <label>ตำแหน่งผู้เห็นชอบ</label>
-      <input type="text" id="f_approver_pos" placeholder="เช่น ผู้อำนวยการกองฝึกอบรมภูมิภาค 1" oninput="renderMemo()">
+      <input type="text" id="f_approver_pos" value="ผู้อำนวยการกองฝึกอบรมภูมิภาค 1" placeholder="เช่น ผู้อำนวยการกองฝึกอบรมภูมิภาค 1" oninput="renderMemo()">
     </div>
   </div>
 
@@ -468,6 +505,55 @@
     </div>
   </div>
   <div id="loadStatus"></div>
+</div>
+
+<div class="word-toolbar no-print" id="word-toolbar">
+  <button type="button" class="wt-btn" onmousedown="event.preventDefault()" onclick="wtExec('undo')" title="ยกเลิก">↺</button>
+  <button type="button" class="wt-btn" onmousedown="event.preventDefault()" onclick="wtExec('redo')" title="ทำซ้ำ">↻</button>
+  <span class="wt-sep"></span>
+  <select onmousedown="event.preventDefault()" onchange="wtExec('fontName', this.value)" title="ฟอนต์">
+    <option value="Sarabun" selected>Sarabun</option>
+    <option value="TH Sarabun New">TH Sarabun New</option>
+    <option value="Angsana New">Angsana New</option>
+    <option value="Arial">Arial</option>
+    <option value="Times New Roman">Times New Roman</option>
+  </select>
+  <select onmousedown="event.preventDefault()" onchange="wtFontSize(this.value)" title="ขนาดตัวอักษร (พิกเซล)">
+    <option value="12">12</option>
+    <option value="14">14</option>
+    <option value="16" selected>16</option>
+    <option value="18">18</option>
+    <option value="20">20</option>
+    <option value="24">24</option>
+    <option value="28">28</option>
+  </select>
+  <span class="wt-sep"></span>
+  <button type="button" class="wt-btn" onmousedown="event.preventDefault()" onclick="wtExec('bold')" title="ตัวหนา"><b>B</b></button>
+  <button type="button" class="wt-btn" onmousedown="event.preventDefault()" onclick="wtExec('italic')" title="ตัวเอียง"><i>I</i></button>
+  <button type="button" class="wt-btn" onmousedown="event.preventDefault()" onclick="wtExec('underline')" title="ขีดเส้นใต้"><u>U</u></button>
+  <button type="button" class="wt-btn" onmousedown="event.preventDefault()" onclick="wtExec('strikeThrough')" title="ขีดฆ่า"><s>S</s></button>
+  <span class="wt-sep"></span>
+  <label class="wt-btn" title="สีข้อความ" onmousedown="event.preventDefault()">
+    A<input type="color" onmousedown="event.stopPropagation()" onchange="wtExec('foreColor', this.value)">
+  </label>
+  <label class="wt-btn" title="สีไฮไลท์" onmousedown="event.preventDefault()">
+    <span style="background:#fff59d;padding:0 3px;border-radius:2px;">H</span>
+    <input type="color" value="#fff59d" onmousedown="event.stopPropagation()" onchange="wtExec('hiliteColor', this.value)">
+  </label>
+  <span class="wt-sep"></span>
+  <button type="button" class="wt-btn" onmousedown="event.preventDefault()" onclick="wtExec('justifyLeft')" title="ชิดซ้าย">⯇</button>
+  <button type="button" class="wt-btn" onmousedown="event.preventDefault()" onclick="wtExec('justifyCenter')" title="กึ่งกลาง">☰</button>
+  <button type="button" class="wt-btn" onmousedown="event.preventDefault()" onclick="wtExec('justifyRight')" title="ชิดขวา">⯈</button>
+  <button type="button" class="wt-btn" onmousedown="event.preventDefault()" onclick="wtExec('justifyFull')" title="กระจายเท่ากัน">≣</button>
+  <span class="wt-sep"></span>
+  <button type="button" class="wt-btn" onmousedown="event.preventDefault()" onclick="wtExec('insertUnorderedList')" title="รายการสัญลักษณ์">• ―</button>
+  <button type="button" class="wt-btn" onmousedown="event.preventDefault()" onclick="wtExec('insertOrderedList')" title="รายการตัวเลข">1. ―</button>
+  <span class="wt-sep"></span>
+  <div class="wt-spacing" title="ระยะห่างตัวอักษร (คลุมดำข้อความก่อน)">
+    <button type="button" class="wt-btn" style="height:24px;min-width:24px;padding:0 6px;" onmousedown="event.preventDefault()" onclick="wtLetterSpacing(-0.1)">A↔−</button>
+    <span id="wt_spacing_val">0px</span>
+    <button type="button" class="wt-btn" style="height:24px;min-width:24px;padding:0 6px;" onmousedown="event.preventDefault()" onclick="wtLetterSpacing(0.1)">A↔+</button>
+  </div>
 </div>
 
 <div class="screen-wrap">
@@ -630,6 +716,152 @@ function fmtDocDate(iso){
 }
 
 /* ============================================================
+   WORD-STYLE TOOLBAR — แก้ไขข้อความในเอกสาร #doc-display แบบ rich text (ล้อจาก Word_Style.html)
+   ใช้ document.execCommand() ธรรมดา ไม่แตะ/เปลี่ยนโครงสร้างหรือ CSS เดิมของเอกสารเลย —
+   เป็นแค่ความสามารถเพิ่มให้ผู้ใช้จัดรูปแบบข้อความเองหลังจากตัวแปรถูกเติมเข้าไปแล้ว
+   ============================================================ */
+/* ============================================================
+   ปักหมุดแถบเครื่องมือ (.word-toolbar) ให้อยู่ใต้ .site-header เสมอ — วัดความสูงจริงของ header
+   ด้วย JS แล้วตั้งเป็น CSS var --site-header-h แทนการเดาตัวเลขคงที่ เพราะ .header-inner ใช้
+   flex-wrap (ขึ้น 2 บรรทัดได้บนจอแคบ) ทำให้ความสูงจริงไม่คงที่เสมอไป
+   ============================================================ */
+function syncStickyOffsets(){
+  const header = document.getElementById('siteHeader');
+  if(!header) return;
+  document.documentElement.style.setProperty('--site-header-h', header.offsetHeight + 'px');
+}
+window.addEventListener('load', syncStickyOffsets);
+window.addEventListener('resize', syncStickyOffsets);
+document.addEventListener('DOMContentLoaded', syncStickyOffsets);
+
+function wtEditor(){ return document.getElementById('doc-display'); }
+
+function enableDocEditing(){
+  const el = wtEditor();
+  if (el) el.setAttribute('contenteditable', 'true');
+}
+
+function wtExec(cmd, val){
+  wtEditor()?.focus();
+  document.execCommand(cmd, false, val || null);
+}
+
+// ขนาดตัวอักษรเป็น px ตรงๆ (execCommand('fontSize') รองรับแค่ 1-7 ไม่ใช่ px) —
+// ห่อข้อความที่เลือกด้วย <span style="font-size:...px"> แทน (วิธีเดียวกับ Word_Style.html)
+function wtFontSize(px){
+  const sel = window.getSelection();
+  if (!sel.rangeCount || sel.isCollapsed) return;
+  const range = sel.getRangeAt(0);
+  const span = document.createElement('span');
+  span.style.fontSize = px + 'px';
+  try {
+    span.appendChild(range.extractContents());
+    range.insertNode(span);
+    sel.removeAllRanges();
+    const nr = document.createRange();
+    nr.selectNodeContents(span);
+    sel.addRange(nr);
+  } catch(e) {}
+  wtEditor()?.focus();
+}
+
+/* ============================================================
+   ปรับระยะห่างตัวอักษร (letter-spacing) — แก้บั๊กเดิม
+   ------------------------------------------------------------
+   เดิมใช้ node.closest('span[style*="letter-spacing"]') เพียงอย่างเดียวเพื่อหา "span ที่เคยปรับ
+   ไว้แล้ว" — ปัญหาคือ closest() เจอ span นั้นได้แม้ผู้ใช้จะ "เลือกแค่บางส่วน" ของข้อความในนั้น
+   (เช่น span ครอบคำว่า "ABCDE" ทั้งก้อนไว้ แต่ผู้ใช้ลากเลือกแค่ "ABC") ผลคือ:
+   - กดปรับแล้วค่าที่แสดง/ที่ปรับจริงเป็นของทั้ง span "ABCDE" ไม่ใช่แค่ "ABC" ที่เลือกอยู่ (ปรับไม่ตรง)
+   - เลขบน label อ่านจากค่าของ span เดิมทั้งก้อน ทำให้ดูเหมือน "ค้าง" ไม่ตรงกับสิ่งที่เพิ่งลากเลือกใหม่
+   แก้โดยเช็คว่าข้อความที่เลือกอยู่ "ตรงกับเนื้อหาทั้งหมด" ของ span[letter-spacing] ที่ใกล้ที่สุด
+   หรือไม่ (findExactLetterSpacingSpan) — ถ้าตรงเป๊ะ = ผู้ใช้เลือกช่วงเดิมมาปรับต่อ ปรับ span นั้นตรงๆ
+   ถ้าไม่ตรง (เลือกใหม่ทั้งหมด หรือเลือกคาบเกี่ยวบางส่วนของ span เดิม) = ถือเป็นช่วงใหม่ เริ่มนับจาก 0
+   เสมอ แล้วห่อด้วย span ใหม่เฉพาะข้อความที่เลือกจริงเท่านั้น (ไม่ไปแตะข้อความส่วนอื่นที่ไม่ได้เลือก)
+   ============================================================ */
+function findExactLetterSpacingSpan(range){
+  let node = range.commonAncestorContainer;
+  if (node.nodeType === 3) node = node.parentNode;
+  const span = node.closest && node.closest('span[style*="letter-spacing"]');
+  if (!span) return null;
+  // ต้องเลือกครอบ "ทั้งก้อน" ของ span นั้นพอดี ไม่ใช่แค่บางส่วน
+  return (range.toString() === span.textContent) ? span : null;
+}
+
+function getCurrentSpacingForSelection(range){
+  const span = findExactLetterSpacingSpan(range);
+  return span ? (parseFloat(span.style.letterSpacing) || 0) : 0;
+}
+
+// เอา span ออกแต่เก็บเนื้อหาข้างในไว้ (กันมี <span style=""> ว่างเปล่าค้างอยู่ใน DOM เมื่อปรับกลับเป็น 0)
+function unwrapSpanKeepChildren(span){
+  const parent = span.parentNode;
+  if (!parent) return;
+  while (span.firstChild) parent.insertBefore(span.firstChild, span);
+  parent.removeChild(span);
+}
+
+function wtLetterSpacing(delta) {
+  const sel = window.getSelection();
+  if (!sel.rangeCount || sel.isCollapsed) return;
+
+  const range = sel.getRangeAt(0);
+  const exactSpan = findExactLetterSpacingSpan(range);
+  const cur  = exactSpan ? (parseFloat(exactSpan.style.letterSpacing) || 0) : 0;
+  const next = Math.round((cur + delta) * 10) / 10;
+
+  updateSpacingLabel(next);
+
+  if (exactSpan) {
+    // เลือกครอบพอดีทั้ง span เดิม → ปรับต่อจากค่าเดิมตรงๆ
+    if (next === 0) {
+      unwrapSpanKeepChildren(exactSpan);
+      sel.removeAllRanges();
+    } else {
+      exactSpan.style.letterSpacing = next + 'px';
+      const nr = document.createRange();
+      nr.selectNodeContents(exactSpan);
+      sel.removeAllRanges();
+      sel.addRange(nr);
+    }
+  } else {
+    // ช่วงใหม่ (ไม่เคยปรับมาก่อน หรือเลือกคาบเกี่ยวบางส่วนของ span เดิม) — เริ่มนับจาก 0 เสมอ
+    if (next === 0) { wtEditor()?.focus(); return; }
+    const span = document.createElement('span');
+    span.style.letterSpacing = next + 'px';
+    try {
+      span.appendChild(range.extractContents());
+      range.insertNode(span);
+      sel.removeAllRanges();
+      const nr = document.createRange();
+      nr.selectNodeContents(span);
+      sel.addRange(nr);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  wtEditor()?.focus();
+}
+
+// ฟังก์ชันอัปเดตตัวเลขบน Label
+function updateSpacingLabel(val) {
+  const lbl = document.getElementById('wt_spacing_val');
+  if (!lbl) return;
+  if (val === 0) {
+    lbl.textContent = '0px';
+  } else {
+    lbl.textContent = (val > 0 ? '+' : '') + val.toFixed(1) + 'px';
+  }
+}
+// อัปเดตค่าตัวเลขบน Label เมื่อผู้ใช้คลิกย้ายตำแหน่งข้อความ หรือไฮไลต์ข้อความใหม่ — ใช้ตรรกะเดียวกับ
+// wtLetterSpacing() ทุกประการ (getCurrentSpacingForSelection) กันเลข label โชว์ไม่ตรงกับที่ปุ่ม +/- จะปรับจริง
+document.addEventListener('selectionchange', () => {
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount || sel.isCollapsed) return;
+  updateSpacingLabel(getCurrentSpacingForSelection(sel.getRangeAt(0)));
+});
+
+/* ============================================================
    STATE
    ============================================================ */
 let COURSE = null, BUDGET = null, ACTUAL06 = null;
@@ -693,6 +925,10 @@ function renderMemo(){
   setText('v_reviewer_pos', reviewerPos);
   setText('v_approver_name', approverName);
   setText('v_approver_pos', approverPos);
+
+  // เปิดให้แก้ไขข้อความทั้งหน้าเอกสารได้ (ผ่านแถบเครื่องมือคล้าย Word ด้านบน) ทุกครั้งที่
+  // renderMemo() เติมข้อมูลตัวแปรเสร็จ — ไม่เปลี่ยนรูปแบบการแสดงผลเดิมของเอกสารเลย แค่เปิดสิทธิ์แก้ไข
+  enableDocEditing();
 }
 
 /* ============================================================
@@ -747,6 +983,47 @@ async function _autoLoadGs11(no){
   renderMemo();
 }
 
+/* ============================================================
+   AUTOFILL ผู้ยืมเงินทดรองจ่าย — ดึง full_name/position ของผู้ใช้ที่ล็อกอินอยู่จาก Supabase
+   ตาราง "profiles" มาเติมให้อัตโนมัติ (สร้าง client ของตัวเอง ตาม pattern เดียวกับ
+   settings.html/auth.js — ต่างไฟล์ต่างสร้าง client เมื่อจำเป็น ไม่ได้แชร์ instance กัน)
+   เติมเฉพาะช่องที่ "ยังว่างอยู่" เท่านั้น — ไม่เขียนทับถ้าผู้ใช้พิมพ์ชื่อ/ตำแหน่งอื่นไว้เองแล้ว
+   (เผื่อกรณีบันทึกข้อความแทนคนอื่น) ไม่บล็อกการโหลดหน้าหลักถ้าจุดนี้พลาด/ไม่มีคอลัมน์ 'position'
+   ============================================================ */
+let _borrowerProfileClient = null;
+function getBorrowerProfileClient(){
+  if (_borrowerProfileClient) return _borrowerProfileClient;
+  const CFG = window.APP_CONFIG || {};
+  if (!window.supabase || !window.supabase.createClient) return null;
+  _borrowerProfileClient = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY);
+  return _borrowerProfileClient;
+}
+
+async function autofillBorrowerFromProfile(){
+  const client = getBorrowerProfileClient();
+  if (!client) return;
+  try {
+    const { data: { user } } = await client.auth.getUser();
+    if (!user) return;
+
+    const { data: profile, error } = await client
+      .from('profiles')
+      .select('full_name, position')
+      .eq('id', user.id)
+      .single();
+    if (error || !profile) return;
+
+    const nameEl = document.getElementById('f_borrower_name');
+    const posEl  = document.getElementById('f_borrower_pos');
+    if (nameEl && !nameEl.value.trim() && profile.full_name) nameEl.value = profile.full_name;
+    if (posEl  && !posEl.value.trim()  && profile.position)  posEl.value  = profile.position;
+
+    renderMemo();
+  } catch(e) {
+    console.warn('autofillBorrowerFromProfile error:', e);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   let cd = null;
   try { cd = JSON.parse(sessionStorage.getItem('courseData') || 'null'); } catch(e){}
@@ -764,6 +1041,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('loadStatus').textContent = 'ℹ️ ไม่พบเลขที่หลักสูตร — กรุณาเข้าหน้านี้ผ่านปุ่ม "รายละเอียด" จากหน้าหลักสูตรการฝึกอบรม หรือเพิ่ม ?no=เลขที่หลักสูตร ต่อท้าย URL เพื่อทดสอบ';
     renderMemo();
   }
+
+  autofillBorrowerFromProfile();
 });
 </script>
 
