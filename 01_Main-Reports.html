@@ -78,17 +78,59 @@
     .panel-head p{margin:0;color:var(--muted);font-size:12px}
     .count-chip{background:var(--sky);color:#0a5c8c;border:1px solid #cfe4f0;border-radius:999px;padding:6px 13px;font-size:12px;font-weight:700;white-space:nowrap}
 
-    .summary{display:grid;grid-template-columns:repeat(3,minmax(200px,1fr));gap:14px;padding:20px}
-    .card{background:#fff;border:1px solid #e5ebef;border-radius:10px;padding:16px 18px;box-shadow:0 2px 8px rgba(19,47,68,.035);display:flex;flex-direction:column;gap:2px}
-    .card .top-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
-    .card label{font-size:12px;color:var(--muted);display:block}
-    .card .ic{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;flex:0 0 28px}
-    .card .ic svg{width:15px;height:15px;stroke-width:2.2}
-    .card strong{font-size:19px;color:var(--navy);line-height:1.3}
-    .card .sub{font-size:11px;margin-top:5px;color:var(--muted)}
-    .card .empty-val{color:#9aa9b4;font-size:13px;font-weight:500}
     .spk-name{font-size:12.5px;color:var(--blue);font-weight:600;line-height:1.7}
     .spk-int{font-size:12px;color:var(--purple);font-weight:600}
+    .empty-val{color:#9aa9b4;font-size:13px;font-weight:500}
+
+    /* ===== Budget summary (bs-*) ===== */
+    .bs-panel{background:linear-gradient(180deg,#fbfdff,#f4f8fd);border:1px solid #e0e8f3;border-radius:16px;padding:20px 22px 22px;margin-bottom:20px}
+    .bs-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+    .bs-title{display:flex;align-items:center;gap:12px}
+    .bs-title-ic{width:40px;height:40px;flex:0 0 40px;color:#1d5fd6}
+    .bs-title h2{margin:0;font-size:22px;color:var(--navy);font-weight:700;line-height:1.25}
+    .bs-title p{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
+    .bs-head-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    #summary-msg{font-size:12px;color:var(--muted)}
+    .bs-updated{display:flex;align-items:center;gap:10px;background:#eef2f8;border-radius:14px;padding:9px 16px}
+    .bs-updated svg{width:22px;height:22px;flex:0 0 22px;color:#2c4a7a}
+    .bs-updated b{display:block;font-size:12px;color:var(--navy);font-weight:600;line-height:1.3}
+    .bs-updated span{display:block;font-size:11.5px;color:var(--muted);line-height:1.3}
+
+    .bs-grid{display:grid;grid-template-columns:minmax(250px,330px) 1fr;gap:16px}
+    .bs-hero{position:relative;overflow:hidden;border-radius:16px;padding:22px 24px;color:#fff;background:linear-gradient(135deg,#3b7bf5 0%,#1f56d8 100%);box-shadow:0 10px 24px rgba(31,86,216,.28);display:flex;flex-direction:column;justify-content:center;gap:14px;min-height:200px}
+    .bs-hero-top{display:flex;align-items:center;gap:12px;position:relative;z-index:1}
+    .bs-hero-ic{width:44px;height:44px;flex:0 0 44px;border-radius:50%;background:#fff;color:#2a62e6;display:grid;place-items:center}
+    .bs-hero-ic svg{width:22px;height:22px}
+    .bs-hero-label{font-size:14px;font-weight:500;opacity:.95;line-height:1.35}
+    .bs-hero-value{font-size:34px;font-weight:700;line-height:1.15;position:relative;z-index:1}
+    .bs-hero-value small{font-size:18px;font-weight:600;margin-left:4px}
+    .bs-hero-value .empty-val{color:rgba(255,255,255,.75);font-size:16px}
+    .bs-hero-pill{position:relative;z-index:1;display:inline-flex;align-items:center;gap:6px;width:fit-content;background:rgba(255,255,255,.2);border-radius:999px;padding:7px 15px;font-size:12.5px;font-weight:500}
+    .bs-hero-pill svg{width:13px;height:13px}
+    .bs-spark{position:absolute;right:10px;bottom:10px;width:150px;height:70px;opacity:.55;pointer-events:none}
+
+    .bs-right{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
+    .bs-card{position:relative;border-radius:14px;padding:16px 18px 15px 22px;border:1px solid transparent;display:flex;align-items:center;gap:14px;min-width:0;overflow:hidden}
+    .bs-card::before{content:'';position:absolute;left:0;top:10px;bottom:10px;width:5px;border-radius:0 5px 5px 0;background:var(--acc)}
+    .bs-card.w3{grid-column:span 3}
+    .bs-card.w2{grid-column:span 2}
+    .bs-card-ic{width:46px;height:46px;flex:0 0 46px;border-radius:50%;display:grid;place-items:center;background:var(--accbg);color:var(--acc);border:1.5px solid var(--accline)}
+    .bs-card-ic svg{width:21px;height:21px}
+    .bs-card-body{min-width:0;flex:1}
+    .bs-card-label{font-size:13px;color:#33475b;line-height:1.35;margin-bottom:3px}
+    .bs-card-value{font-size:22px;font-weight:700;color:#0d2a55;line-height:1.3}
+    .bs-card-value small{font-size:16px;font-weight:600;margin-left:3px}
+    .bs-card-value.sm{font-size:15px}
+    .bs-progress{display:flex;align-items:center;gap:10px;margin-top:8px}
+    .bs-bar{flex:1;height:6px;border-radius:99px;background:rgba(15,40,80,.1);overflow:hidden}
+    .bs-bar i{display:block;height:100%;border-radius:99px;background:var(--acc)}
+    .bs-pct{font-size:11.5px;font-weight:700;padding:3px 11px;border-radius:999px;background:var(--pillbg);color:var(--pillfg);white-space:nowrap}
+    .bs-green{--acc:#1fa971;--accbg:#e2f6ec;--accline:#bfe8d3;--pillbg:#d5f2e3;--pillfg:#177a52;background:#f0faf5;border-color:#dbf0e6}
+    .bs-purple{--acc:#7c5ce0;--accbg:#ece6fc;--accline:#d9cdf8;--pillbg:#e6def9;--pillfg:#5b3fc0;background:#f5f2fd;border-color:#e6def9}
+    .bs-blue{--acc:#2f7de1;--accbg:#dfeafb;--accline:#c3d8f6;--pillbg:#d9e7fb;--pillfg:#1d5fb8;background:#eef5fd;border-color:#dbe8f9}
+    .bs-orange{--acc:#f28c28;--accbg:#feebd8;--accline:#f9d3ac;--pillbg:#fde6cc;--pillfg:#c26a10;background:#fff5ec;border-color:#fbe3cb}
+    .bs-red{--acc:#c0364f;--accbg:#fbe3e7;--accline:#f3c7cf;--pillbg:#fbe0e5;--pillfg:#a12a40}
+    .bs-spk-list{margin-top:4px;font-size:12px;color:#5b3fc0;line-height:1.55}
 
     /* ===== Course detail panel ===== */
     .course-grid{display:grid;grid-template-columns:380px 1fr;gap:26px;padding:22px}
@@ -114,15 +156,16 @@
     .primary:hover{background:#07598f}
 
     /* ===== Report tiles ===== */
-    .report-grid{display:grid;grid-template-columns:repeat(3,minmax(150px,1fr));gap:14px;padding:20px}
+    .report-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;padding:20px}
     .report-tile{display:flex;align-items:center;gap:12px;text-decoration:none;border:1px solid #e5ebef;border-radius:10px;padding:14px 16px;transition:.15s;background:#fff}
     .report-tile:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(19,47,68,.09);border-color:#cfe4f0}
     .report-tile .r-ic{width:40px;height:40px;flex:0 0 40px;border-radius:10px;display:grid;place-items:center;font-size:19px}
     .report-tile .r-name{font-size:13.2px;font-weight:600;color:#1c3547;line-height:1.4}
 
-    @media(max-width:1200px){.summary{grid-template-columns:repeat(2,1fr)}.report-grid{grid-template-columns:repeat(2,1fr)}}
-    @media(max-width:1050px){.main{padding:22px}.sidebar{width:215px;flex-basis:215px}.main{width:calc(100% - 215px)}.course-grid{grid-template-columns:1fr}.course-image-wrap{aspect-ratio:16/9}}
-    @media(max-width:720px){.sidebar{display:none}.main{width:100%;padding:18px}.summary{grid-template-columns:1fr}.report-grid{grid-template-columns:1fr}.topbar{align-items:flex-start;flex-direction:column}}
+    @media(max-width:1300px){.bs-grid{grid-template-columns:1fr}.bs-hero{min-height:170px}}
+    @media(max-width:1200px){.report-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:1050px){.main{padding:22px}.sidebar{width:215px;flex-basis:215px}.main{width:calc(100% - 215px)}.course-grid{grid-template-columns:1fr}.course-image-wrap{aspect-ratio:16/9}.bs-card.w3,.bs-card.w2{grid-column:span 6}}
+    @media(max-width:720px){.sidebar{display:none}.main{width:100%;padding:18px}.report-grid{grid-template-columns:1fr}.topbar{align-items:flex-start;flex-direction:column}}
   </style>
 </head>
 <body>
@@ -163,26 +206,44 @@
           <div class="meta-line" id="f_meta_line2"></div>
           <div class="meta-line" id="f_meta_line3"></div>
           <div class="course-actions">
-            <button id="btn-detail" class="primary">รายละเอียด</button>
-            <button id="btn-report" class="secondary">บันทึก</button>
+            <button id="btn-save" class="secondary">บันทึก</button>
+            <button id="btn-report" class="secondary">ออกรายงาน</button>
+            <button id="btn-pdf" class="primary">ดูไฟล์ PDF</button>
           </div>
         </div>
       </div>
     </section>
 
     <!-- ===== Budget summary ===== -->
-    <section class="panel">
-      <div class="panel-head">
-        <div><h2>สรุปงบประมาณ</h2><p>ข้อมูลอัปเดตจากระบบบันทึกค่าใช้จ่ายการฝึกอบรม</p></div>
-        <span class="count-chip" id="summary-status">ยังไม่มีข้อมูล</span>
+    <section class="bs-panel">
+      <div class="bs-head">
+        <div class="bs-title">
+          <svg class="bs-title-ic" viewBox="0 0 40 40" fill="currentColor"><rect x="4" y="22" width="7" height="14" rx="1.5"/><rect x="14" y="15" width="7" height="21" rx="1.5"/><rect x="24" y="24" width="7" height="12" rx="1.5" opacity=".55"/><path d="M6 14l9-7 8 5 12-9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div><h2>สรุปงบประมาณ</h2><p>อัปเดตข้อมูลค่าใช้จ่ายล่าสุด เพื่อใช้ในการบริหารงบประมาณ</p></div>
+        </div>
+        <div class="bs-head-right">
+          <span id="summary-msg">ยังไม่มีข้อมูล</span>
+          <div class="bs-updated" id="summary-status">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/><path d="M8 14h2M12 14h2M16 14h.01M8 17.5h2M12 17.5h2"/></svg>
+            <div><b>ข้อมูลล่าสุด</b><span id="summary-updated">—</span></div>
+          </div>
+        </div>
       </div>
-      <div class="summary" id="summary-grid"></div>
+      <div id="summary-grid"></div>
     </section>
 
-    <!-- ===== Report shortcuts ===== -->
+    <!-- ===== หัวข้อ: บันทึก ===== -->
+    <section class="panel" id="save-panel">
+      <div class="panel-head">
+        <div><h2>บันทึก</h2><p>กรอก/บันทึกข้อมูลงบประมาณและค่าใช้จ่ายของหลักสูตรนี้</p></div>
+      </div>
+      <div class="report-grid" id="save-grid"></div>
+    </section>
+
+    <!-- ===== หัวข้อ: ออกรายงาน ===== -->
     <section class="panel" id="report-panel">
       <div class="panel-head">
-        <div><h2>บันทึก/ออกรายงาน</h2><p>เลือกประเภทรายงานที่ต้องการเพื่อดำเนินการต่อ</p></div>
+        <div><h2>ออกรายงาน</h2><p>เลือกแบบฟอร์ม/รายงานที่ต้องการออกเพื่อพิมพ์หรือบันทึก PDF</p></div>
       </div>
       <div class="report-grid" id="report-grid"></div>
     </section>
@@ -192,25 +253,29 @@
 <!-- toggleSidebar() มาจาก js/sidebar.js แล้ว (โมดูลกลาง) — ไม่ต้องประกาศซ้ำในไฟล์นี้อีก -->
 
 <script>
-    const REPORTS = [
-        { num: '05', name: 'ประมาณการค่าใช้จ่าย',        icon: '⭐', bg: '#fff6e8', fg: '#bf7800', href: '05_Budgeted-Expenses.html' },
-        { num: '06', name: 'สรุปค่าใช้จ่ายจริง',          icon: '📋', bg: '#eafaf5', fg: '#0f8a73', href: '06_Sum-Training-Expenses.html' },
-        { num: '07', name: 'สรุปฯ (ใบปะหน้า)',            icon: '📝', bg: '#f1edfc', fg: '#7865c8', href: '07_Sum-Borrow1.html' },
-        { num: '08', name: 'ใบหักล้างยืมเงิน (บง.27)',    icon: '🧾', bg: '#fdeeea', fg: '#c4562f', href: '08_Form-Pwa-27.html' },
-        { num: '09', name: 'ค่าใช้จ่ายตาม ว.119',   icon: '⏱️', bg: '#f0f4f7', fg: '#557080', href: '09_V199.html' },
-        { num: '01', name: 'ภาพรวมทั้งหมด',               icon: '🏠', bg: '#eaf4fb', fg: '#0b6aab', href: '10_PDF-Overview.html' },
+    const SAVE_ITEMS = [
+        { num: '05', name: 'ประมาณการค่าใช้จ่าย',  icon: '⭐', bg: '#fff6e8', fg: '#bf7800', href: '05_Budgeted-Expenses.html' },
+        { num: '06', name: 'สรุปค่าใช้จ่ายจริง',    icon: '📋', bg: '#eafaf5', fg: '#0f8a73', href: '06_Sum-Training-Expenses.html' },
+        { num: '07', name: 'สรุปฯ (ใบปะหน้า)',      icon: '📝', bg: '#f1edfc', fg: '#7865c8', href: '07_Sum-Borrow1.html' },
+    ];
+    const REPORT_ITEMS = [
+        { num: '08', name: 'ใบหักล้างยืมเงิน (บง.27)',                       icon: '🧾', bg: '#fdeeea', fg: '#c4562f', href: '08_Form-Pwa-27.html' },
+        { num: '09', name: 'ค่าใช้จ่ายตาม ว.119',                            icon: '⏱️', bg: '#f0f4f7', fg: '#557080', href: '09_V199.html' },
+        { num: '11', name: 'บันทึกข้อความ - ขอหักล้างเงินยืมทดรองจ่าย',     icon: '📑', bg: '#eaf4fb', fg: '#0b6aab', href: '11_Memo-Borrow-Reconcile.html' },
+        { num: '12', name: 'บันทึกข้อความ - เห็นชอบการจัดซื้อจัดจ้าง',       icon: '📄', bg: '#eafaf5', fg: '#197a5d', href: '12_Report-Purchase-Approval.html' },
     ];
 
-    function renderReportCards() {
-        const grid = document.getElementById('report-grid');
-        grid.innerHTML = REPORTS.map(r => `
+    function renderTiles(gridId, items) {
+        const grid = document.getElementById(gridId);
+        grid.innerHTML = items.map(r => `
             <a href="${r.href}" onclick="return passRunToReport(event, '${r.href}')" class="report-tile">
                 <span class="r-ic" style="background:${r.bg};color:${r.fg}">${r.icon}</span>
                 <span class="r-name">${r.name}</span>
             </a>
         `).join('');
     }
-    renderReportCards();
+    renderTiles('save-grid', SAVE_ITEMS);
+    renderTiles('report-grid', REPORT_ITEMS);
 
     function passRunToReport(e, href) {
         if (window.__courseData && window.__courseData.no) {
@@ -219,78 +284,104 @@
         return true;
     }
 
-    document.getElementById('btn-report').addEventListener('click', () => {
-        document.getElementById('report-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-
-    document.getElementById('btn-detail').addEventListener('click', () => {
-        showUnderConstructionPopup();
-    });
-
-    /* ── Popup แจ้งว่าฟีเจอร์นี้อยู่ระหว่างปรับปรุง ── */
-    function showUnderConstructionPopup(){
-        let overlay = document.getElementById('under-construction-overlay');
-        if(overlay){ overlay.style.display = 'flex'; return; }
-        overlay = document.createElement('div');
-        overlay.id = 'under-construction-overlay';
-        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(10,20,40,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
-        overlay.onclick = (e) => { if(e.target === overlay) overlay.style.display = 'none'; };
-        overlay.innerHTML = `
-            <div style="background:#fff;border-radius:14px;padding:30px 32px;max-width:340px;width:100%;
-              box-shadow:0 20px 60px rgba(0,0,0,.3);font-family:'Prompt',sans-serif;text-align:center;">
-              <div style="font-size:42px;margin-bottom:12px;">🚧</div>
-              <div style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:8px;">อยู่ระหว่างปรับปรุง</div>
-              <div style="font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.6;">ฟีเจอร์นี้กำลังอยู่ระหว่างการพัฒนา<br>ขออภัยในความไม่สะดวก</div>
-              <button onclick="document.getElementById('under-construction-overlay').style.display='none'"
-                style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:9px 28px;
-                font-family:'Prompt',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">ตกลง</button>
-            </div>`;
-        document.body.appendChild(overlay);
+    function scrollToSection(id) {
+        document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+    document.getElementById('btn-save').addEventListener('click',   () => scrollToSection('save-panel'));
+    document.getElementById('btn-report').addEventListener('click', () => scrollToSection('report-panel'));
+    document.getElementById('btn-pdf').addEventListener('click', () => {
+        passRunToReport(null, '10_PDF-Overview.html');
+        window.location.href = '10_PDF-Overview.html';
+    });
 </script>
 
 <script>
-    function fmtBaht(n) {
-        return (n !== null && n !== undefined)
-            ? Number(n).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' บาท'
-            : null;
+    function fmtNum(n) {
+        return Number(n).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
+    function fmtBaht(n) {
+        return (n !== null && n !== undefined) ? fmtNum(n) + ' บาท' : null;
+    }
+    // ค่าเงินแยกหน่วย "บาท" เป็นตัวเล็ก เพื่อให้ตรงกับดีไซน์
+    function moneyHtml(n) { return fmtNum(n) + '<small>บาท</small>'; }
 
-    function cardHTML(iconSvg, bg, fg, label, valueHtml, subHtml) {
-        return `
-            <div class="card">
-                <div class="top-row">
-                    <label>${label}</label>
-                    <div class="ic" style="background:${bg};color:${fg}">${iconSvg}</div>
-                </div>
-                <div>${valueHtml}</div>
-                ${subHtml ? `<div class="sub">${subHtml}</div>` : ''}
-            </div>`;
+    // วันที่-เวลาไทย (มีเวลาด้วย — DateTH.format ยังไม่รองรับเวลา จึงจัดรูปแบบเองตรงนี้)
+    function fmtUpdated(iso) {
+        const d = new Date(iso);
+        if (isNaN(d)) return '';
+        const hh = String(d.getHours()).padStart(2, '0'), mm = String(d.getMinutes()).padStart(2, '0');
+        return `${d.getDate()} ${DateTH.MONTHS_SHORT[d.getMonth()]} ${d.getFullYear() + 543} ${hh}:${mm} น.`;
+    }
+    function latestSavedAt(list) {
+        let best = null;
+        list.forEach(r => {
+            if (!r || !r.savedAt) return;
+            const t = new Date(r.savedAt);
+            if (!isNaN(t) && (!best || t > best)) best = t;
+        });
+        return best ? best.toISOString() : '';
     }
 
     const ICONS = {
-        coins: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18M7 6h1v4M16.71 13.88l.7.71-2.82 2.82"/></svg>',
-        wallet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v3M3 7v10a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1h-4a2 2 0 1 0 0 4h5"/></svg>',
-        users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.5 2.8-6 6.5-6s6.5 2.5 6.5 6M16.5 8.3a3 3 0 1 1 3.3 4.6M20 20c0-2.7-1.6-4.9-4-5.7"/></svg>',
-        receipt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>',
-        chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>',
-        refund: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4v6h6M4.5 14a8 8 0 1 0 2-9.5L4 10"/></svg>'
+        coins:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg>',
+        sheet:   '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2h8l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm7 1.5V8h4.5L13 3.5ZM8 12v1.6h8V12H8Zm0 3.2v1.6h8v-1.6H8Z"/></svg>',
+        user:    '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.6 3.6-6 8-6s8 2.4 8 6v1H4v-1Z"/></svg>',
+        doc:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h8l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"/><path d="M13 3v5h5M8 13h8M8 17h8"/></svg>',
+        pie:     '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 3.1A9 9 0 1 0 20.9 13H11V3.1Z"/><path d="M13 2.05V11h8.95A9 9 0 0 0 13 2.05Z" opacity=".7"/></svg>',
+        wallet:  '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 6a3 3 0 0 1 3-3h10a1 1 0 0 1 0 2H7a1 1 0 0 0 0 2h12a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 1-1Zm12.5 7a1.5 1.5 0 1 0 0 3h3v-3h-3Z"/></svg>',
+        arrow:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>'
     };
+    const SPARK = '<svg class="bs-spark" viewBox="0 0 150 70" fill="none"><path d="M2 62c14-2 20-10 34-14s22 6 36-6 22-4 34-16 24-10 42-18" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><path d="M2 62c14-2 20-10 34-14s22 6 36-6 22-4 34-16 24-10 42-18V70H2Z" fill="#fff" opacity=".12"/></svg>';
+
+    function bsCard(color, w, icon, label, valueHtml, pct, valueCls) {
+        const hasPct = pct !== null && pct !== undefined && isFinite(pct);
+        const barW = hasPct ? Math.max(0, Math.min(100, pct)) : 0;
+        const cls = (hasPct && pct < 0) ? 'bs-red' : color;
+        const progress = hasPct
+            ? `<div class="bs-progress"><div class="bs-bar"><i style="width:${barW}%"></i></div><span class="bs-pct">${pct.toFixed(2)}%</span></div>`
+            : '';
+        return `
+            <div class="bs-card ${cls} ${w}">
+                <div class="bs-card-ic">${icon}</div>
+                <div class="bs-card-body">
+                    <div class="bs-card-label">${label}</div>
+                    <div class="bs-card-value ${valueCls || ''}">${valueHtml}</div>
+                    ${progress}
+                </div>
+            </div>`;
+    }
+
+    function bsLayout(heroValue, cards) {
+        return `
+            <div class="bs-grid">
+                <div class="bs-hero">
+                    <div class="bs-hero-top">
+                        <div class="bs-hero-ic">${ICONS.coins}</div>
+                        <div class="bs-hero-label">งบประมาณที่ได้รับจัดสรร</div>
+                    </div>
+                    <div class="bs-hero-value">${heroValue}</div>
+                    <span class="bs-hero-pill">${ICONS.arrow.replace('<svg','<svg width="13" height="13"')} รวมทั้งหมด</span>
+                    ${SPARK}
+                </div>
+                <div class="bs-right">${cards}</div>
+            </div>`;
+    }
 
     function renderSummaryCards(slot) {
         const grid = document.getElementById('summary-grid');
-        const statusEl = document.getElementById('summary-status');
+        const updEl = document.getElementById('summary-updated');
+        const msgEl = document.getElementById('summary-msg');
         const noData = '<span class="empty-val">ยังไม่มีข้อมูล</span>';
 
         if (!slot) {
-            grid.innerHTML =
-                cardHTML(ICONS.coins, '#eaf4fb', '#0b6aab', 'ประมาณการค่าใช้จ่ายทั้งหมด', noData) +
-                cardHTML(ICONS.wallet, '#fff6e8', '#bf7800', 'จำนวนเงินยืมทดลองจ่าย', noData) +
-                cardHTML(ICONS.users, '#f1edfc', '#7865c8', 'ชื่อวิทยากร / บริษัท', noData) +
-                cardHTML(ICONS.receipt, '#eafaf5', '#0f8a73', 'ค่าใช้จ่ายเกิดจริงทั้งหมด', noData) +
-                cardHTML(ICONS.chart, '#fdeeea', '#c4562f', 'ค่าใช้จ่ายรวม ก. เฉพาะเงินยืม (ใช้จริง)', noData) +
-                cardHTML(ICONS.refund, '#eef2f5', '#556577', 'เงินคืน (คงเหลือของรวมเงิน ก.)', noData);
-            statusEl.textContent = 'ยังไม่มีข้อมูล';
+            grid.innerHTML = bsLayout(noData,
+                bsCard('bs-green',  'w3', ICONS.sheet,  'ค่าใช้จ่ายเกิดจริงทั้งหมด', noData) +
+                bsCard('bs-purple', 'w3', ICONS.user,   'ชื่อวิทยากร / บริษัท', noData) +
+                bsCard('bs-blue',   'w2', ICONS.doc,    'จำนวนเงินยืมทดลองจ่าย', noData) +
+                bsCard('bs-orange', 'w2', ICONS.pie,    'ค่าใช้จ่ายรวม ก. เฉพาะเงินยืม', noData) +
+                bsCard('bs-green',  'w2', ICONS.wallet, 'เงินคืน', noData));
+            updEl.textContent = '—';
+            msgEl.textContent = 'ยังไม่มีข้อมูล';
             return;
         }
 
@@ -335,27 +426,36 @@
         const hasBudget = budgetTotal > 0;
         const hasActual = actualTotal !== null;
 
-        const spkHTML = spkNames.length
-            ? spkNames.map(n => `<div class="spk-name">👤 ${n}</div>`).join('')
-            : noData;
+        // เปอร์เซ็นต์บนแถบความคืบหน้า
+        const pctActual = (hasActual && hasBudget) ? (actualTotal / budgetTotal) * 100 : null;      // ใช้จริงทั้งหมด ÷ งบจัดสรร
+        const pctGor    = (actualGorA !== null && borrowAmt > 0) ? (actualGorA / borrowAmt) * 100 : null; // ก. ใช้จริง ÷ เงินยืม
+        const pctRefund = (refund !== null && borrowAmt > 0) ? (refund / borrowAmt) * 100 : null;   // เงินคืน ÷ เงินยืม
 
-        grid.innerHTML =
-            cardHTML(ICONS.coins, '#eaf4fb', '#0b6aab', 'ประมาณการค่าใช้จ่ายทั้งหมด',
-                `<strong>${hasBudget ? fmtBaht(budgetTotal) : noData}</strong>`) +
-            cardHTML(ICONS.wallet, '#fff6e8', '#bf7800', 'จำนวนเงินยืมทดลองจ่าย',
-                `<strong>${hasBudget ? fmtBaht(borrowAmt) : noData}</strong>`) +
-            cardHTML(ICONS.users, '#f1edfc', '#7865c8', 'ชื่อวิทยากร / บริษัท',
-                `${spkHTML}${hasInt ? '<div class="spk-int">🏢 มีวิทยากรภายใน</div>' : ''}`) +
-            cardHTML(ICONS.receipt, '#eafaf5', '#0f8a73', 'ค่าใช้จ่ายเกิดจริงทั้งหมด',
-                `<strong>${hasActual ? fmtBaht(actualTotal) : noData}</strong>`) +
-            cardHTML(ICONS.chart, '#fdeeea', '#c4562f', 'ค่าใช้จ่ายรวม ก. เฉพาะเงินยืม (ใช้จริง)',
-                `<strong>${actualGorA !== null ? fmtBaht(actualGorA) : noData}</strong>`) +
-            cardHTML(ICONS.refund, '#eef2f5', '#556577', 'เงินคืน (คงเหลือของรวมเงิน ก.)',
-                refund !== null
-                  ? `<strong style="color:${refund >= 0 ? '#197a5d' : '#c0364f'}">${fmtBaht(refund)}</strong>`
-                  : `<strong>${noData}</strong>`);
+        let spkValue = noData, spkExtra = '';
+        if (spkNames.length) {
+            spkValue = `${spkNames.length} ชื่อวิทยากร / บริษัท`;
+            spkExtra = spkNames.map(n => `<div class="bs-spk-list">👤 ${n}</div>`).join('');
+        }
+        if (hasInt) spkExtra += '<div class="spk-int">🏢 มีวิทยากรภายใน</div>';
+        if (!spkNames.length && hasInt) spkValue = '<span class="empty-val">ไม่มีวิทยากรภายนอก</span>';
 
-        statusEl.textContent = 'เชื่อมต่อสำเร็จ';
+        grid.innerHTML = bsLayout(
+            hasBudget ? moneyHtml(budgetTotal) : noData,
+            bsCard('bs-green',  'w3', ICONS.sheet, 'ค่าใช้จ่ายเกิดจริงทั้งหมด',
+                hasActual ? moneyHtml(actualTotal) : noData, pctActual) +
+            bsCard('bs-purple', 'w3', ICONS.user, 'ชื่อวิทยากร / บริษัท',
+                spkValue + spkExtra, null, spkNames.length ? '' : 'sm') +
+            bsCard('bs-blue',   'w2', ICONS.doc, 'จำนวนเงินยืมทดลองจ่าย',
+                hasBudget ? moneyHtml(borrowAmt) : noData) +
+            bsCard('bs-orange', 'w2', ICONS.pie, 'ค่าใช้จ่ายรวม ก. เฉพาะเงินยืม',
+                actualGorA !== null ? moneyHtml(actualGorA) : noData, pctGor) +
+            bsCard('bs-green',  'w2', ICONS.wallet, 'เงินคืน',
+                refund !== null ? moneyHtml(refund) : noData, pctRefund)
+        );
+
+        const upd = latestSavedAt([b, a06, a07]);
+        updEl.textContent = upd ? fmtUpdated(upd) : '—';
+        msgEl.textContent = '';
     }
 
     renderSummaryCards(null);
@@ -416,7 +516,7 @@
 
     async function loadSummary(no, attempt) {
         attempt = attempt || 1;
-        const statusEl = document.getElementById('summary-status');
+        const statusEl = document.getElementById('summary-msg');
         statusEl.textContent = attempt === 1 ? 'กำลังโหลด...' : `กำลังลองใหม่ (${attempt}/3)...`;
         showGsLoader(attempt === 1 ? '📥 กำลังโหลดข้อมูล' : `📥 กำลังลองใหม่ (${attempt}/3)...`);
 
@@ -482,7 +582,7 @@
             document.getElementById('f_meta_line1').textContent = 'กรุณาเข้าหน้านี้ผ่านปุ่ม "รายละเอียด" จากหน้าหลักสูตรการฝึกอบรม';
             document.getElementById('f_meta_line2').textContent = '';
             document.getElementById('f_meta_line3').textContent = '';
-            document.getElementById('summary-status').textContent = '';
+            document.getElementById('summary-msg').textContent = '';
         }
     })();
 
