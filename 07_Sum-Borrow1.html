@@ -171,9 +171,15 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:1px solid #000;verti
   .bgray{background:#eaeaea!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   .rpt-edit{border:none!important;}
   .hdr-edit{border:none!important;border-bottom:none!important;}
+  
+  /* ซ่อนบรรทัดหมายเหตุที่ว่างอยู่ */
   .note-row-1:has(input:placeholder-shown){display:none!important;}
   .note-row-2:has(input:placeholder-shown){display:none!important;}
   .note-row-3:has(input:placeholder-shown){display:none!important;}
+
+  /* --- แก้ไขเป็นบรรทัดนี้: หา strong ตัวที่อยู่หน้าช่อง input ที่ว่างอยู่ --- */
+  div:has(.note-row-1 input:placeholder-shown) > strong {display:none!important;}
+
   table.rpt{font-size:13px;}
   table.rpt thead th{padding:4px 2px!important;}
   table.rpt tbody td{padding:var(--row-pad-v,5px) 8px!important;}
