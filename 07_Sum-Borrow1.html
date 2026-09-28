@@ -180,9 +180,11 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:1px solid #000;verti
   .header-area{margin-bottom:18px;text-align:center;}
   .header-area h1{font-size:18px;line-height:1.6!important;margin:0 0 2px 0!important;}
   .header-area p{font-size:14px;line-height:1.5!important;margin:0 0 4px 0!important;}
+  .no-print{display:none!important;}
   }
   @page{margin:10mm;}
-
+ 
+  
 /* ── ie-wrap inline edit ── */
 .ie-wrap { position:relative; display:inline-flex; align-items:center; }
 .ie-wrap .ie-input { position:relative; z-index:1; background:transparent; min-width:80px; }
@@ -554,9 +556,9 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:1px solid #000;verti
   <div class="report-container" id="report-container-07">
     <div class="header-area">
       <h1><div class="rpt-edit hdr-edit" contenteditable="true" id="r_title" style="width:100%;text-align:center;font-size:inherit;font-weight:inherit;color:#000;font-family:inherit;background:transparent;border:none;outline:none;padding:2px 4px;">สรุปค่าใช้จ่ายการดำเนินการฝึกอบรม</div></h1>
-      <p><div class="rpt-edit hdr-edit" contenteditable="true" id="r_hdr1" style="width:100%;text-align:center;font-size:inherit;font-weight:inherit;color:#000;font-family:inherit;background:transparent;border:none;outline:none;padding:2px 4px;"></div></p>
-      <p><div class="rpt-edit hdr-edit" contenteditable="true" id="r_hdr2" style="width:100%;text-align:center;font-size:inherit;font-weight:inherit;color:#000;font-family:inherit;background:transparent;border:none;outline:none;padding:2px 4px;"></div></p>
-      <p><div class="rpt-edit hdr-edit" contenteditable="true" id="r_hdr3" style="width:100%;text-align:center;font-size:inherit;font-weight:inherit;color:#000;font-family:inherit;background:transparent;border:none;outline:none;padding:2px 4px;"></div></p>
+      <p><div class="rpt-edit hdr-edit" contenteditable="true" id="r_hdr1" style="width:100%;text-align:center;font-size:inherit;font-weight:bold;color:#000;font-family:inherit;background:transparent;border:none;outline:none;padding:2px 4px;"></div></p>
+      <p><div class="rpt-edit hdr-edit" contenteditable="true" id="r_hdr2" style="width:100%;text-align:center;font-size:inherit;font-weight:bold;color:#000;font-family:inherit;background:transparent;border:none;outline:none;padding:2px 4px;"></div></p>
+      <p><div class="rpt-edit hdr-edit" contenteditable="true" id="r_hdr3" style="width:100%;text-align:center;font-size:inherit;font-weight:bold;color:#000;font-family:inherit;background:transparent;border:none;outline:none;padding:2px 4px;"></div></p>
     </div>
     <div id="rpt_wrap"></div>
   </div>
@@ -1357,10 +1359,23 @@ function buildTable(){
     sec1=s11+s12; asec1=a11+a12;
     rows.push(r5(`${nums.office}. ค่าวัสดุสำนักงาน`,'tl tw i1 nb nt', '','nb nt', fmt(sec1),'tr tw nb nt', '','nb nt', fmt(asec1),'tr tw nb nt', fmt(sec1-asec1),'tr tw nb nt'));
     const officeItems=[];
-    if(has11) officeItems.push({label:'ค่าเครื่องเขียนแบบพิมพ์ (สมุด, ปากกา, ฯลฯ)', budgetAmt:s11, actualAmt:a11});
-    if(has12) officeItems.push({label:'ค่าถ่ายเอกสารและเข้าเล่ม', budgetAmt:s12, actualAmt:a12});
-    rows.push(...renderTriad07(String(nums.office), officeItems));
-  }
+      if(has11) {
+        officeItems.push({
+          // ปรับเปลี่ยนจุดนี้: ใช้ ieVal ใส่ข้อความเริ่มต้น (สมุด, ปากกา, ฯลฯ) เพื่อให้สามารถพิมพ์แก้ไข/พิมพ์ต่อได้
+          label: `ค่าเครื่องเขียนแบบพิมพ์ ${ieVal('(สมุด, ปากกา, ฯลฯ)', '60%')}`, 
+          budgetAmt: s11, 
+          actualAmt: a11
+        });
+      }
+      if(has12) {
+        officeItems.push({
+          label: 'ค่าถ่ายเอกสารและเข้าเล่ม', 
+          budgetAmt: s12, 
+          actualAmt: a12
+        });
+      }
+      rows.push(...renderTriad07(String(nums.office), officeItems));
+    }
 
   // ── 2. ค่าวัสดุเบ็ดเตล็ด ──
   let sec2=0, asec2=0;
@@ -1576,7 +1591,8 @@ function buildTable(){
       rows.push(`<tr class="bb2">${td(`รวมเงินข้อ ก. (1. - ${preInternalLast}.) เป็นเงิน`,'tc tw bgray bt2')+td('','bgray bt2')+td(fmt(extTotal),'tr tw bgray bt2')+td('','bgray bt2')+td(fmt(aExtTotal),'tr tw bgray bt2')+td(fmt(extTotal-aExtTotal),'tr tw bgray bt2')}</tr>`);
     }
     secPres=pres1+pres2+pres3; asecPres=apres1+apres2+apres3;
-    rows.push(r5(`${nums.pres}. ค่าเดินทางประธานในพิธี (โอนให้หน่วยงานต้นสังกัด)`,'tl tw i1 nb nt', '','nb nt', secPres?fmt(secPres):'','tr tw nb nt', '','nb nt', asecPres?fmt(asecPres):'','tr tw nb nt', fmt(secPres-asecPres),'tr tw nb nt'));
+    // 🔴 ปรับแก้บรรทัดนี้: ครอบ ieVal ทั้งหมด
+    rows.push(r5(`${nums.pres}. ${ieVal('ค่าเดินทางประธานในพิธี (โอนให้หน่วยงานต้นสังกัด)', '95%','font-weight: bold;')}`,'tl tw i1 nb nt', '','nb nt', secPres?fmt(secPres):'','tr tw nb nt', '','nb nt', asecPres?fmt(asecPres):'','tr tw nb nt', fmt(secPres-asecPres),'tr tw nb nt'));
     rows.push(...renderTriad07(String(nums.pres), [
       {label:'ค่าเบี้ยเลี้ยง', budgetAmt:pres1, actualAmt:apres1},
       {label:'ค่าที่พัก', budgetAmt:pres2, actualAmt:apres2},
@@ -1630,23 +1646,34 @@ function buildTable(){
   </table>`;
 
   const noteHTML = `
-    <div style="margin-top: 16px; font-size: 14px; text-align: left; line-height: 24px;">
-    
-      <div style="overflow: hidden;">
-    
-        <div class="note-row-1">
-          <span style="color: #000;"> </span><input class="rpt-edit" type="text" placeholder="พิมพ์เพื่อใส่หมายเหตุ (หากไม่มีให้ว่างไว้)" style="width: 95%; font-family: 'Sarabun', sans-serif; font-size: 14px; color: #000;">
-        </div>
-        <div class="note-row-2">
-          <span style="color: #000;"> </span><input class="rpt-edit" type="text" placeholder="ระบุหมายเหตุเพิ่มเติมที่นี่ (ถ้ามี)..." style="width: 95%; font-family: 'Sarabun', sans-serif; font-size: 14px; color: #000;">
-        </div>
-        <div class="note-row-3">
-          <span style="color: #000;"> </span><input class="rpt-edit" type="text" placeholder="ระบุหมายเหตุเพิ่มเติมที่นี่ (ถ้ามี)..." style="width: 95%; font-family: 'Sarabun', sans-serif; font-size: 14px; color: #000;">
-        </div>
+  <div style="margin-top: 16px; font-size: 14px; text-align: left; line-height: 24px;">
+    <strong style="float: left; margin-right: 6px; color: #000;">หมายเหตุ :</strong>
+    <div style="overflow: hidden;">
+      
+      <!-- บรรทัดหลักแรก -->
+      <div class="note-row-1" style="margin-bottom: 4px;">
+        <input class="rpt-edit" type="text" placeholder="พิมพ์เพื่อใส่หมายเหตุ (หากไม่มีให้ว่างไว้)" style="width: 100%; color: #000 !important; font-family: 'Sarabun', sans-serif; font-size: 14px; font-weight: normal;">
       </div>
+
+      <!-- Container ตัวนี้จำเป็นต้องมี เพื่อให้ JS นำแถวใหม่มาต่อท้ายตรงนี้ -->
+      <div id="noteExtraLines"></div>
+
+      <!-- ปุ่มเพิ่มบรรทัด -->
+      <button type="button" class="no-print btn-add-note" onclick="addNoteLine05()"
+        style="margin-top:4px;padding:3px 12px;font-size:12px;border:1px dashed var(--blue,#1a56db);background:var(--blue-light,#e8f0fe);color:var(--blue,#1a56db);border-radius:5px;cursor:pointer;font-family:'Sarabun',sans-serif;">+ เพิ่มบรรทัด</button>
+        
     </div>
+  </div>
   `;
 
+  window.addNoteLine05 = function(){
+  const container = document.getElementById('noteExtraLines');
+  if(!container) return;
+  const div = document.createElement('div');
+  div.className = 'note-row-2';
+  div.innerHTML = `<span style="color: #000;"> </span><input class="rpt-edit" type="text" placeholder="ระบุหมายเหตุเพิ่มเติมที่นี่ (ถ้ามี)..." style="width: 95%; font-family: 'Sarabun', sans-serif; font-size: 14px; color: #000; font-weight: normal;">`;
+  container.appendChild(div);
+  };
   // ตารางจำนวนผู้อบรม (แถวบรรทัดเดียว อยู่หลังตารางหลัก ก่อน หมายเหตุ 1)
   const tApproved = parseInt(document.getElementById('f_trainees_approved')?.value)||0;
   const tActual   = parseInt(document.getElementById('f_trainees_actual')?.value)||0;
