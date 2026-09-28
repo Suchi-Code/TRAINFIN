@@ -12,6 +12,12 @@
   <script src="js/date-th.js"></script>
   <script src="js/gas-api.js"></script>
   <script src="js/sidebar.js"></script>
+  <script src="js/permissions.js"></script>
+  <!-- ⚠️ ไม่เรียก lockPageIfReadOnly() ในหน้านี้ — ต่างจากไฟล์รายงานอื่น เพราะหน้านี้มีฟีเจอร์
+       self-service (แก้โปรไฟล์ตัวเอง/เปลี่ยนรหัสผ่านตัวเอง/ออกจากระบบ) ที่ทุก role ต้องใช้ได้เสมอ
+       ตามที่ระบุไว้ใน Permission-System-Guide-TH.md §1 — การล็อกทั้งหน้าจะไปปิดกั้นฟีเจอร์เหล่านี้
+       สำหรับ viewer/manager โดยไม่ตั้งใจ ส่วนที่ต้องจำกัดสิทธิ์จริงในหน้านี้มีแค่กล่อง
+       "จัดการผู้ใช้งาน" ด้านล่าง ซึ่งเช็ค role แบบเจาะจงเองแยกต่างหาก (ดู initAdminPanel()) -->
   <script>checkAuth();</script>
 
   <style>
@@ -97,6 +103,23 @@
     .info-row strong{font-size:13px;color:#1c3547;font-weight:600;text-align:right}
     .pill{display:inline-flex;align-items:center;gap:6px;background:var(--sky);color:#0a5c8c;border:1px solid #cfe4f0;border-radius:999px;padding:4px 11px;font-size:11.5px;font-weight:700}
 
+    /* ===== Admin: จัดการผู้ใช้งาน ===== */
+    .um-table-wrap{overflow-x:auto}
+    table.um-table{width:100%;border-collapse:collapse;font-size:13px}
+    table.um-table th{background:var(--navy);color:#fff;padding:9px 12px;font-weight:600;text-align:left;white-space:nowrap}
+    table.um-table td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+    table.um-table tbody tr:last-child td{border-bottom:none}
+    table.um-table tbody tr:hover{background:var(--sky)}
+    .um-role-select{border:1px solid #cfdbe3;border-radius:6px;padding:6px 8px;font:inherit;font-size:12.5px;color:var(--ink);background:#fff}
+    .um-role-select:disabled{background:#f3f6f8;color:#8f9aa6;cursor:not-allowed}
+    .um-self-note{font-size:11px;color:var(--muted)}
+    .um-btn-reset{background:#fff;border:1px solid #ccd9e0;color:#506978;border-radius:6px;padding:6px 12px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+    .um-btn-reset:hover{background:#f5f8fa;border-color:#b9cddb}
+    .um-role-badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700}
+    .um-role-badge.admin{background:#f1edfc;color:#5948a4}
+    .um-role-badge.manager{background:#fff6e8;color:#9c6200}
+    .um-role-badge.viewer{background:#eef0f4;color:#627587}
+
     @media(max-width:1050px){.main{padding:22px}.sidebar{width:215px;flex-basis:215px}.main{width:calc(100% - 215px);max-width:calc(100% - 215px)}.settings-grid{grid-template-columns:1fr}}
     @media(max-width:720px){.sidebar{display:none}.main{width:100%;max-width:100%;padding:18px}.settings-grid{grid-template-columns:1fr}}
   </style>
@@ -176,6 +199,25 @@
           <div class="info-row"><label>ระบบ</label><strong>Training Financial Reporting System (TRAINFIN)</strong></div>
           <div class="info-row"><label>สถานะการเชื่อมต่อฐานข้อมูล</label><strong id="s_connStatus"><span class="pill">กำลังตรวจสอบ...</span></strong></div>
         </div>
+      </div>
+    </section>
+
+    <!-- ===== จัดการผู้ใช้งาน (admin เท่านั้น — ซ่อนไว้ก่อน initAdminPanel() จะแสดงถ้า role เป็น admin) ===== -->
+    <section class="panel" id="adminUserPanel" style="display:none;">
+      <div class="panel-head">
+        <div><h2>จัดการผู้ใช้งาน</h2><p>เปลี่ยนสิทธิ์ (role) หรือรีเซ็ตรหัสผ่านให้ผู้ใช้งานคนอื่น — มองเห็นเฉพาะบัญชี admin เท่านั้น</p></div>
+        <span class="pill">🔒 Admin only</span>
+      </div>
+      <div class="panel-body">
+        <div class="um-table-wrap">
+          <table class="um-table">
+            <thead>
+              <tr><th>รหัสพนักงาน</th><th>ชื่อ-นามสกุล</th><th>สิทธิ์ปัจจุบัน</th><th>เปลี่ยนสิทธิ์</th><th>รหัสผ่าน</th></tr>
+            </thead>
+            <tbody id="um_rows"><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:16px">กำลังโหลด...</td></tr></tbody>
+          </table>
+        </div>
+        <div class="inline-msg" id="umMsg"></div>
       </div>
     </section>
 
@@ -345,10 +387,146 @@ async function doLogout(){
 /* toggleSidebar() มาจาก js/sidebar.js แล้ว (โมดูลกลาง) — ไม่ต้องประกาศซ้ำในไฟล์นี้อีก */
 
 /* ============================================================
+   จัดการผู้ใช้งาน (admin เท่านั้น) — ดู Permission-System-Guide-TH.md §6
+   ------------------------------------------------------------
+   - แสดงกล่องนี้เฉพาะ getCurrentRole()==='admin' (จาก js/permissions.js อ่าน
+     sessionStorage.currentUser.role ที่ตั้งไว้ตอน login — ไม่ realtime)
+   - เปลี่ยน role: เขียนตรงไปที่ Supabase profiles ผ่าน client (ปลอดภัยเพราะมี
+     RLS + trigger คุมอยู่แล้วฝั่ง database — ดูคู่มือ §2: กัน self-role-change
+     และกันลด role ของ admin คนสุดท้าย)
+   - รีเซ็ตรหัสผ่าน: ต้องผ่าน js/Code.gs action 'resetUserPassword' เท่านั้น
+     (เรียก Supabase Admin API ด้วย service role key ที่เก็บไว้ใน
+     PropertiesService ฝั่ง Apps Script — service role key ห้ามอยู่ browser
+     เด็ดขาด จึงเรียกผ่าน gsApi() แทนการเรียก Supabase admin API ตรงๆ จากหน้านี้)
+   - นี่คือ UI-level protection เท่านั้น (การป้องกันจริงคือ RLS/trigger ของ
+     Supabase ฝั่งเปลี่ยน role, และ Code.gs ฝั่งรีเซ็ตรหัสผ่าน — Phase 2 การเช็ค
+     สิทธิ์ผู้เรียกจริงฝั่ง backend สำหรับ action นี้ยังไม่ได้ทำ ตามที่ตกลงไว้)
+   ============================================================ */
+let _umCurrentUserId = null;
+
+async function initAdminPanel(){
+  const panel = document.getElementById('adminUserPanel');
+  if(!panel) return;
+  if (typeof getCurrentRole !== 'function' || getCurrentRole() !== 'admin') return; // ไม่ใช่ admin — ปล่อยซ่อนไว้ตามเดิม
+
+  const client = getSettingsClient();
+  if(!client){ return; }
+
+  try{
+    const { data: { user } } = await client.auth.getUser();
+    _umCurrentUserId = user ? user.id : null;
+  } catch(e){ console.warn('initAdminPanel: getUser error', e); }
+
+  panel.style.display = '';
+  await loadUsersList();
+}
+
+async function loadUsersList(){
+  const client = getSettingsClient();
+  const tbody = document.getElementById('um_rows');
+  if(!client || !tbody) return;
+
+  try{
+    const { data: rows, error } = await client
+      .from('profiles')
+      .select('id, emp_id, full_name, role')
+      .order('emp_id', { ascending: true });
+
+    if(error){
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--red);padding:16px">โหลดรายชื่อผู้ใช้ไม่สำเร็จ: ' + error.message + '</td></tr>';
+      return;
+    }
+    renderUsersTable(rows || []);
+  } catch(e){
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--red);padding:16px">เกิดข้อผิดพลาด: ' + e.message + '</td></tr>';
+  }
+}
+
+const UM_ROLE_LABEL = { admin: 'Admin', manager: 'ผู้บริหาร (Manager)', viewer: 'ทั่วไป (Viewer)' };
+
+function renderUsersTable(rows){
+  const tbody = document.getElementById('um_rows');
+  if(!tbody) return;
+  if(!rows.length){
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:16px">ไม่พบผู้ใช้งาน</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(u => {
+    const isSelf = u.id === _umCurrentUserId;
+    const roleOpts = ['admin','manager','viewer'].map(r =>
+      `<option value="${r}"${u.role===r?' selected':''}>${UM_ROLE_LABEL[r]}</option>`).join('');
+    return `<tr data-uid="${u.id}">
+      <td>${u.emp_id || '—'}</td>
+      <td>${u.full_name || '—'}</td>
+      <td><span class="um-role-badge ${u.role}">${UM_ROLE_LABEL[u.role] || u.role}</span></td>
+      <td>
+        ${isSelf
+          ? `<span class="um-self-note">— เปลี่ยนสิทธิ์ตัวเองไม่ได้ —</span>`
+          : `<select class="um-role-select" onchange="updateUserRole('${u.id}', this)">${roleOpts}</select>`}
+      </td>
+      <td><button class="um-btn-reset" onclick="resetUserPasswordPrompt('${u.id}', '${(u.emp_id||'').replace(/'/g,"\\'")}')">🔑 รีเซ็ต</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function showUmMsg(text, ok){
+  const el = document.getElementById('umMsg');
+  if(!el) return;
+  el.textContent = text;
+  el.className = 'inline-msg show ' + (ok ? 'ok' : 'err');
+}
+
+async function updateUserRole(userId, selectEl){
+  const client = getSettingsClient();
+  if(!client){ showUmMsg('⚠️ ระบบยังไม่พร้อมเชื่อมต่อ Supabase', false); return; }
+
+  const newRole = selectEl.value;
+  const prevValue = Array.from(selectEl.options).find(o => o.defaultSelected)?.value || newRole;
+  selectEl.disabled = true;
+
+  try{
+    const { error } = await client.from('profiles').update({ role: newRole }).eq('id', userId);
+    if(error){
+      showUmMsg('❌ เปลี่ยนสิทธิ์ไม่สำเร็จ: ' + error.message, false);
+      selectEl.value = prevValue; // ย้อนค่ากลับ (เช่น กรณีโดน trigger บล็อกลด role ของ admin คนสุดท้าย)
+      return;
+    }
+    showUmMsg('✅ เปลี่ยนสิทธิ์เรียบร้อย — มีผลกับผู้ใช้คนนั้นตอน login ครั้งถัดไป', true);
+    const badge = selectEl.closest('tr')?.querySelector('.um-role-badge');
+    if(badge){ badge.className = 'um-role-badge ' + newRole; badge.textContent = UM_ROLE_LABEL[newRole] || newRole; }
+  } catch(e){
+    showUmMsg('❌ เกิดข้อผิดพลาด: ' + e.message, false);
+    selectEl.value = prevValue;
+  } finally {
+    selectEl.disabled = false;
+  }
+}
+
+async function resetUserPasswordPrompt(userId, empIdLabel){
+  const pw1 = prompt('ตั้งรหัสผ่านใหม่สำหรับ ' + (empIdLabel || 'ผู้ใช้นี้') + ' (อย่างน้อย 6 ตัวอักษร)');
+  if(pw1 === null) return; // กดยกเลิก
+  if(pw1.length < 6){ showUmMsg('⚠️ รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร — ยังไม่ได้รีเซ็ต', false); return; }
+  const pw2 = prompt('กรอกรหัสผ่านใหม่อีกครั้งเพื่อยืนยัน');
+  if(pw2 === null) return;
+  if(pw1 !== pw2){ showUmMsg('⚠️ รหัสผ่านทั้งสองครั้งไม่ตรงกัน — ยังไม่ได้รีเซ็ต', false); return; }
+
+  showGsLoader('🔑 กำลังรีเซ็ตรหัสผ่าน...');
+  const result = await gsApi('resetUserPassword', { userId, newPassword: pw1 });
+  hideGsLoader();
+
+  if(result && result.success){
+    showUmMsg('✅ รีเซ็ตรหัสผ่านให้ ' + (empIdLabel || 'ผู้ใช้นี้') + ' สำเร็จแล้ว', true);
+  } else {
+    showUmMsg('❌ รีเซ็ตรหัสผ่านไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อแล้วลองใหม่', false);
+  }
+}
+
+/* ============================================================
    INIT
    ============================================================ */
 loadProfile();
 loadCurrentUser();
+initAdminPanel();
 </script>
 </body>
 </html>
