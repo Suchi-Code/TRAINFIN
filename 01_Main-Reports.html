@@ -155,15 +155,29 @@
     .primary{border:0;background:var(--blue);color:#fff;border-radius:8px;padding:10px 18px;font:inherit;font-weight:700;cursor:pointer;transition:.15s}
     .primary:hover{background:#07598f}
 
-    /* ===== Report tiles ===== */
-    .report-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;padding:20px}
-    .report-tile{display:flex;align-items:center;gap:12px;text-decoration:none;border:1px solid #e5ebef;border-radius:10px;padding:14px 16px;transition:.15s;background:#fff}
-    .report-tile:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(19,47,68,.09);border-color:#cfe4f0}
-    .report-tile .r-ic{width:40px;height:40px;flex:0 0 40px;border-radius:10px;display:grid;place-items:center;font-size:19px}
-    .report-tile .r-name{font-size:13.2px;font-weight:600;color:#1c3547;line-height:1.4}
+    /* ===== Action sections (บันทึก / ออกรายงาน) ===== */
+    .act-panel{background:#fff;border:1px solid #e0e8ed;border-radius:14px;margin-bottom:20px;overflow:hidden;scroll-margin-top:16px}
+    .act-head{display:flex;align-items:center;gap:14px;padding:18px 22px;background:linear-gradient(180deg,#f8fbfd,#fff);border-bottom:1px solid var(--line)}
+    .act-head-ic{width:42px;height:42px;flex:0 0 42px;border-radius:12px;background:var(--navy);color:#fff;display:grid;place-items:center}
+    .act-head-ic svg{width:21px;height:21px}
+    .act-head h2{margin:0;font-size:17px;color:var(--navy);font-weight:700;line-height:1.3}
+    .act-head p{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
+    .act-head .count-chip{margin-left:auto}
+    .report-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;padding:20px 22px 22px}
+    .report-tile{position:relative;display:flex;align-items:center;gap:14px;text-decoration:none;border:1px solid #e3eaef;border-radius:12px;padding:16px 44px 16px 16px;background:#fff;transition:.16s}
+    .report-tile::before{content:'';position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:0 3px 3px 0;background:var(--tc,#cfd9e0);transition:.16s}
+    .report-tile:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(19,47,68,.09);border-color:#b9d3e6}
+    .report-tile:hover::before{top:8px;bottom:8px}
+    .report-tile .r-ic{width:46px;height:46px;flex:0 0 46px;border-radius:12px;display:grid;place-items:center}
+    .report-tile .r-ic svg{width:23px;height:23px}
+    .r-body{min-width:0}
+    .report-tile .r-name{font-size:13.5px;font-weight:700;color:#1c3547;line-height:1.4}
+    .r-desc{font-size:11.5px;color:var(--muted);line-height:1.45;margin-top:2px}
+    .r-go{position:absolute;right:14px;top:50%;transform:translateY(-50%);width:24px;height:24px;color:#9db0be;transition:.16s}
+    .report-tile:hover .r-go{color:var(--blue);transform:translate(3px,-50%)}
 
     @media(max-width:1300px){.bs-grid{grid-template-columns:1fr}.bs-hero{min-height:170px}}
-    @media(max-width:1200px){.report-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:1200px){.report-grid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}}
     @media(max-width:1050px){.main{padding:22px}.sidebar{width:215px;flex-basis:215px}.main{width:calc(100% - 215px)}.course-grid{grid-template-columns:1fr}.course-image-wrap{aspect-ratio:16/9}.bs-card.w3,.bs-card.w2{grid-column:span 6}}
     @media(max-width:720px){.sidebar{display:none}.main{width:100%;padding:18px}.report-grid{grid-template-columns:1fr}.topbar{align-items:flex-start;flex-direction:column}}
   </style>
@@ -233,17 +247,21 @@
     </section>
 
     <!-- ===== หัวข้อ: บันทึก ===== -->
-    <section class="panel" id="save-panel">
-      <div class="panel-head">
+    <section class="act-panel" id="save-panel">
+      <div class="act-head">
+        <div class="act-head-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg></div>
         <div><h2>บันทึก</h2><p>กรอก/บันทึกข้อมูลงบประมาณและค่าใช้จ่ายของหลักสูตรนี้</p></div>
+        <span class="count-chip" id="save-count"></span>
       </div>
       <div class="report-grid" id="save-grid"></div>
     </section>
 
     <!-- ===== หัวข้อ: ออกรายงาน ===== -->
-    <section class="panel" id="report-panel">
-      <div class="panel-head">
+    <section class="act-panel" id="report-panel">
+      <div class="act-head">
+        <div class="act-head-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7" rx="1"/></svg></div>
         <div><h2>ออกรายงาน</h2><p>เลือกแบบฟอร์ม/รายงานที่ต้องการออกเพื่อพิมพ์หรือบันทึก PDF</p></div>
+        <span class="count-chip" id="report-count"></span>
       </div>
       <div class="report-grid" id="report-grid"></div>
     </section>
@@ -254,28 +272,34 @@
 
 <script>
     const SAVE_ITEMS = [
-        { num: '05', name: 'ประมาณการค่าใช้จ่าย',  icon: '⭐', bg: '#fff6e8', fg: '#bf7800', href: '05_Budgeted-Expenses.html' },
-        { num: '06', name: 'สรุปค่าใช้จ่ายจริง',    icon: '📋', bg: '#eafaf5', fg: '#0f8a73', href: '06_Sum-Training-Expenses.html' },
-        { num: '07', name: 'สรุปฯ (ใบปะหน้า)',      icon: '📝', bg: '#f1edfc', fg: '#7865c8', href: '07_Sum-Borrow1.html' },
+        { num: '05', desc: 'กำหนดงบประมาณและรายการค่าใช้จ่ายตามแผน', name: 'ประมาณการค่าใช้จ่าย',  icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 19h.01M12 19h.01"/></svg>`, bg: '#fff6e8', fg: '#bf7800', href: '05_Budgeted-Expenses.html' },
+        { num: '06', desc: 'คีย์ใบเสร็จ/ใบสำคัญรับเงินตามจริง', name: 'สรุปค่าใช้จ่ายจริง',    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v19l-3-2-3 2-3-2-3 2Z"/><path d="M9 8h6M9 12h6"/></svg>`, bg: '#eafaf5', fg: '#0f8a73', href: '06_Sum-Training-Expenses.html' },
+        { num: '07', desc: 'กรอกยอดใช้จริงเทียบกับงบประมาณ', name: 'สรุปฯ (ใบปะหน้า)',      icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1M9 11h6M9 15h6"/></svg>`, bg: '#f1edfc', fg: '#7865c8', href: '07_Sum-Borrow1.html' },
     ];
     const REPORT_ITEMS = [
-        { num: '08', name: 'ใบหักล้างยืมเงิน (บง.27)',                       icon: '🧾', bg: '#fdeeea', fg: '#c4562f', href: '08_Form-Pwa-27.html' },
-        { num: '09', name: 'ค่าใช้จ่ายตาม ว.119',                            icon: '⏱️', bg: '#f0f4f7', fg: '#557080', href: '09_V199.html' },
-        { num: '11', name: 'บันทึกข้อความ - ขอหักล้างเงินยืมทดรองจ่าย',     icon: '📑', bg: '#eaf4fb', fg: '#0b6aab', href: '11_Memo-Borrow-Reconcile.html' },
-        { num: '12', name: 'บันทึกข้อความ - เห็นชอบการจัดซื้อจัดจ้าง',       icon: '📄', bg: '#eafaf5', fg: '#197a5d', href: '12_Report-Purchase-Approval.html' },
+        { num: '08', desc: 'ใบหักล้างเงินยืมทดรองจ่าย กปภ.บง.27', name: 'ใบหักล้างยืมเงิน (บง.27)',                       icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v3M3 7v10a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1h-4a2 2 0 1 0 0 4h5"/></svg>`, bg: '#fdeeea', fg: '#c4562f', href: '08_Form-Pwa-27.html' },
+        { num: '09', desc: 'รายการจัดซื้อจัดจ้างวงเงินไม่เกิน 10,000 บาท', name: 'ค่าใช้จ่ายตาม ว.119',                            icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>`, bg: '#f0f4f7', fg: '#557080', href: '09_V199.html' },
+        { num: '11', desc: 'ใบขอหักล้างเงินยืมทดลองจ่าย', name: 'บันทึกข้อความ - หักล้างเงินยืม',     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z"/><path d="M14 2v5h5M8 12h8M8 16h5"/></svg>`, bg: '#eaf4fb', fg: '#0b6aab', href: '11_Memo-Borrow-Reconcile.html' },
+        { num: '12', desc: 'ใบการจัดซื้อจัดจ้างตาม ว.119', name: 'บันทึกข้อความ - จัดซื้อจัดจ้าง',       icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h2l2.4 12.2a2 2 0 0 0 2 1.6h8.5a2 2 0 0 0 2-1.6L21 7H6"/></svg>`, bg: '#eafaf5', fg: '#197a5d', href: '12_Report-Purchase-Approval.html' },
     ];
 
     function renderTiles(gridId, items) {
         const grid = document.getElementById(gridId);
         grid.innerHTML = items.map(r => `
-            <a href="${r.href}" onclick="return passRunToReport(event, '${r.href}')" class="report-tile">
+            <a href="${r.href}" onclick="return passRunToReport(event, '${r.href}')" class="report-tile" style="--tc:${r.fg}">
                 <span class="r-ic" style="background:${r.bg};color:${r.fg}">${r.icon}</span>
-                <span class="r-name">${r.name}</span>
+                <span class="r-body">
+                    <span class="r-name" style="display:block">${r.name}</span>
+                    <span class="r-desc" style="display:block">${r.desc || ''}</span>
+                </span>
+                <svg class="r-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
             </a>
         `).join('');
     }
     renderTiles('save-grid', SAVE_ITEMS);
     renderTiles('report-grid', REPORT_ITEMS);
+    document.getElementById('save-count').textContent = SAVE_ITEMS.length + ' รายการ';
+    document.getElementById('report-count').textContent = REPORT_ITEMS.length + ' รายการ';
 
     function passRunToReport(e, href) {
         if (window.__courseData && window.__courseData.no) {
