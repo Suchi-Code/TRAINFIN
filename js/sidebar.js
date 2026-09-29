@@ -224,9 +224,16 @@ function injectSidebarStyles() {
     /* เส้นแนวตั้งจางๆ บอกว่าลูกกลุ่มไหนมาจาก tab ไหน — ตำแหน่ง left:21px ชนกึ่งกลาง
        ไอคอนของ nav-parent พอดี (padding-left 12px + ไอคอนกว้าง 19px/2 ≈ 21px) */
     '.nav-children::before{content:"";position:absolute;left:21px;top:0;bottom:0;width:1.5px;background:rgba(255,255,255,.18)}' +
-    '.nav-child{display:flex;align-items:center;gap:8px;text-decoration:none;color:#a9c3d6;padding:10px 12px 10px 43px;border-radius:8px;margin:2px 0;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:.15s}' +
-    '.nav-child:hover{background:rgba(255,255,255,.08);color:#fff}' +
-    '.nav-child.active{background:#1275b4;color:#fff;font-weight:700;box-shadow:inset 3px 0 #91d8ff}' +
+    /* ⚠️ .nav-child เป็น <a> ที่อยู่ใต้ <nav class="nav"> เหมือนกับลิงก์เมนูหลักปกติ —
+       ทุกหน้ามีกฎ ".nav a{padding:12px;...}" ของตัวเองอยู่แล้ว ซึ่ง specificity สูงกว่า
+       class เดี่ยว ".nav-child" (มี element selector "a" ร่วมด้วย) ถ้าไม่ใส่ !important
+       ตรงนี้ padding-left:43px จะโดนทับกลับเป็น 12px เฉยๆ ทำให้ข้อความมาชนเส้นเชื่อมพอดี
+       (ดูเหมือนเส้นทับตัวหนังสือ) — ใส่ !important เฉพาะค่าที่ทับกันจริงเพื่อให้ sidebar.js
+       เป็นผู้ควบคุมหน้าตาของ element ที่มันสร้างเองเสมอ ไม่ต้องพึ่งว่าแต่ละหน้าจะมีกฎ
+       ".nav a" ตรงกันหรือไม่ */
+    '.nav-child{display:flex!important;align-items:center;gap:8px!important;text-decoration:none;color:#a9c3d6!important;padding:10px 12px 10px 43px!important;border-radius:8px;margin:2px 0!important;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:.15s}' +
+    '.nav-child:hover{background:rgba(255,255,255,.08)!important;color:#fff!important}' +
+    '.nav-child.active{background:#1275b4!important;color:#fff!important;font-weight:700;box-shadow:inset 3px 0 #91d8ff!important}' +
     '.sidebar.collapsed .nav-children{display:none}' +
     '.sidebar.collapsed .nav-parent .nav-caret{display:none}' +
     /* ปุ่มออกจากระบบ — ปักอยู่ล่างสุดต่อจากกล่องผู้ใช้ */
