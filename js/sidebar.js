@@ -81,7 +81,7 @@ const SIDEBAR_NAV_ITEMS = [
     title: 'ระบบงานฝึกอบรม',
     icon: '<path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>',
     children: [
-      { title: 'สร้างวุฒิบัตร/สร้างป้ายชื่อ/ใบสำคัญรับเงิน', href: 'Training_Support_Tools_Center.html' },
+      { title: 'สร้างวุฒิบัตร/ป้ายชื่อ/ใบสำคัญรับเงิน', href: 'Training_Support_Tools_Center.html' },
       { title: 'ระบบงาน...', href: '#' } // ← dummy รอปลายทางจริง — กดแล้วขึ้นป๊อปอัป "อยู่ระหว่างพัฒนา"
     ]
   },
