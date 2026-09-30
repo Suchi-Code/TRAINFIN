@@ -134,6 +134,12 @@
         <!-- การ์ดถูกสร้างด้วย JS จาก PDF_REPORTS ด้านล่าง -->
       </div>
     </section>
+
+    <section class="panel" style="margin-top:20px">
+      <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:4px">📎 เอกสารที่อัปโหลด</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:14px">PDF ที่ผู้ใช้อัปโหลดเองจากหน้าหลักสูตรการฝึกอบรม (ปุ่ม "เอกสาร")</div>
+      <div id="doc-grid" class="pdf-grid"><div class="sub" style="color:var(--muted)">กำลังโหลด...</div></div>
+    </section>
   </main>
 </div>
 
@@ -182,6 +188,20 @@
                     <span class="sub">ยังไม่เคยกดบันทึก PDF จากรายงานนี้</span>
                 </div>`;
         }).join('');
+    }
+
+    async function loadUploadedDocs(no) {
+        const grid = document.getElementById('doc-grid');
+        const docs = await listCourseDocs(no);   // จาก js/gas-api.js
+        if (docs === null) { grid.innerHTML = '<div class="sub" style="color:#c0364f">⚠️ โหลดรายการเอกสารไม่สำเร็จ</div>'; return; }
+        if (!docs.length) { grid.innerHTML = '<div class="sub" style="color:var(--muted)">ยังไม่มีเอกสารที่อัปโหลด</div>'; return; }
+        const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        grid.innerHTML = docs.map(d => `
+            <a href="${esc(d.url)}" target="_blank" rel="noopener" class="pdf-card has-file">
+                <div class="row-top"><span class="icon">📄</span><span class="chip ok">มีไฟล์</span></div>
+                <span class="title" style="word-break:break-word">${esc(d.name)}</span>
+                <span class="sub">อัปโหลดเมื่อ ${new Date(d.ts).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+            </a>`).join('');
     }
 
     function fmtSavedAt(iso) {
@@ -236,6 +256,7 @@
             try { sessionStorage.setItem('courseData', JSON.stringify({ ...cr, no })); } catch (e) {}
         }
         renderPdfCards(cr);
+        loadUploadedDocs(no);
         hideGsLoader();
         statusEl.textContent = 'เชื่อมต่อสำเร็จ';
     }
