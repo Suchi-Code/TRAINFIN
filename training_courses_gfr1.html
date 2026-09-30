@@ -117,8 +117,9 @@ body{font-family:'Prompt',sans-serif;background:var(--gray-50);color:var(--text)
 .run-table{width:100%;border-collapse:collapse;font-size:13px}
 .run-table thead th{background:var(--navy-mid);color:white;padding:8px 12px;font-weight:500;text-align:center;font-size:12px;white-space:nowrap}
 .run-table thead th.left{text-align:left}
-.run-table tbody tr:nth-child(even):not(.run-total){background:var(--gray-50)}
-.run-table tbody tr:hover:not(.run-total){background:var(--info-bg)}
+.run-table tbody tr.run-row:nth-child(4n+3){background:var(--gray-50)}
+.run-table tbody tr.run-row:hover{background:var(--info-bg)}
+.run-table tbody tr.doc-row td{padding:0;border-bottom:none}
 .run-table td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
 .run-table tbody tr:last-child td{border-bottom:none}
 .run-table .center{text-align:center}
@@ -506,25 +507,67 @@ function selectYear(y){
   document.getElementById('panel-'+y)?.classList.add('active');
 }
 
-/* --- Popup แจ้งว่าฟีเจอร์นี้อยู่ระหว่างปรับปรุง (ใช้กับปุ่มแนบไฟล์) --- */
-function showUnderConstructionPopup(){
-  let overlay = document.getElementById('under-construction-overlay');
-  if(overlay){ overlay.style.display = 'flex'; return; }
-  overlay = document.createElement('div');
-  overlay.id = 'under-construction-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(10,20,40,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
-  overlay.onclick = (e) => { if(e.target === overlay) overlay.style.display = 'none'; };
-  overlay.innerHTML = `
-    <div style="background:#fff;border-radius:14px;padding:30px 32px;max-width:340px;width:100%;
-      box-shadow:0 20px 60px rgba(0,0,0,.3);font-family:'Prompt',sans-serif;text-align:center;">
-      <div style="font-size:42px;margin-bottom:12px;">🚧</div>
-      <div style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:8px;">อยู่ระหว่างปรับปรุง</div>
-      <div style="font-size:13px;color:var(--text-soft);margin-bottom:22px;line-height:1.6;">ฟีเจอร์แนบไฟล์กำลังอยู่ระหว่างการพัฒนา<br>ขออภัยในความไม่สะดวก</div>
-      <button onclick="document.getElementById('under-construction-overlay').style.display='none'"
-        style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:9px 28px;
-        font-family:'Prompt',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">ตกลง</button>
-    </div>`;
-  document.body.appendChild(overlay);
+/* ============================================================
+   เอกสาร (PDF) ของแต่ละรุ่น — list/upload/รูปแบบ key อยู่ใน js/gas-api.js
+   (listCourseDocs / uploadCourseDocFile) ใช้ร่วมกับ 10_PDF-Overview.html
+   ============================================================ */
+const docEsc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function fmtDocSize(n){
+  if(!n) return '';
+  return n >= 1048576 ? (n/1048576).toFixed(1)+' MB' : Math.max(1,Math.round(n/1024))+' KB';
+}
+function renderDocPanel(no, docs){
+  const panel = document.getElementById('docpanel-'+no);
+  if(!panel) return;
+  const list = docs === null
+    ? '<div class="fp-cat-empty" style="color:var(--red)">⚠️ โหลดรายการเอกสารไม่สำเร็จ</div>'
+    : (docs.length
+        ? '<div class="fp-items">' + docs.map(d=>`
+            <div class="fp-item">
+              <div class="fp-item-thumb"><span class="pdf-icon">📄</span></div>
+              <div class="fp-item-info">
+                <div class="fp-item-name" title="${docEsc(d.name)}">${docEsc(d.name)}</div>
+                <div class="fp-item-meta">${new Date(d.ts).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'})}${d.size?' · '+fmtDocSize(d.size):''}</div>
+              </div>
+              <div class="fp-item-actions"><a class="fp-btn-view" href="${docEsc(d.url)}" target="_blank" rel="noopener">เปิดดู ↗</a></div>
+            </div>`).join('') + '</div>'
+        : '<div class="fp-cat-empty">ยังไม่มีเอกสาร</div>');
+  panel.querySelector('.doc-list').innerHTML = list;
+  const btn = document.getElementById('abtn-'+no);
+  if(btn && docs){
+    btn.textContent = '📎 เอกสาร' + (docs.length ? ` (${docs.length})` : '');
+    btn.classList.toggle('has-files', docs.length > 0);
+  }
+}
+async function refreshDocs(no){
+  const panel = document.getElementById('docpanel-'+no);
+  if(panel) panel.querySelector('.doc-list').innerHTML = '<div class="fp-cat-empty">⏳ กำลังโหลด...</div>';
+  const docs = await listCourseDocs(no);
+  renderDocPanel(no, docs);
+  if(panel) panel.dataset.loaded = '1';
+}
+async function toggleDocPanel(no){
+  const panel = document.getElementById('docpanel-'+no);
+  if(!panel) return;
+  const opening = !panel.classList.contains('open');
+  panel.classList.toggle('open', opening);
+  if(opening && !panel.dataset.loaded) await refreshDocs(no);
+}
+async function uploadCourseDoc(no, input){
+  const file = input.files && input.files[0];
+  input.value = '';
+  if(!file) return;
+  const statusEl = document.querySelector(`#docpanel-${no} .doc-status`);
+  const setStatus = (t, err) => { if(statusEl){ statusEl.textContent = t; statusEl.style.color = err ? 'var(--red)' : 'var(--text-soft)'; } };
+  const label = document.querySelector(`#docpanel-${no} .fp-cat-upload`);
+  if(label) label.style.pointerEvents = 'none';
+  setStatus('⏳ กำลังอัปโหลด...');
+  const res = await uploadCourseDocFile(no, file);   // จาก js/gas-api.js
+  if(label) label.style.pointerEvents = '';
+  if(!res.ok){ setStatus('❌ อัปโหลดไม่สำเร็จ: ' + res.error, true); return; }
+  setStatus('✅ อัปโหลดสำเร็จ');
+  await refreshDocs(no);
+  setTimeout(()=>{ const el = document.querySelector(`#docpanel-${no} .doc-status`); if(el && el.textContent.startsWith('✅')) el.textContent=''; }, 3000);
 }
 
 /* ============================================================
@@ -846,9 +889,10 @@ function buildGsCourseCard(group) {
   const head = runs[0]; // ใช้ข้อมูลแถวแรกเป็นตัวแทน header (ชื่อหลักสูตร/courseNum)
 
   // รวมช่วงวันที่ทั้งหมดของกลุ่ม เพื่อแสดงสรุปบน header (เผื่อหลายรุ่นคนละวัน)
-  const allDates = runs.map(r => normDate(r.dateStart)).filter(Boolean).sort();
-  const headerDateRange = allDates.length
-    ? thDateRange(allDates[0], allDates[allDates.length-1])
+  const allStarts = runs.map(r => normDate(r.dateStart)).filter(Boolean).sort();
+  const allEnds   = runs.map(r => normDate(r.dateEnd) || normDate(r.dateStart)).filter(Boolean).sort();
+  const headerDateRange = allStarts.length
+    ? thDateRange(allStarts[0], allEnds[allEnds.length-1] || allStarts[0])
     : '';
 
   const courseLabel = head.courseNum ? 'หลักสูตรที่ ' + head.courseNum : 'เลขที่ ' + head.no;
@@ -862,16 +906,36 @@ function buildGsCourseCard(group) {
     const dateDisplay = thDateRange(ds, de);
     const runid = cr.no;
     return `
-          <tr>
+          <tr class="run-row">
             <td class="center run-badge">${cr.batch || '—'}</td>
             <td class="mono">${runid}</td>
             <td class="center">${dateDisplay || '—'}</td>
             <td>${cr.location || '—'}</td>
             <td class="center">
-              <button class="attach-btn" id="abtn-${runid}" onclick="showUnderConstructionPopup()">📎 แนบไฟล์</button>
+              <button class="attach-btn" id="abtn-${runid}" onclick="toggleDocPanel('${runid}')">📎 เอกสาร</button>
             </td>
             <td class="center">
               <button class="detail-btn" onclick="goDetail('${runid}')">📊 รายละเอียด</button>
+            </td>
+          </tr>
+          <tr class="doc-row">
+            <td colspan="6">
+              <div class="file-panel" id="docpanel-${runid}">
+                <div class="fp-inner">
+                  <div class="fp-cat">
+                    <div class="fp-cat-head">
+                      <span class="fp-cat-label">📄 เอกสาร PDF — เลขที่หลักสูตร ${runid}</span>
+                      <label class="fp-cat-upload" data-permission="write">＋ อัปโหลด PDF
+                        <input type="file" accept="application/pdf,.pdf" onchange="uploadCourseDoc('${runid}', this)">
+                      </label>
+                    </div>
+                    <div class="fp-cat-body">
+                      <div class="doc-list"></div>
+                      <div class="doc-status" style="font-size:12px;margin-top:6px;min-height:16px"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </td>
           </tr>`;
   }).join('');
@@ -885,7 +949,6 @@ function buildGsCourseCard(group) {
       <div class="course-meta-row">
         <span class="course-tag">📋 ${runs.length} รุ่น</span>
         ${headerDateRange ? `<span class="course-tag">🗓 ${headerDateRange}</span>` : ''}
-        ${planIdVal ? `<span class="course-tag">🔗 แผน ${planIdVal}</span>` : ''}
       </div>
     </div>
     <div class="run-table-wrap">
@@ -896,7 +959,7 @@ function buildGsCourseCard(group) {
             <th style="width:130px">เลขที่หลักสูตร</th>
             <th style="width:180px">วันที่อบรม</th>
             <th class="left">สถานที่</th>
-            <th style="width:90px">ไฟล์แนบ</th>
+            <th style="width:100px">เอกสาร</th>
             <th style="width:100px">รายงาน</th>
           </tr>
         </thead>
@@ -904,7 +967,6 @@ function buildGsCourseCard(group) {
         </tbody>
       </table>
     </div>
-    ${runs.map(cr => `<div class="file-panel" id="files-${cr.no}"></div>`).join('')}
   </div>`;
 }
 
