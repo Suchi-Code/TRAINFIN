@@ -177,9 +177,71 @@
     }
   }
 
+
+  // ============================================================
+  //  เอกสาร PDF ที่ผู้ใช้อัปโหลดเอง (แยกจากรายงาน pdfNN ที่ระบบสร้าง)
+  //  เก็บใน bucket เดียวกัน โฟลเดอร์เดียวกับเลขที่หลักสูตร:
+  //    <no>/doc_<timestamp>__<base64url ของชื่อไฟล์เดิม>.pdf
+  //  (ชื่อไทยใช้เป็น key ใน Storage ตรงๆ ไม่ได้ จึงเข้ารหัสชื่อเดิมแล้วถอดตอนแสดง)
+  //  แก้รูปแบบ key ที่นี่ที่เดียว — training_courses_gfr1.html และ 10_PDF-Overview.html เรียกใช้ตัวนี้
+  //  swallow-return-null เหมือน gsApi: listCourseDocs คืน null ถ้าผิดพลาด
+  //  uploadCourseDocFile คืน { ok:true } หรือ { ok:false, error:'...' } (ไม่ throw)
+  // ============================================================
+  const DOC_MAX_MB = 20;
+
+  function docEncodeName(name) {
+    const bytes = new TextEncoder().encode(name);
+    let bin = ''; bytes.forEach(b => bin += String.fromCharCode(b));
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function docDecodeName(b64) {
+    try {
+      let t = b64.replace(/-/g, '+').replace(/_/g, '/');
+      while (t.length % 4) t += '=';
+      const bin = atob(t);
+      return new TextDecoder().decode(Uint8Array.from(bin, ch => ch.charCodeAt(0)));
+    } catch (e) { return 'เอกสาร'; }
+  }
+
+  // คืน [{ ts, name, url, size }] เรียงเก่า→ใหม่ หรือ null ถ้าโหลดไม่สำเร็จ
+  async function listCourseDocs(courseNo) {
+    const client = getStorageClient();
+    const folder = String(courseNo || '').trim();
+    if (!client || !folder) return null;
+    const bucket = CFG.PDF_BUCKET || 'pdfs';
+    const { data, error } = await client.storage.from(bucket).list(folder, { limit: 200 });
+    if (error) { console.error('listCourseDocs error:', error.message); return null; }
+    const out = [];
+    (data || []).forEach(f => {
+      const m = f.name.match(/^doc_(\d+)__([A-Za-z0-9_-]+)\.pdf$/);
+      if (!m) return;
+      const { data: pub } = client.storage.from(bucket).getPublicUrl(folder + '/' + f.name);
+      out.push({ ts: parseInt(m[1], 10), name: docDecodeName(m[2]), url: pub.publicUrl, size: f.metadata && f.metadata.size });
+    });
+    return out.sort((a, b) => a.ts - b.ts);
+  }
+
+  async function uploadCourseDocFile(courseNo, file) {
+    const client = getStorageClient();
+    const folder = String(courseNo || '').trim();
+    if (!client) return { ok: false, error: 'ระบบยังไม่พร้อมเชื่อมต่อ Supabase' };
+    if (!folder) return { ok: false, error: 'ไม่พบเลขที่หลักสูตร' };
+    if (!file) return { ok: false, error: 'ไม่พบไฟล์' };
+    if (!/\.pdf$/i.test(file.name) || (file.type && file.type !== 'application/pdf')) return { ok: false, error: 'อัปโหลดได้เฉพาะไฟล์ PDF' };
+    if (file.size > DOC_MAX_MB * 1048576) return { ok: false, error: 'ไฟล์ใหญ่เกิน ' + DOC_MAX_MB + ' MB' };
+    const baseName = file.name.replace(/\.pdf$/i, '').slice(0, 80);
+    const path = folder + '/doc_' + Date.now() + '__' + docEncodeName(baseName) + '.pdf';
+    const { error } = await client.storage.from(CFG.PDF_BUCKET || 'pdfs')
+      .upload(path, file, { contentType: 'application/pdf', cacheControl: '3600', upsert: false });
+    if (error) { console.error('uploadCourseDocFile error:', error.message); return { ok: false, error: error.message }; }
+    return { ok: true };
+  }
+
   window.gsApi          = gsApi;
   window.showGsLoader   = showGsLoader;
   window.hideGsLoader   = hideGsLoader;
   window.showGsStatus   = showGsStatus;
   window.saveReportPdf  = saveReportPdf;
+  window.listCourseDocs = listCourseDocs;
+  window.uploadCourseDocFile = uploadCourseDocFile;
 })();
