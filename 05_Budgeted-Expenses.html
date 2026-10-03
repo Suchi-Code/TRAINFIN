@@ -13,7 +13,8 @@
 <script src="js/date-th.js"></script>
 <script src="js/gas-api.js"></script>
 <script src="js/print-layout.js"></script>
-<script>checkAuth();</script>
+<script src="js/permissions.js"></script>
+<script>checkAuth(); lockPageIfReadOnly();</script>
 
 <style>
 :root{--blue:#1a56db;--blue-light:#e8f0fe;--blue-dark:#1241b0;--gray-50:#f7f8fa;--gray-200:#d1d5db;--text:#1f2937;--navy:#0f2744;--accent:#e8a020;}
@@ -391,7 +392,7 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
       <div class="sub-item-row" style="display:block;">
         <label><span class="num-venue">x</span>.<span class="sub-venue-meeting">1</span> ค่าเช่าห้องประชุม</label>
         <div id="venue_meeting_list" style="margin-top:8px;"></div>
-        <button type="button" class="btn-add-spk" onclick="addVenueMeetingDate()">＋ เพิ่มวันที่</button>
+        <button type="button" class="btn-add-spk" data-permission="write" onclick="addVenueMeetingDate()">＋ เพิ่มวันที่</button>
       </div>
     </div>
 
@@ -404,14 +405,14 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
         <div class="sub-item-row" style="display:block;">
           <label><span class="num-venue">x</span>.<span class="sub-venue-staff">2</span> ค่าเช่าห้องพัก ผู้เข้าอบรมและเจ้าหน้าที่</label>
           <div id="venue_staff_list" style="margin-top:8px;"></div>
-          <button type="button" class="btn-add-spk" onclick="addVenueLodgingDate('staff')">＋ เพิ่มวันที่</button>
+          <button type="button" class="btn-add-spk" data-permission="write" onclick="addVenueLodgingDate('staff')">＋ เพิ่มวันที่</button>
         </div>
       </div>
       <div id="wrap_venue_vip" style="display:none;">
         <div class="sub-item-row" style="display:block;">
           <label><span class="num-venue">x</span>.<span class="sub-venue-vip">3</span> ค่าเช่าห้องพัก ประธานในพิธี</label>
           <div id="venue_vip_list" style="margin-top:8px;"></div>
-          <button type="button" class="btn-add-spk" onclick="addVenueLodgingDate('vip')">＋ เพิ่มวันที่</button>
+          <button type="button" class="btn-add-spk" data-permission="write" onclick="addVenueLodgingDate('vip')">＋ เพิ่มวันที่</button>
         </div>
       </div>
 
@@ -513,7 +514,7 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
     <div id="sec_EXT" class="cond-sec show">
       <hr class="sec-divider">
       <div class="sub-items" id="spk_EXT_container"></div>
-      <button class="btn-add-spk" onclick="addSpk('EXT')">＋ เพิ่มวิทยากร</button>
+      <button class="btn-add-spk" data-permission="write" onclick="addSpk('EXT')">＋ เพิ่มวิทยากร</button>
     </div>
   </div><!-- /sec_ext_body -->
 </div><!-- /sec_ext_wrap -->
@@ -570,7 +571,7 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
 
 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-top:20px;padding:16px 20px;background:#fff;border:1px solid var(--gray-200);border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.05)">
   <div style="display:flex;gap:10px;flex-wrap:wrap">
-    <button class="btn-lg btn-save" onclick="saveBudgetSlot()">
+    <button class="btn-lg btn-save" data-permission="write" onclick="saveBudgetSlot()">
       <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
       บันทึกงบประมาณ
     </button>
@@ -593,7 +594,7 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
     <button class="btn-do-print" onclick="window.print()">🖨️ พิมพ์แบบฟอร์ม</button>
     <span style="font-size:11px;color:#6b7280;">แนะนำควรตั้งค่าหน้ากระดาษที่ ๘๕%</span>
   </div>
-  <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+  <div data-permission="write" style="display:flex;flex-direction:column;align-items:center;gap:3px;">
     <button onclick="savePdf05(this)" style="background:linear-gradient(135deg,#1a56db,#1241b0);color:#fff;border:none;border-radius:8px;padding:10px 28px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(26,86,219,.3);display:flex;align-items:center;gap:6px;transition:all .2s;">💾 บันทึก PDF</button>
     <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#6b7280;">
       <span>สเกลหน้ากระดาษ:</span>
@@ -759,6 +760,15 @@ function updateSectionNumberLabels(){
   return nums;
 }
 
+/* ── สิทธิ์: viewer/manager นอก whitelist ดูตัวอย่าง+พิมพ์ได้ แต่แก้/บันทึกไม่ได้ ──
+   ฟอร์มบางส่วนถูกสร้าง/เปิดใช้ใหม่ภายหลัง lockPageIfReadOnly() (onCondChange/renderSpk/renderVenue*)
+   จึงล็อก #form-view ซ้ำทุกครั้งหลัง render */
+function canEdit05(){ return typeof canEditThisPage==='function' ? canEditThisPage(getCurrentRole()) : true; }
+function reapplyReadOnly05(){
+  if(canEdit05()) return;
+  document.querySelectorAll('#form-view input, #form-view select, #form-view textarea').forEach(el=>{ el.disabled = true; });
+}
+
 function onCondChange(){
   const ext = hasExternal();
 
@@ -844,6 +854,7 @@ function onCondChange(){
   renderVenueLodging('vip');
   renderVenueLodging('staff');
   renderSpk('EXT');
+  reapplyReadOnly05();
 }
 
 /* ============================================================
@@ -879,6 +890,7 @@ function renderVenueMeeting(){
       <button type="button" class="btn-add-spk" style="margin-top:6px;" onclick="addVenueMeetingRate(${i})">＋ เพิ่มอัตรา</button>`;
     el.appendChild(d);
   });
+  reapplyReadOnly05();
 }
 
 function addVenueLodgingDate(key){
@@ -912,6 +924,7 @@ function renderVenueLodging(key){
       <button type="button" class="btn-add-spk" style="margin-top:6px;" onclick="addVenueLodgingRate('${key}',${i})">＋ เพิ่มอัตรา</button>`;
     el.appendChild(d);
   });
+  reapplyReadOnly05();
 }
 
 /* ============================================================
@@ -948,6 +961,7 @@ function renderSpk(cas){
       </div><div class="spk-fields">${fields}</div>`;
     el.appendChild(d);
   });
+  reapplyReadOnly05();
 }
 function addSpk(cas){
   spk[cas].push({name:'',amt:0,rate:0,hours:0,hotelRate:0,hotelRooms:1,hotelNights:0,travel:0,travelDays:1});
@@ -2026,6 +2040,7 @@ function showSaveToast(msg) {
 }
 
 async function saveBudgetSlot() {
+  if (!canEdit05()) { showSaveToast('🔒 บัญชีนี้ไม่มีสิทธิ์บันทึกงบประมาณ'); return; }
   const course = (document.getElementById('f_courseName')||{}).value || '';
   const batch  = (document.getElementById('f_batch')||{}).value || '';
   const no     = (document.getElementById('f_courseNo')||{}).value || '';
@@ -2172,6 +2187,7 @@ async function saveBudgetSlot() {
 // กลับ Sheet ให้อัตโนมัติในฟังก์ชันเดียว — ดู savePdf05() ด้านล่าง)
 
 async function savePdf05(btn){
+  if (!canEdit05()) { alert('🔒 บัญชีนี้ไม่มีสิทธิ์บันทึก PDF (พิมพ์ได้อย่างเดียว)'); return; }
   const el = document.getElementById('report-container-05');
   if(!el){ alert('ไม่พบข้อมูลรายงาน กรุณาสร้างรายงานก่อน'); return; }
 
@@ -2323,6 +2339,7 @@ const res = await fetch(APP_CONFIG.PDF_SERVER_URL, {
 }
 
 function confirmBack05() {
+  if (!canEdit05()) { location.href='01_Main-Reports.html'; return; }
   const pop = document.createElement('div');
   pop.id = 'back-confirm-overlay';
   pop.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;';
@@ -2335,7 +2352,7 @@ function confirmBack05() {
         คุณต้องการบันทึกข้อมูลก่อนกลับไปหน้าหลักหรือไม่?
       </div>
       <div style="display:flex;gap:10px;justify-content:center;">
-        <button onclick="document.getElementById('back-confirm-overlay').remove();saveBudgetSlot();"
+        <button data-permission="write" onclick="document.getElementById('back-confirm-overlay').remove();saveBudgetSlot();"
           style="background:linear-gradient(135deg,#1a56db,#1241b0);color:#fff;border:none;border-radius:8px;
           padding:10px 28px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;
           box-shadow:0 3px 12px rgba(26,86,219,.3);">💾 บันทึก</button>
