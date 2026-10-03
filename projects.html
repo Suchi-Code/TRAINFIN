@@ -110,6 +110,14 @@ body{font-family:'Prompt',sans-serif;background:var(--gray-50);color:var(--text)
 .status-progress{background:var(--info-bg);color:var(--blue)}
 .status-done{background:var(--green-bg);color:var(--green)}
 .status-pending{background:var(--amber-bg);color:var(--amber)}
+.pager{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:0 20px 18px}
+.pager-info{font-size:12px;color:var(--text-soft)}
+.pager-btns{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.pager-btns button{min-width:34px;height:34px;padding:0 10px;border:1px solid var(--border);background:#fff;color:#384b5a;border-radius:8px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;transition:.15s}
+.pager-btns button:hover:not(:disabled){border-color:#b9cddb;background:#f2f6f8}
+.pager-btns button.active{background:var(--blue);border-color:var(--blue);color:#fff}
+.pager-btns button:disabled{opacity:.4;cursor:not-allowed}
+.pager-btns .dots{color:var(--gray-400);padding:0 2px}
 .empty-note{grid-column:1/-1;text-align:center;padding:40px;color:var(--text-soft);font-size:13px}
 
 /* ===== Empty state (no project selected) ===== */
@@ -216,9 +224,10 @@ table.brk tbody tr.grand td{background:var(--gray-100);font-weight:700;color:var
           <span class="count-chip" id="projCount">— รายการ</span>
         </div>
         <div class="search-wrap">
-          <input type="text" id="projSearch" class="search-input" placeholder="ค้นหาชื่อหลักสูตร / รุ่น / เลขที่หลักสูตร..." oninput="renderProjectList()">
+          <input type="text" id="projSearch" class="search-input" placeholder="ค้นหาชื่อหลักสูตร / รุ่น / เลขที่หลักสูตร..." oninput="onProjSearch()">
         </div>
         <div class="project-grid" id="projectGrid"><div class="empty-note">กำลังโหลด...</div></div>
+        <div class="pager" id="projPager" style="display:none"></div>
       </section>
 
       <!-- ===== Detail (shown after a project is selected) ===== -->
@@ -289,6 +298,8 @@ let currentYear = '2570';
 let allCourses = [], budgetByNo = {}, actual06ByNo = {}, actual07ByNo = {};
 let currentProjects = [];   // filtered+sorted list for the active year
 let selectedNo = null;
+let projPage = 1;
+const PROJ_PAGE_SIZE = 12;
 let barChartInstance = null, donutChartInstance = null;
 
 const fmt  = n => Math.round(n||0).toLocaleString('th-TH');
@@ -330,7 +341,10 @@ const CATS = [
   // ⚠️ budget.secInternal = เฉพาะยอดเดินทาง (เบี้ยเลี้ยง+ที่พัก+พาหนะ = in1+in2+in3 จากไฟล์ 05)
   // ค่าสมนาคุณที่จ่ายผ่าน Payroll เก็บแยกคอลัมน์ budget.in_payroll เสมอ — ต้องรวมทั้งสองเข้าด้วยกัน
   // ให้ตรงกับฝั่งใช้จริง (a_in_1+a_in_2+a_in_3+a_in_payroll ก็แยกคอลัมน์แบบเดียวกันและรวมครบอยู่แล้ว)
-  { key:'internal',    label:'ก. ค่าสมนาคุณวิทยากรภายใน',                         b:b=>numify(b.secInternal)+numify(b.in_payroll), a:(a)=>a ? numify(a.a_in_1)+numify(a.a_in_2)+numify(a.a_in_3)+numify(a.a_in_payroll) : 0 },
+  // ⚠️ budget.secInternal = เฉพาะยอดเดินทาง (เบี้ยเลี้ยง+ที่พัก+พาหนะ) ส่วน Payroll เก็บแยกที่ budget.in_payroll
+  // — แยกเป็น 2 หมวดตามไฟล์ 05 (ฝั่งใช้จริง a_in_1..3 กับ a_in_payroll ก็แยกคอลัมน์อยู่แล้ว)
+  { key:'internal',    label:'ก. ค่าสมนาคุณวิทยากรภายใน (เบี้ยเลี้ยง/ค่าที่พัก/ยานพาหนะ)', short:'สมนาคุณวิทยากรภายใน (เดินทาง)', b:b=>numify(b.secInternal), a:(a)=>a ? numify(a.a_in_1)+numify(a.a_in_2)+numify(a.a_in_3) : 0 },
+  { key:'internalPay', label:'ก. ค่าสมนาคุณวิทยากรภายใน (จ่ายผ่าน Payroll)',               short:'สมนาคุณวิทยากรภายใน (Payroll)', b:b=>numify(b.in_payroll), a:(a)=>numify(a && a.a_in_payroll) },
   { key:'pres',        label:'ก. ค่าเดินทางประธานในพิธี',                         b:b=>numify(b.secPres),   a:(a)=>a ? numify(a.a_pres_1)+numify(a.a_pres_2)+numify(a.a_pres_3) : 0 },
   { key:'kor',         label:'ข. ค่าเดินทางผู้เข้ารับการฝึกอบรม',              b:b=>numify(b.bb1)+numify(b.bb2)+numify(b.bb3), a:(a)=>a ? numify(a.a_b1)+numify(a.a_b2)+numify(a.a_b3) : 0 },
 ];
@@ -396,8 +410,9 @@ function buildProjectsForYear(year){
     if(!status) return; // ยังไม่เริ่ม — คัดออก
     list.push({ course: cr, status });
   });
-  list.sort((x,y)=> String(y.course.dateStart||'').localeCompare(String(x.course.dateStart||'')));
+  list.sort((x,y)=> DateTH.normalize(y.course.dateStart).localeCompare(DateTH.normalize(x.course.dateStart))); // ล่าสุดขึ้นก่อน
   currentProjects = list;
+  projPage = 1;
   renderProjectList();
 }
 
@@ -414,13 +429,21 @@ function renderProjectList(){
   });
 
   document.getElementById('projCount').textContent = filtered.length + ' รายการ';
+  const pager = document.getElementById('projPager');
 
   if(!filtered.length){
     grid.innerHTML = '<div class="empty-note">ไม่พบหลักสูตรที่เริ่มจัดอบรมแล้วในปีงบนี้ (หรือไม่ตรงกับคำค้นหา)</div>';
+    pager.style.display = 'none';
     return;
   }
 
-  grid.innerHTML = filtered.map(p=>{
+  const totalPages = Math.ceil(filtered.length / PROJ_PAGE_SIZE);
+  projPage = Math.min(Math.max(1, projPage), totalPages);
+  const startIdx = (projPage-1)*PROJ_PAGE_SIZE;
+  const pageItems = filtered.slice(startIdx, startIdx+PROJ_PAGE_SIZE);
+  renderPager(filtered.length, totalPages, startIdx, pageItems.length);
+
+  grid.innerHTML = pageItems.map(p=>{
     const cr = p.course;
     const b = budgetByNo[cr.no];
     const dateTxt = DateTH.formatRange(cr.dateStart, cr.dateEnd, {month:'short'});
@@ -441,6 +464,32 @@ function renderProjectList(){
       </div>
     </button>`;
   }).join('');
+}
+
+function onProjSearch(){ projPage = 1; renderProjectList(); }
+function gotoProjPage(n){
+  projPage = n;
+  renderProjectList();
+  document.getElementById('projectGrid').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+function renderPager(total, totalPages, startIdx, shown){
+  const el = document.getElementById('projPager');
+  if(totalPages <= 1){ el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  const pages = [];
+  for(let i=1;i<=totalPages;i++){
+    if(i===1 || i===totalPages || Math.abs(i-projPage)<=1) pages.push(i);
+    else if(pages[pages.length-1] !== '…') pages.push('…');
+  }
+  const btns = pages.map(n => n==='…'
+    ? '<span class="dots">…</span>'
+    : `<button type="button" class="${n===projPage?'active':''}" onclick="gotoProjPage(${n})">${n}</button>`).join('');
+  el.innerHTML = `<div class="pager-info">แสดง ${startIdx+1}–${startIdx+shown} จาก ${total} รายการ</div>
+    <div class="pager-btns">
+      <button type="button" ${projPage===1?'disabled':''} onclick="gotoProjPage(${projPage-1})">‹ ก่อนหน้า</button>
+      ${btns}
+      <button type="button" ${projPage===totalPages?'disabled':''} onclick="gotoProjPage(${projPage+1})">ถัดไป ›</button>
+    </div>`;
 }
 
 /* ============================================================
@@ -582,7 +631,7 @@ function renderDetailCharts(b, a7){
   if(typeof Chart === 'undefined') return;
   try{ if(typeof ChartDataLabels !== 'undefined') Chart.register(ChartDataLabels); }catch(e){}
 
-  const active = CATS.map(c=>({ label:c.label.replace(/^[กข]\.\s*/,''), b:c.b(b), a:c.a(a7) }))
+  const active = CATS.map(c=>({ label:c.short||c.label.replace(/^[กข]\.\s*/,''), b:c.b(b), a:c.a(a7) }))
                       .filter(c=> c.b>0 || c.a>0);
 
   const dlBase = { anchor:'end', align:'top', offset:2, color:'#4a6072', font:{family:'Prompt',weight:'600',size:9}, formatter:v=>v?fmt(v):'' };
