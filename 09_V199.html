@@ -14,7 +14,8 @@
 <script src="js/gas-api.js"></script>
 <script src="js/schema.js"></script>
 <script src="js/print-layout.js"></script>
-<script>checkAuth();</script>
+<script src="js/permissions.js"></script>
+<script>checkAuth(); lockPageIfReadOnly();</script>
 <style>
 /* ============================================================
    RESET & BASE
@@ -122,7 +123,7 @@ body{font-family:'Sarabun',sans-serif;background:#f3f4f6;color:#1e2533;font-size
     <div style="display:flex;align-items:center;gap:8px">
       <a class="btn-back" href="01_Main-Reports.html">← ย้อนกลับ</a>
       <button class="btn-print-hdr" onclick="window.print()">🖨 พิมพ์แบบฟอร์ม</button>
-      <button class="btn-save-pdf" onclick="savePdf(this)">💾 บันทึก PDF</button>
+      <button class="btn-save-pdf" data-permission="write" onclick="savePdf(this)">💾 บันทึก PDF</button>
     </div>
   </div>
 </header>
@@ -660,6 +661,10 @@ function renderDocDisplay(){
   const docMetaEl  = document.querySelector('#doc-display .doc-meta');
   if (docTitleEl) convertToThaiNumerals(docTitleEl);
   if (docMetaEl)  convertToThaiNumerals(docMetaEl);
+  // สิทธิ์: viewer/manager นอก whitelist แก้หัวเอกสารไม่ได้ (พิมพ์ได้อย่างเดียว)
+  if(typeof canEditThisPage==='function' && !canEditThisPage(getCurrentRole())){
+    document.querySelectorAll('#doc-display [contenteditable]').forEach(el=>{ el.removeAttribute('contenteditable'); el.style.cursor='default'; });
+  }
 }
 
 /* ============================================================
@@ -676,6 +681,7 @@ document.addEventListener('DOMContentLoaded', function(){
    ล่าสุดกลับ Sheet คอลัมน์ pdf09/pdf09SavedAt ให้อัตโนมัติในตัว — แทนที่ html2canvas+jsPDF เดิม
    ที่ดาวน์โหลดลงเครื่องอย่างเดียว ไม่เคยมีการอัปโหลดขึ้น Supabase หรือเขียนลิงก์กลับ Sheet เลย */
 async function savePdf(btn){
+  if(typeof canEditThisPage==='function' && !canEditThisPage(getCurrentRole())){ alert('🔒 บัญชีนี้ไม่มีสิทธิ์บันทึก PDF (พิมพ์ได้อย่างเดียว)'); return; }
   const el = document.getElementById('doc-display');
   if(!el || !el.innerHTML.trim()){ alert('ไม่พบข้อมูลเอกสาร'); return; }
 
