@@ -207,7 +207,8 @@ table.rpt tbody tr:last-child td{border-bottom:none}
 <script src="js/gas-api.js"></script>
 <script src="js/schema.js"></script>
 <script src="js/print-layout.js"></script>
-<script>checkAuth();</script>
+<script src="js/permissions.js"></script>
+<script>checkAuth(); lockPageIfReadOnly();</script>
 </head>
 <body>
 
@@ -266,11 +267,11 @@ table.rpt tbody tr:last-child td{border-bottom:none}
     <div class="sum-section-box">
       <div class="sum-section-head">
         <span class="sum-section-label">รายการใบเสร็จ / ใบสำคัญรับเงิน</span>
-        <button class="sum-add-btn" onclick="sumAddRow()">+ เพิ่มรายการ</button>
+        <button class="sum-add-btn" data-permission="write" onclick="sumAddRow()">+ เพิ่มรายการ</button>
       </div>
       <div id="sm_rows"></div>
       <div style="padding:10px 18px;border-top:1px solid var(--border)">
-        <button class="sum-add-btn" onclick="sumAddRow()" style="width:100%">+ เพิ่มรายการ</button>
+        <button class="sum-add-btn" data-permission="write" onclick="sumAddRow()" style="width:100%">+ เพิ่มรายการ</button>
       </div>
     </div>
 
@@ -284,7 +285,7 @@ table.rpt tbody tr:last-child td{border-bottom:none}
 
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-top:20px;padding:16px 20px;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.05)">
       <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <button class="btn-lg btn-save" id="btn-save-draft" onclick="sumSave()">
+        <button class="btn-lg btn-save" id="btn-save-draft" data-permission="write" onclick="sumSave()">
           <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           บันทึกแบบร่าง
         </button>
@@ -308,7 +309,7 @@ table.rpt tbody tr:last-child td{border-bottom:none}
         <button class="btn-do-print" onclick="window.print()">🖨️ พิมพ์แบบฟอร์ม</button>
         <span style="font-size:11px;color:#9ca3af;">ควรตั้งค่าหน้ากระดาษที่ 100%</span>
       </div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+      <div data-permission="write" style="display:flex;flex-direction:column;align-items:center;gap:4px;">
         <button onclick="savePdf06(this)" style="background:linear-gradient(135deg,#1a56db,#1241b0);color:#fff;border:none;border-radius:8px;padding:10px 28px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(26,86,219,.3);display:flex;align-items:center;gap:6px;transition:all .2s;">💾 บันทึก PDF</button>
         <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#6b7280;">
           <label for="pdf_scale_06">สเกลหน้ากระดาษ:</label>
@@ -630,6 +631,16 @@ function shGetDateStr(){
   return sumFmtDateRange(s, e);
 }
 
+/* ── สิทธิ์: viewer/manager นอก whitelist ดูตัวอย่าง+พิมพ์ได้ แต่แก้/บันทึกไม่ได้ ──
+   การ์ดรายการ (sumAddRow), dropdown หมวด (sumSecChange ปลด disabled ของ doc) และหัวรายงาน
+   contenteditable ถูกสร้าง/เปิดใหม่หลัง lockPageIfReadOnly() จึงล็อกซ้ำหลังทุกจุดดังกล่าว */
+function canEdit06(){ return typeof canEditThisPage==='function' ? canEditThisPage(getCurrentRole()) : true; }
+function reapplyReadOnly06(){
+  if(canEdit06()) return;
+  document.querySelectorAll('#panel-summary input, #panel-summary select, #panel-summary textarea, .shared-meta-box input').forEach(el=>{ el.disabled = true; });
+  document.querySelectorAll('#sm_doc [contenteditable]').forEach(el=>{ el.removeAttribute('contenteditable'); el.style.cursor='default'; });
+}
+
 function sumAddRow(){
   smCnt++;
   const id = 'smr'+smCnt;
@@ -649,7 +660,7 @@ function sumAddRow(){
     <div class="sum-row-top">
       <div class="sum-row-num">${smCnt}</div>
       <div class="sum-row-title">รายการที่ ${smCnt}</div>
-      <div class="sum-order-btns">
+      <div class="sum-order-btns" data-permission="write">
         <button type="button" class="sum-order-btn" id="${id}_up" onclick="sumMoveRow('${id}',-1)" title="เลื่อนขึ้น">▲</button>
         <button type="button" class="sum-order-btn" id="${id}_down" onclick="sumMoveRow('${id}',1)" title="เลื่อนลง">▼</button>
       </div>
@@ -662,11 +673,11 @@ function sumAddRow(){
         <input type="checkbox" id="${id}_w119">
         <span>ค่าใช้จ่ายตาม ว.119</span>
       </label>
-      <label class="sum-remember-label" id="${id}_rememberlabel">
+      <label class="sum-remember-label" id="${id}_rememberlabel" data-permission="write">
         <input type="checkbox" id="${id}_remember" onchange="sumToggleRemember('${id}')">
         <span>💾 จำรายการนี้ไว้</span>
       </label>
-      <button class="sum-del-btn" onclick="sumDelRow('${id}')">ลบ</button>
+      <button class="sum-del-btn" data-permission="write" onclick="sumDelRow('${id}')">ลบ</button>
     </div>
     <div id="${id}_remember_opts" class="sum-remember-opts" style="display:none">
       <label class="sum-remember-opt-check">
@@ -696,7 +707,7 @@ function sumAddRow(){
       <div class="sum-inp sum-wide" id="${id}_name_wrap">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
           <label style="margin-bottom:0;">ชื่อผู้ขาย / บุคคล</label>
-          <button type="button" class="sum-pick-btn" onclick="openVendorPicker('${id}')">📋 เลือกจากที่เคยบันทึก</button>
+          <button type="button" class="sum-pick-btn" data-permission="write" onclick="openVendorPicker('${id}')">📋 เลือกจากที่เคยบันทึก</button>
         </div>
         <input type="text" id="${id}_name" placeholder="เช่น บริษัท ซีพี แอ็กซ์ตร้า จำกัด (มหาชน)"></div>
       <div class="sum-inp sum-wide" id="${id}_staff_wrap" style="display:none"><label>เจ้าหน้าที่ กฝภ.1</label>
@@ -783,6 +794,7 @@ function sumAddRow(){
   sumSecChange(id);
   sumRenumber();
   sumCalc();
+  reapplyReadOnly06();
 }
 
 function sumSecChange(id){
@@ -824,6 +836,7 @@ function sumSecChange(id){
   }
   sumCalc();
   sumValidateOrder();
+  reapplyReadOnly06();
 }
 
 
@@ -881,6 +894,7 @@ function sumSubChange(id){
   if(sec === SchemaTH.SEC.FOOD) apply3_12Logic(ps, id, sub);
   sumCalc();
   sumValidateOrder();
+  reapplyReadOnly06();
 }
 
 /* ─────────────────────────────────────────────────────
@@ -1068,6 +1082,7 @@ function sumRenumber(){
     if(downBtn) downBtn.disabled = (i === cards.length - 1);
   });
   sumValidateOrder();
+  reapplyReadOnly06();
 }
 
 /* ============================================================
@@ -1379,6 +1394,7 @@ function sumCollectState(){
 }
 
 async function sumSave(){
+  if (!canEdit06()) { showGsStatus('🔒 บัญชีนี้ไม่มีสิทธิ์บันทึกข้อมูล', 'warn'); return; }
   const state = sumCollectState();
   const runno  = shGet('sm_runno') || shGet('sh_runno') || '';
   const title  = shGet('sm_title') || shGet('sm_run') || '(ไม่มีชื่อ)';
@@ -2076,10 +2092,12 @@ function sumBuildDoc(){
     html += renderPageHtml(c.start, c.end, p, totalPages, p === totalPages - 1);
   });
   ps.querySelector('#sm_doc').innerHTML = html;
+  reapplyReadOnly06();
 }
 
 /* ── CONFIRM BACK (3.2) ── */
 function confirmBack06() {
+  if (!canEdit06()) { location.href='01_Main-Reports.html'; return; }
   const pop = document.createElement('div');
   pop.id = 'back-confirm-overlay-06';
   pop.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;';
@@ -2091,7 +2109,7 @@ function confirmBack06() {
       <div style="font-size:13px;color:#6b7280;margin-bottom:22px;line-height:1.6;">
         </div>
       <div style="display:flex;gap:10px;justify-content:center;">
-        <button onclick="document.getElementById('back-confirm-overlay-06').remove();sumSave();"
+        <button data-permission="write" onclick="document.getElementById('back-confirm-overlay-06').remove();sumSave();"
           style="background:linear-gradient(135deg,#1a56db,#1241b0);color:#fff;border:none;border-radius:8px;
           padding:10px 28px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;
           box-shadow:0 3px 12px rgba(26,86,219,.3);">💾 บันทึก</button>
@@ -2113,6 +2131,7 @@ function confirmBack06() {
    ⚠️ ไฟล์ PDF เก่าที่เคยอัปโหลดไว้ในโครงสร้าง path เดิมจะไม่ถูกย้าย/ลบ แต่จะไม่มีลิงก์ผูกกับ Sheet
    เหมือนที่ผ่านมา (เพราะ Sheet ไม่เคยมีลิงก์เก่าอยู่แล้ว) */
 async function savePdf06(btn){
+  if (!canEdit06()) { alert('🔒 บัญชีนี้ไม่มีสิทธิ์บันทึก PDF (พิมพ์ได้อย่างเดียว)'); return; }
   const el = document.getElementById('sm_doc');
   if(!el || !el.innerHTML.trim()){ alert('กรุณาดูสรุปเอกสารก่อน'); return; }
 
