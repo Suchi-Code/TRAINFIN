@@ -108,6 +108,8 @@ td { font-size:15px; padding:2px 4px; }
 .btn-print-hdr:hover{background:#f5c842;}
 .btn-save-pdf{background:#1a7a4a;color:#fff;border:none;border-radius:6px;padding:7px 20px;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit;}
 .btn-save-pdf:hover{background:#22a05e;}
+/* ── โหมดดูอย่างเดียว: ช่องที่ถูก disabled ต้องยังพิมพ์เป็นสีดำปกติ ── */
+body.readonly-mode #form-wrap input:disabled{color:#000!important;-webkit-text-fill-color:#000!important;opacity:1!important}
 /* ── Print Logo ── */
 .pwa-print-logo{display:none;}
 @media print{
@@ -125,7 +127,8 @@ td { font-size:15px; padding:2px 4px; }
 <script src="js/auth.js"></script>
 <script src="js/date-th.js"></script>
 <script src="js/gas-api.js"></script>
-<script>checkAuth();</script>
+<script src="js/permissions.js"></script>
+<script>checkAuth(); lockPageIfReadOnly();</script>
 <!-- html2canvas/jsPDF ถูกลบออก — สร้าง PDF ผ่าน Puppeteer server ฝั่ง backend แทน (ดู savePdf08()) -->
 </head>
 <body>
@@ -148,7 +151,7 @@ td { font-size:15px; padding:2px 4px; }
     <div style="display:flex;align-items:center;gap:8px;">
       <a class="btn-back" href="01_Main-Reports.html">← ย้อนกลับ</a>
       <button class="btn-print-hdr" onclick="window.print()">🖨 พิมพ์แบบฟอร์ม</button>
-      <button class="btn-save-pdf" onclick="savePdf08(this)">💾 บันทึก PDF</button>
+      <button class="btn-save-pdf" data-permission="write" onclick="savePdf08(this)">💾 บันทึก PDF</button>
     </div>
   </div>
 </header>
@@ -777,6 +780,51 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
+/* ── เติมรหัสพนักงาน + ชื่อผู้ขอหักล้าง จากผู้ใช้ที่ login อัตโนมัติ (แก้ไขทับได้ — เติมเฉพาะช่องที่ยังว่าง) ──
+   ลำดับ: 1) sessionStorage('currentUser') ที่ตั้งไว้ตอน login (เร็วสุด)
+          2) Supabase profiles (emp_id, full_name) ของ user ปัจจุบัน ถ้าใน session ยังไม่ครบ */
+let _userProfileClient08 = null;
+function getUserProfileClient08(){
+  if (_userProfileClient08) return _userProfileClient08;
+  const C = window.APP_CONFIG || {};
+  if (!window.supabase || !window.supabase.createClient) return null;
+  _userProfileClient08 = window.supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY);
+  return _userProfileClient08;
+}
+async function autofillUser08(){
+  const idEl = document.getElementById('f_empid');
+  const nameEl = document.getElementById('f_name');
+  if (!idEl || !nameEl) return;
+
+  let empId = '', name = '';
+  try {
+    const cu = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+    if (cu) {
+      empId = cu.empId || '';
+      // index.html ใช้รหัสพนักงานแทนชื่อถ้าไม่พบชื่อใน profiles — ไม่นับเป็นชื่อจริง
+      name = (cu.name && cu.name !== cu.empId) ? cu.name : '';
+    }
+  } catch(e) {}
+
+  if (!empId || !name) {
+    const client = getUserProfileClient08();
+    if (client) {
+      try {
+        const { data: { user } } = await client.auth.getUser();
+        if (user) {
+          const { data: p } = await client.from('profiles').select('emp_id, full_name').eq('id', user.id).single();
+          if (p) { empId = empId || p.emp_id || ''; name = name || p.full_name || ''; }
+        }
+      } catch(e) { console.warn('[08] autofillUser08 error:', e); }
+    }
+  }
+
+  if (empId && !idEl.value.trim())   idEl.value = empId;
+  if (name  && !nameEl.value.trim()) nameEl.value = name;
+  if (typeof sync === 'function') sync();
+}
+document.addEventListener('DOMContentLoaded', autofillUser08);
+
 /* ฟังก์ชันช่วยแปลงฟอร์แมตวันที่ ISO (YYYY-MM-DD) เป็นวันที่ไทย
    — logic ย้ายไปรวมที่ js/date-th.js แล้ว (DateTH.format ชดเชย timezone +7 ให้ด้วย)
    คงชื่อฟังก์ชันเดิมไว้เป็น wrapper บางๆ (ปัจจุบันไม่มีจุดเรียกใช้ในไฟล์นี้ แต่กันไว้เผื่ออนาคต) */
@@ -865,6 +913,7 @@ async function loadFromGSheet(no) {
    ⚠️ ของเดิมมีบั๊ก courseNo ว่างเปล่าเสมอ (window.__courseNo08 ไม่เคยถูก assign มาก่อน — แก้แล้ว
    ในจุด DOMContentLoaded ด้านบน) ทำให้ไม่เคยเขียนลิงก์กลับ Sheet สำเร็จเลยตั้งแต่โค้ดชุดนี้ถูกเขียน */
 async function savePdf08(btn){
+  if(typeof canEditThisPage==='function' && !canEditThisPage(getCurrentRole())){ alert('🔒 บัญชีนี้ไม่มีสิทธิ์บันทึก PDF (พิมพ์ได้อย่างเดียว)'); return; }
   const el = document.getElementById('form-wrap');
   if(!el){ alert('ไม่พบแบบฟอร์ม'); return; }
 
