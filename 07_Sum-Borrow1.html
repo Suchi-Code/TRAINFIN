@@ -219,7 +219,8 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:1px solid #000;verti
 <script src="js/gas-api.js"></script>
 <script src="js/schema.js"></script>
 <script src="js/print-layout.js"></script>
-<script>checkAuth();</script>
+<script src="js/permissions.js"></script>
+<script>checkAuth(); lockPageIfReadOnly();</script>
 </head>
 <body>
 
@@ -512,7 +513,7 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:1px solid #000;verti
 <!-- BUTTON ROW — เฉพาะ บันทึก + ดูรายงาน + พิมพ์ -->
 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-top:20px;padding:16px 20px;background:#fff;border:1px solid var(--gray-200);border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.05)">
   <div style="display:flex;gap:10px;flex-wrap:wrap">
-    <button class="btn-lg btn-save" onclick="saveActual07()">
+    <button class="btn-lg btn-save" data-permission="write" onclick="saveActual07()">
       <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
       บันทึกค่าใช้จริง
     </button>
@@ -542,7 +543,7 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:1px solid #000;verti
       <button class="btn-do-print" onclick="window.print()">🖨️ พิมพ์แบบฟอร์ม</button>
       <span style="font-size:11px;color:#9ca3af;">ควรตั้งค่าหน้ากระดาษที่ 75%</span>
     </div>
-    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+    <div data-permission="write" style="display:flex;flex-direction:column;align-items:center;gap:4px;">
       <button onclick="savePdf07(this)" style="background:linear-gradient(135deg,#1a56db,#1241b0);color:#fff;border:none;border-radius:8px;padding:10px 28px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(26,86,219,.3);display:flex;align-items:center;gap:6px;transition:all .2s;">💾 บันทึก PDF</button>
       <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#6b7280;">
         <label for="pdf_scale_07">สเกลหน้ากระดาษ:</label>
@@ -725,6 +726,14 @@ function applySectionVisibility07(){
 }
 
 /* ── RENDER SPEAKER SECTION (ล้อจาก 05 — budget readonly, actual editable) ── */
+/* ── สิทธิ์: viewer/manager นอก whitelist ดูตัวอย่าง+พิมพ์ได้ แต่แก้/บันทึกไม่ได้ ──
+   การ์ดวิทยากรและรายการค่าเช่าสถานที่ถูกสร้างใหม่หลัง lockPageIfReadOnly() จึงล็อกซ้ำหลัง render */
+function canEdit07(){ return typeof canEditThisPage==='function' ? canEditThisPage(getCurrentRole()) : true; }
+function reapplyReadOnly07(){
+  if(canEdit07()) return;
+  document.querySelectorAll('#form-view input, #form-view select, #form-view textarea').forEach(el=>{ el.disabled = true; });
+}
+
 function renderSpk07(){
   const el = document.getElementById('spk_EXT_container');
   if(!el) return;
@@ -775,6 +784,7 @@ function renderSpk07(){
   if(list.length===0){
     el.innerHTML = '<div class="hint-row">— ไม่มีวิทยากรภายนอกในงบประมาณ —</div>';
   }
+  reapplyReadOnly07();
 }
 
 function onCondChange07(){
@@ -877,6 +887,7 @@ function renderVenueSubItems07(){
         <span class="actual-label">ใช้จริง (บาท)</span><input type="number" id="a_venue_vip" value="0" step="0.01" class="actual-input">
       </div></div>`;
   }
+  reapplyReadOnly07();
 }
 
 function applySlot07(slot){
@@ -1175,6 +1186,7 @@ function computeActual07Grand(){
 }
 
 async function saveActual07(){
+  if(!canEdit07()){ showToast07('🔒 บัญชีนี้ไม่มีสิทธิ์บันทึกค่าใช้จ่ายจริง'); return; }
   const course = document.getElementById('f_courseName')?.value||'';
   const batch  = document.getElementById('f_batch')?.value||'';
   const no     = document.getElementById('f_courseNo')?.value||'';
@@ -1959,6 +1971,7 @@ function showBackConfirmPopup(){
 
 /* ── CONFIRM BACK ── */
 function confirmBack07() {
+  if(!canEdit07()){ location.href='01_Main-Reports.html'; return; }
   const pop = document.createElement('div');
   pop.id = 'back-confirm-07';
   pop.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;';
@@ -1970,7 +1983,7 @@ function confirmBack07() {
       <div style="font-size:13px;color:#6b7280;margin-bottom:22px;line-height:1.6;">
         </div>
       <div style="display:flex;gap:10px;justify-content:center;">
-        <button onclick="saveActual07();document.getElementById('back-confirm-07').remove();"
+        <button data-permission="write" onclick="saveActual07();document.getElementById('back-confirm-07').remove();"
           style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:8px;
           padding:10px 28px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;
           box-shadow:0 3px 12px rgba(16,185,129,.3);">💾 บันทึก</button>
@@ -1993,6 +2006,7 @@ function confirmBack07() {
    ซ้ำเองอีกต่อไป
 ============================================================ */
 async function savePdf07(btn){
+  if(!canEdit07()){ alert('🔒 บัญชีนี้ไม่มีสิทธิ์บันทึก PDF (พิมพ์ได้อย่างเดียว)'); return; }
   const el = document.getElementById('report-container-07');
   if(!el || document.getElementById('report-view').style.display==='none'){
     alert('กรุณากดดูตัวอย่างรายงานก่อน'); return;
