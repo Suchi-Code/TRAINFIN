@@ -169,6 +169,7 @@ td{padding:11px 10px;border-bottom:1px solid #e7edf1;font-size:12.5px;color:#384
 .ccm-num{position:absolute;top:9px;right:9px;background:rgba(9,44,76,.72);color:#fff;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:7px;backdrop-filter:blur(2px)}
 .ccm-status{position:absolute;top:9px;left:9px;display:inline-flex;align-items:center;gap:4px;font-size:9.5px;font-weight:700;padding:3px 9px;border-radius:999px;backdrop-filter:blur(2px)}
 .ccm-status.done{background:rgba(25,122,93,.85);color:#fff}
+.ccm-status.progress{background:rgba(11,106,171,.9);color:#fff}
 .ccm-status.pending{background:rgba(0,0,0,.45);color:#fff}
 .ccm-status.cancelled{background:rgba(192,54,79,.85);color:#fff}
 .ccm-body{padding:11px 12px 4px}
@@ -399,7 +400,9 @@ function quarterOfDate(yearBE, isoDate){
 
 function computeStatus(q, runsTotal, runsDone, year){
   if(runsTotal>0 && runsDone>=runsTotal) return 'done';
-  if(runsDone>0) return 'progress';
+  // มีรุ่นผูกแผน (สร้างรุ่น+ได้เลขที่หลักสูตรแล้ว) = กำลังดำเนินการ ทันที จนกว่าทุกรุ่นจะมีไฟล์ 07
+  // (07 เป็นขั้นตอนท้ายสุดหลังอบรมเสร็จ ไม่ใช่จุดเริ่มของ "กำลังดำเนินการ")
+  if(runsTotal>0) return 'progress';
   if(!q) return 'notstarted';
   return (fiscalQuarterState(year, q) === 'past') ? 'cancelled' : 'notstarted';
 }
@@ -646,7 +649,7 @@ function cardHTML(r, idx){
   const diff2 = r.approved>0 ? r.approved - r.plan : null;
   const diff3 = r.approved>0 ? r.plan - r.approved : null;
   const st = STATUS_LABEL[r.status];
-  const statusBadgeCls = done ? 'done' : (cancelled ? 'cancelled' : 'pending');
+  const statusBadgeCls = done ? 'done' : (cancelled ? 'cancelled' : (r.status==='progress' ? 'progress' : 'pending'));
   // การ์ดที่ยังไม่จัดอบรม (สถานะไม่ใช่ done ทั้งหมด — รวม progress/notstarted/cancelled) ใช้ภาพ placeholder
   // ที่ Kwang กำหนด แทน emoji เดิม; ต้องวางเป็นลูกตัวแรกใน .ccm-photo (ก่อน badge) ไม่งั้นจะไปทับ badge
   // เพราะ .ccm-photo-img เป็น position:absolute inset:0 เต็มกล่อง
