@@ -129,6 +129,7 @@ body{font-family:'Prompt',sans-serif;background:var(--gray-50);color:var(--text)
 .qd-row-dots{display:flex;flex-wrap:wrap;align-items:center;gap:6px;flex:1;min-height:16px}
 .qd-dot{width:15px;height:15px;border-radius:50%;flex:0 0 auto;box-shadow:0 1px 2px rgba(0,0,0,.12);cursor:default;transition:transform .12s}
 .qd-dot:hover{transform:scale(1.25)}
+.qd-dot.moved{outline:1.5px dashed #627587;outline-offset:2px}
 .qd-row-empty{font-size:11px;color:#b7c0c8}
 
 /* table */
@@ -623,13 +624,28 @@ function renderStatusTable(){
   document.getElementById('tableCount').textContent = rows.length+' รายการ';
 }
 
+/* ไตรมาสที่ใช้จัดกลุ่มบนกราฟ/ตัวกรองการ์ด: ใช้ไตรมาสจริงจากวันที่ของรุ่น ถ้าไม่มี (หรือวันที่อยู่นอกปีงบ) ใช้ตามแผน */
+function effQuarter(r){ return r.actualQuarter || r.q; }
+function isMovedQuarter(r){ return !!(r.actualQuarter && r.q && r.actualQuarter!==r.q); }
+
+/* เรียงให้แผนที่ผูกรุ่น (planId) แล้วขึ้นก่อน — คงลำดับเดิมของ Google Sheet ภายในแต่ละกลุ่ม (stable) */
+function linkedFirst(list){
+  return list.map((r,i)=>({r,i}))
+    .sort((a,b)=>{
+      const la = a.r.linkedCourses.length>0 ? 0 : 1;
+      const lb = b.r.linkedCourses.length>0 ? 0 : 1;
+      return la!==lb ? la-lb : a.i-b.i;
+    })
+    .map(x=>x.r);
+}
+
 function renderQuarterDots(){
   const quarters = [1,2,3,4];
   const statusColors = {done:'#197a5d',progress:'#0b6aab',notstarted:'#c3cdd6',cancelled:'#c0364f'};
   document.getElementById('quarterDots').innerHTML = quarters.map(q=>{
-    const list = rows.filter(r=>r.q===q);
+    const list = linkedFirst(rows.filter(r=>effQuarter(r)===q));
     const dots = list.length
-      ? list.map(r=>`<span class="qd-dot" style="background:${statusColors[r.status]}" title="${r.name} (${STATUS_LABEL[r.status].text})"></span>`).join('')
+      ? list.map(r=>`<span class="qd-dot${isMovedQuarter(r)?' moved':''}" style="background:${statusColors[r.status]}" title="${r.name} (${STATUS_LABEL[r.status].text})${isMovedQuarter(r)?' · จัดจริง Q'+r.actualQuarter+' (แผน Q'+r.q+')':''}"></span>`).join('')
       : `<span class="qd-row-empty">— ไม่มีแผนงาน —</span>`;
     return `<div class="qd-row"><div class="qd-row-label">ไตรมาส ${q}</div><div class="qd-row-dots">${dots}</div></div>`;
   }).join('');
@@ -684,12 +700,12 @@ function renderCards(){
   const fType    = document.getElementById('fltType').value;
   const fQuarter = document.getElementById('fltQuarter').value;
   const fForm    = document.getElementById('fltForm').value;
-  const filtered = rows.filter(r =>
+  const filtered = linkedFirst(rows.filter(r =>
     (!fStatus || r.status===fStatus) &&
     (!fType || r.type===fType) &&
-    (!fQuarter || String(r.q)===fQuarter) &&
+    (!fQuarter || String(effQuarter(r))===fQuarter) &&
     (!fForm || r.form===fForm)
-  );
+  ));
   document.getElementById('cardsGrid').innerHTML = filtered.length
     ? filtered.map((r,i)=>cardHTML(r,i)).join('')
     : '<div class="empty-note">ไม่พบแผนงานตามเงื่อนไขที่เลือก</div>';
