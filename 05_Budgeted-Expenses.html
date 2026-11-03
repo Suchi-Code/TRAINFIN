@@ -306,6 +306,9 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
       <div class="form-group"><label>วันที่จัดอบรม</label><input type="text" id="f_date" value="" readonly></div>
     </div>
     <div class="form-row single"><div class="form-group"><label>สถานที่จัดอบรม</label><input type="text" id="f_location" value="" readonly></div></div>
+    <div class="opt-group" style="margin-top:2px;">
+      <label><input type="checkbox" id="chk_online" onchange="onCondChange()"> จัดอบรมแบบออนไลน์ <span style="font-weight:400;color:#6b7280;font-size:12px;">(หัวรายงานไม่ใส่ "ณ" หน้าสถานที่ และตัดแถว "รวมเงินข้อ ก." ส่วนบนก่อนค่าเช่าสถานที่)</span></label>
+    </div>
   </div>
 </div>
 
@@ -504,6 +507,13 @@ table.rpt tbody td{padding:var(--row-pad-v,5px) 10px;border:0.5px solid #555;ver
         <label><input type="radio" name="payType" value="hourly" onchange="onCondChange()" checked> อัตราต่อชั่วโมง</label>
       </div>
     </div>
+    <div style="margin-bottom:10px;">
+      <div class="form-group" style="margin-bottom:4px;"><label style="font-size:13px;font-weight:700;">การแสดงผลในรายงาน</label></div>
+      <div class="opt-group">
+        <label><input type="radio" name="extLayout" value="inline" onchange="onCondChange()" checked> ชื่อวิทยากรอยู่บรรทัดเดียวกับหัวข้อ (ถ้ามีรายเดียว)</label>
+        <label><input type="radio" name="extLayout" value="separate" onchange="onCondChange()"> ขึ้นบรรทัดใหม่ (x.1 ชื่อวิทยากร)</label>
+      </div>
+    </div>
     <div id="cond_expense_wrap">
       <div class="form-group" style="margin-bottom:4px;"><label style="font-size:13px;font-weight:700;">ค่าใช้จ่ายเพิ่มเติมของวิทยากร</label></div>
       <div class="opt-group">
@@ -675,6 +685,9 @@ function hasVenueStaff(){ return hasVenueLodging() && document.getElementById('c
 function hasFoodDinner(){ return document.getElementById('chk_food_dinner')?.checked; }
 function hasSpkLodging(){ return document.getElementById('chk_spk_lodging')?.checked; }
 function hasSpkTravel(){ return document.getElementById('chk_spk_travel')?.checked; }
+function isOnline(){ return !!document.getElementById('chk_online')?.checked; }
+// 'inline' (ค่าเริ่มต้น) = วิทยากรรายเดียวอยู่บรรทัดเดียวกับหัวข้อ / 'separate' = ขึ้นบรรทัดใหม่ x.1
+function getExtLayout(){ return document.querySelector('input[name=extLayout]:checked')?.value === 'separate' ? 'separate' : 'inline'; }
 function isLumpPay(){ return document.querySelector('input[name=payType]:checked')?.value==='lump'; }
 function hotelAmtOf(s){ return (s.hotelRate||0)*(s.hotelRooms||1)*(s.hotelNights||0); }
 function travelAmtOf(s){ return (s.travel||0)*(s.travelDays||1); }
@@ -1184,7 +1197,8 @@ function buildTable(){
   {
     let preVenueLast = 0;
     for(const k of ['lump','misc','office','fuel']){ if(nums[k]){ preVenueLast = nums[k]; break; } }
-    if(preVenueLast > 0){
+    // ออนไลน์ → ตัดแถวรวมส่วนบนทิ้ง เหลือเฉพาะแถวรวม ก. ท้ายตาราง (แถวรวมก่อนวิทยากรภายใน/ประธานในพิธียังอยู่)
+    if(preVenueLast > 0 && !isOnline()){
       const subtotalPreVenue = secFuel + sec1 + sec2 + secLump;
       rows.push(`<tr class="bb2">${td(`รวมเงินข้อ ก. (1. - ${preVenueLast}.) เป็นเงิน`,'tc tw bt2')+td('','bt2')+td(fmt(subtotalPreVenue),'tr tw bt2')}</tr>`);
     }
@@ -1313,11 +1327,29 @@ function buildTable(){
   const honorSuffix = lump ? '' : ' (บาท/ชม.)';
   const honorAmt = s => lump ? (s.amt||0) : (s.rate||0)*(s.hours||0);
   const honorDetail = s => lump ? '' : (s.rate||s.hours ? ` (อัตรา ${fmt(s.rate||0)} บาท/ชั่วโมง × ${s.hours||0} ชั่วโมง)` : '');
+  // ✅ extLayout: 'inline' = วิทยากรรายเดียวรวมอยู่บรรทัดหัวข้อ (เดิม) / 'separate' = แตกเป็น x.1 ชื่อวิทยากร เหมือนกรณีหลายคน
+  // inl เป็น true เฉพาะเมื่อมีวิทยากรรายเดียว และเลือกแสดงแบบบรรทัดเดียว (ใช้กับส่วนค่าสมนาคุณเท่านั้น ที่พัก/พาหนะไม่เกี่ยว)
+  const inl = list.length===1 && getExtLayout()==='inline';
+  const pushHonorMulti = (num, total, flex) => {
+    const head = flex
+      ? `
+        <div style="display: flex; align-items: center; white-space: nowrap; gap: 8px;">
+          <span>${num}. ค่าสมนาคุณวิทยากรภายนอก</span>
+          <div style="flex-grow: 1;">${ie('ระบุรายละเอียด', undefined, '100%', true)}</div>
+        </div>
+      `
+      : `${num}. ค่าสมนาคุณวิทยากรภายนอก`;
+    rows.push(row(td(head, 'tl tw i1 nb nt')+td('','nb nt')+td(total?fmt(total):'','tr tw nb nt')));
+    list.forEach((s,i)=>{
+      const isLast=i===list.length-1; const amt=honorAmt(s);
+      rows.push(row(td(`${num}.${i+1} ${s.name||'(ไม่ระบุชื่อ)'}${honorDetail(s)}`,`tl i2 nt ${isLast?'bb2':'nb'}`)+td(amt?fmt(amt):'',`tr nt ${isLast?'bb2':'nb'}`)+td('',`nt ${isLast?'bb2':'nb'}`)));
+    });
+  };
 
   if(hasExt && !L && !T){
     const total=list.reduce((a,s)=>a+honorAmt(s),0);
     secExt1=total;
-    if(list.length===1){
+    if(inl){
       const s=list[0]; const amt=honorAmt(s);
       rows.push(row(td(`
         <div style="display: flex; align-items: center; white-space: nowrap; gap: 8px;">
@@ -1326,16 +1358,7 @@ function buildTable(){
         </div>
       `, 'tl tw i1 nt bb2')+td('','nt bb2')+td(amt?fmt(amt):'','tr tw nt bb2')));
     }else {
-      rows.push(row(td(`
-        <div style="display: flex; align-items: center; white-space: nowrap; gap: 8px;">
-          <span>${nums.ext1}. ค่าสมนาคุณวิทยากรภายนอก</span>
-          <div style="flex-grow: 1;">${ie('ระบุรายละเอียด', undefined, '100%', true)}</div>
-        </div>
-      `, 'tl tw i1 nb nt')+td('','nb nt')+td(total?fmt(total):'','tr tw nb nt')));
-      list.forEach((s,i)=>{
-        const isLast=i===list.length-1; const amt=honorAmt(s);
-        rows.push(row(td(`${nums.ext1}.${i+1} ${s.name||'(ไม่ระบุชื่อ)'}${honorDetail(s)}`,`tl i2 nt ${isLast?'bb2':'nb'}`)+td(amt?fmt(amt):'',`tr nt ${isLast?'bb2':'nb'}`)+td('',`nt ${isLast?'bb2':'nb'}`)));
-      });
+      pushHonorMulti(nums.ext1, total, true);
     }
   }
   else if(hasExt && L && !T){
@@ -1346,23 +1369,23 @@ function buildTable(){
       const s=list[0]; const hAmt=hotelAmtOf(s);
       rows.push(row(td(`${nums.ext1}. ค่าที่พักวิทยากรภายนอก`, 'tl tw i1 nb nt')+td('','nb nt')+td(hAmt?fmt(hAmt):'','tr tw nb nt')));
       rows.push(row(td(`${nums.ext1}.1 ค่าที่พัก (${fmt(s.hotelRate||0)} บ./ห้อง/คืน x ${s.hotelRooms||1} ห้อง x ${s.hotelNights||0} คืน)`,'tl i2 nt bb2')+td(hAmt?fmt(hAmt):'','tr nt bb2')+td('','nt bb2')));
-      rows.push(row(td(`
+      if(inl){
+        rows.push(row(td(`
           <div style="display: flex; align-items: center; white-space: nowrap; gap: 8px;">
             <span>${nums.ext2}. ค่าสมนาคุณวิทยากรภายนอก (${s.name||'(ไม่ระบุชื่อ)'} ${''} ${honorDetail(s)})</span>
             <div style="flex-grow: 1;">${ie('ระบุรายละเอียด', undefined, '100%',true)}</div>
           </div>
         `, 'tl tw i1 nt bb2')+td('','nt bb2')+td(honorAmt(s)?fmt(honorAmt(s)):'','tr tw nt bb2')));
+      } else {
+        pushHonorMulti(nums.ext2, totalHonor, false);
+      }
     } else {
       rows.push(row(td(`${nums.ext1}. ค่าที่พักวิทยากรภายนอก`, 'tl tw i1 nb nt')+td('','nb nt')+td(totalHotel?fmt(totalHotel):'','tr tw nb nt')));
       list.forEach((s,i)=>{
         const isLast=i===list.length-1; const hAmt=hotelAmtOf(s);
         rows.push(row(td(`${nums.ext1}.${i+1} ${s.name||'(ไม่ระบุชื่อ)'} (${fmt(s.hotelRate||0)} บ./ห้อง/คืน x ${s.hotelRooms||1} ห้อง x ${s.hotelNights||0} คืน)`,`tl i2 nt ${isLast?'bb2':'nb'}`)+td(hAmt?fmt(hAmt):'',`tr nt ${isLast?'bb2':'nb'}`)+td('',`nt ${isLast?'bb2':'nb'}`)));
       });
-      rows.push(row(td(`${nums.ext2}. ค่าสมนาคุณวิทยากรภายนอก`, 'tl tw i1 nb nt')+td('','nb nt')+td(totalHonor?fmt(totalHonor):'','tr tw nb nt')));
-      list.forEach((s,i)=>{
-        const isLast=i===list.length-1; const amt=honorAmt(s);
-        rows.push(row(td(`${nums.ext2}.${i+1} ${s.name||'(ไม่ระบุชื่อ)'}${honorDetail(s)}`,`tl i2 nt ${isLast?'bb2':'nb'}`)+td(amt?fmt(amt):'',`tr nt ${isLast?'bb2':'nb'}`)+td('',`nt ${isLast?'bb2':'nb'}`)));
-      });
+      pushHonorMulti(nums.ext2, totalHonor, false);
     }
   }
   else if(hasExt && !L && T){
@@ -1372,18 +1395,18 @@ function buildTable(){
     if(list.length===1){
       const s=list[0]; const tAmt=travelAmtOf(s);
       rows.push(row(td(flexLabelWithEdit(`${nums.ext1}. ค่าใช้จ่ายในการเดินทางของวิทยากร (${s.name||'(ไม่ระบุชื่อ)'})`, travelDetailTxt(s)), 'tl tw i1 nt bb2')+td('','nt bb2')+td(tAmt?fmt(tAmt):'','tr tw nt bb2')));
-      rows.push(row(td(`${nums.ext2}. ค่าสมนาคุณวิทยากรภายนอก (${s.name||'(ไม่ระบุชื่อ)'} ${fmt(honorAmt(s))} บาท${honorDetail(s)})`, 'tl tw i1 nt bb2')+td('','nt bb2')+td(honorAmt(s)?fmt(honorAmt(s)):'','tr tw nt bb2')));
+      if(inl){
+        rows.push(row(td(`${nums.ext2}. ค่าสมนาคุณวิทยากรภายนอก (${s.name||'(ไม่ระบุชื่อ)'} ${fmt(honorAmt(s))} บาท${honorDetail(s)})`, 'tl tw i1 nt bb2')+td('','nt bb2')+td(honorAmt(s)?fmt(honorAmt(s)):'','tr tw nt bb2')));
+      } else {
+        pushHonorMulti(nums.ext2, totalHonor, false);
+      }
     } else {
       rows.push(row(td(`${nums.ext1}. ค่าใช้จ่ายในการเดินทางของวิทยากร`, 'tl tw i1 nb nt')+td('','nb nt')+td(totalTravel?fmt(totalTravel):'','tr tw nb nt')));
       list.forEach((s,i)=>{
         const isLast=i===list.length-1; const tAmt=travelAmtOf(s);
         rows.push(row(td(flexLabelWithEdit(`${nums.ext1}.${i+1} ${s.name||'(ไม่ระบุชื่อ)'}`, travelDetailTxt(s)),`tl i2 nt ${isLast?'bb2':'nb'}`)+td(tAmt?fmt(tAmt):'',`tr nt ${isLast?'bb2':'nb'}`)+td('',`nt ${isLast?'bb2':'nb'}`)));
       });
-      rows.push(row(td(`${nums.ext2}. ค่าสมนาคุณวิทยากรภายนอก`, 'tl tw i1 nb nt')+td('','nb nt')+td(totalHonor?fmt(totalHonor):'','tr tw nb nt')));
-      list.forEach((s,i)=>{
-        const isLast=i===list.length-1; const amt=honorAmt(s);
-        rows.push(row(td(`${nums.ext2}.${i+1} ${s.name||'(ไม่ระบุชื่อ)'}${honorDetail(s)}`,`tl i2 nt ${isLast?'bb2':'nb'}`)+td(amt?fmt(amt):'',`tr nt ${isLast?'bb2':'nb'}`)+td('',`nt ${isLast?'bb2':'nb'}`)));
-      });
+      pushHonorMulti(nums.ext2, totalHonor, false);
     }
   }
   else if(hasExt && L && T){
@@ -1424,20 +1447,11 @@ function buildTable(){
       });
     }
 
-    if(list.length===1){
+    if(inl){
       const s=list[0]; const amt=honorAmt(s);
       rows.push(row(td(`${nums.ext2}. ค่าสมนาคุณวิทยากรภายนอก (${s.name||'(ไม่ระบุชื่อ)'}${honorDetail(s)})`, 'tl tw i1 nt bb2')+td('','nt bb2')+td(amt?fmt(amt):'','tr tw nt bb2')));
     } else {
-      rows.push(row(td(`
-        <div style="display: flex; align-items: center; white-space: nowrap; gap: 8px;">
-          <span>${nums.ext2}. ค่าสมนาคุณวิทยากรภายนอก</span>
-          <div style="flex-grow: 1;">${ie('ระบุรายละเอียด', undefined, '100%', true)}</div>
-        </div>
-      `, 'tl tw i1 nb nt')+td('','nb nt')+td(secExt2?fmt(secExt2):'','tr tw nb nt')));
-      list.forEach((s,i)=>{
-        const isLast=i===list.length-1; const amt=honorAmt(s);
-        rows.push(row(td(`${nums.ext2}.${i+1} ${s.name||'(ไม่ระบุชื่อ)'}${honorDetail(s)}`,`tl i2 nt ${isLast?'bb2':'nb'}`)+td(amt?fmt(amt):'',`tr nt ${isLast?'bb2':'nb'}`)+td('',`nt ${isLast?'bb2':'nb'}`)));
-      });
+      pushHonorMulti(nums.ext2, secExt2, true);
     }
   }
 
@@ -1573,7 +1587,9 @@ if(useInternal){
 function showReport(doPrint){
   document.getElementById('r_hdr1').textContent=`หลักสูตร "${document.getElementById('f_courseName').value}" รุ่นที่ ${document.getElementById('f_batch').value}`;
   document.getElementById('r_hdr2').textContent=`เลขที่รุ่นหลักสูตร ${document.getElementById('f_courseNo').value} ในวันที่ ${document.getElementById('f_date').value}`;
-  document.getElementById('r_hdr3').textContent=`ณ ${document.getElementById('f_location').value}`;
+  // ออนไลน์ → ไม่ใส่ "ณ" นำหน้าสถานที่ (แก้ไขข้อความต่อในหัวรายงานได้เหมือนเดิม)
+  const locVal = document.getElementById('f_location').value;
+  document.getElementById('r_hdr3').textContent = isOnline() ? locVal : `ณ ${locVal}`;
   document.getElementById('rpt_wrap').innerHTML=buildTable();
 
   try {
@@ -1814,6 +1830,11 @@ function restoreBudgetForm(budget, speakers) {
     // (ข้อมูลเก่ามากๆ ที่ไม่เคยมี toggles.kor เก็บไว้เลยจะกลายเป็นไม่ติ๊ก เหมือนหลักสูตรใหม่)
     const chkKor = document.getElementById('chk_kor');
     if (chkKor) chkKor.checked = !!toggles.kor;
+    // ✅ online / extLayout: ข้อมูลเก่าที่ไม่มีค่านี้ = ไม่ออนไลน์ + บรรทัดเดียว (inline) เหมือนพฤติกรรมเดิม
+    const chkOnline = document.getElementById('chk_online');
+    if (chkOnline) chkOnline.checked = !!toggles.online;
+    const layoutRadio = document.querySelector(`input[name=extLayout][value="${toggles.extLayout === 'separate' ? 'separate' : 'inline'}"]`);
+    if (layoutRadio) layoutRadio.checked = true;
 
     const lump = spkParsedPre.lump || {};
     document.getElementById('chk_lump').checked = !!lump.on;
@@ -2003,7 +2024,8 @@ function computeBudget() {
       hasLodging: L, hasTravel: T,
       fuel: { on: fuelOn, amt: secFuel },
       toggles: { office: officeOn, misc: miscOn, food: foodOn, stafftravel: stafftravelOn,
-                 office_1_1: has11, office_1_2: has12, food_lunch: has31, food_coffee: has32, kor: korOn },
+                 office_1_1: has11, office_1_2: has12, food_lunch: has31, food_coffee: has32, kor: korOn,
+                 online: isOnline(), extLayout: getExtLayout() },
       lump: { on: lumpOn, rate: lRate, vehicles: lVeh, days: lDays },
       venue: { on: venueOn, meetingOn: mOn, lodgingOn: hasVenueLodging(), vipOn, staffOn,
                meeting: JSON.parse(JSON.stringify(venueData.meeting)),
