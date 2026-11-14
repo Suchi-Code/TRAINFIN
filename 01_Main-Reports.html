@@ -486,8 +486,40 @@
 </script>
 
 <script>
-    function courseImageUrl(no) {
-        return `https://res.cloudinary.com/daytjjgll/image/upload/f_auto,q_auto/gfr1/2569/${no}`;
+    // ── รูปหลักสูตรบน Cloudinary: gfr1/<ปีงบ พ.ศ.>/<เลขที่หลักสูตร> ──
+    // ไม่ฮาร์ดโค้ดปีแล้ว: ลองปีงบของหลักสูตรก่อน แล้วค่อยลองปีงบปัจจุบัน/ก่อนหน้า/ถัดไป
+    // (ปี 2571 ฯลฯ ใช้ได้เองโดยไม่ต้องแก้โค้ด) — ถ้าไม่เจอสักปีค่อย fallback เป็นรูป random
+    const CLOUDINARY_COURSE_BASE = 'https://res.cloudinary.com/daytjjgll/image/upload/f_auto,q_auto/gfr1/';
+
+    // ปีงบประมาณ (พ.ศ.) ของวันที่หนึ่งๆ — ปีงบใหม่เริ่ม 1 ต.ค.
+    function fiscalYearBE(d) {
+        let y = d.getFullYear();
+        if (y < 2400) y += 543;
+        return y + (d.getMonth() >= 9 ? 1 : 0);
+    }
+
+    // ปีงบของหลักสูตร: ใช้ field year ถ้ามี ไม่งั้นคำนวณจากวันที่เริ่มอบรม
+    function courseFiscalYear(cr) {
+        if (!cr) return '';
+        const m = String(cr.year || '').match(/\d{4}/);
+        if (m) return m[0];
+        const s = String(cr.dateStart || '');
+        const iso = s.match(/^(\d{4})-(\d{1,2})/);
+        if (iso) {
+            let y = Number(iso[1]);
+            if (y < 2400) y += 543;
+            return String(y + (Number(iso[2]) >= 10 ? 1 : 0));
+        }
+        const d = new Date(s);
+        return isNaN(d) ? '' : String(fiscalYearBE(d));
+    }
+
+    function courseImageUrls(no, cr) {
+        const cur = fiscalYearBE(new Date());
+        const years = [courseFiscalYear(cr), cur, cur - 1, cur + 1]
+            .map(String)
+            .filter((y, i, a) => /^\d{4}$/.test(y) && a.indexOf(y) === i);
+        return years.map(y => `${CLOUDINARY_COURSE_BASE}${y}/${encodeURIComponent(no)}`);
     }
 
     const FALLBACK_GFR1_IMAGES = [
@@ -500,23 +532,31 @@
         return `https://res.cloudinary.com/daytjjgll/image/upload/f_auto,q_auto/${pick}`;
     }
 
-    function setCourseImage(no) {
+    function setCourseImage(no, cr) {
         const imgEl = document.getElementById('course-image');
         if (!imgEl || !no) return;
 
-        const url = courseImageUrl(no);
-        if (imgEl.dataset.wanted === url) return;
-        imgEl.dataset.wanted = url;
+        const candidates = courseImageUrls(no, cr);
+        const key = candidates.join('|');
+        if (imgEl.dataset.wanted === key) return;   // ชุด URL เดิม ไม่ต้องโหลดซ้ำ
+        imgEl.dataset.wanted = key;
 
+        let idx = 0;
         imgEl.style.opacity = '0';
 
         imgEl.onload = () => { imgEl.style.opacity = '1'; };
         imgEl.onerror = () => {
+            idx++;
+            if (idx < candidates.length) {
+                imgEl.src = candidates[idx];        // ลองปีถัดไป
+                return;
+            }
+            // หมดทุกปี → รูป random ตามเดิม
             imgEl.onerror = () => { imgEl.onerror = null; imgEl.style.opacity = '1'; };
             imgEl.src = randomFallbackImage();
         };
 
-        imgEl.src = url;
+        imgEl.src = candidates[0];
     }
 
     function setCourseFields(cr) {
@@ -564,6 +604,7 @@
 
         if (cr && cr.course) {
             setCourseFields({ ...cr, no });
+            setCourseImage(no, cr);   // ได้วันที่อบรมจริงแล้ว → ลองปีงบของหลักสูตรก่อน (ข้ามถ้าชุด URL เดิม)
             const crClean = { ...cr, dateStart: DateTH.normalize(cr.dateStart), dateEnd: DateTH.normalize(cr.dateEnd) };
             try { sessionStorage.setItem('courseData', JSON.stringify({ ...crClean, no, _fromCourseList: true })); } catch (e) {}
         }
@@ -596,7 +637,7 @@
         }
 
         if (no) {
-            setCourseImage(no);
+            setCourseImage(no, courseData);
             setCourseFields(courseData && courseData.no === no ? courseData : { no });
             loadSummary(no);
         } else {
