@@ -589,9 +589,60 @@ function computeMajorNumbers(rows){
   const nums = {};
   let n = 0;
   DYNAMIC_SEC_ORDER.forEach(sec=>{
-    if(present.has(sec)){ n++; nums[sec] = String(n); }
+    if(!present.has(sec)) return;
+    // วิทยากรภายนอก: เลขข้อตามไฟล์ 05 — ถ้ามีที่พัก/เดินทางจะมี 2 ข้อติดกัน
+    // (ext1 = ค่าที่พัก/เดินทาง, ext2 = ค่าสมนาคุณ) ไม่งั้นข้อเดียว (ext1 = ค่าสมนาคุณ)
+    if(sec === SchemaTH.SEC.EXT){
+      const f = extFlags06(rows);
+      n++; nums.ext1 = String(n);
+      if(f.L || f.T){ n++; nums.ext2 = String(n); }
+      return;
+    }
+    n++; nums[sec] = String(n);
   });
   return nums;
+}
+
+/* ─────────────────────────────────────────────────────
+   วิทยากรภายนอก — แยกข้อตามโครงสร้างไฟล์ 05
+   • ไม่มีที่พัก/เดินทาง      → "N. ค่าสมนาคุณวิทยากรภายนอก"
+   • มีที่พักอย่างเดียว       → "N. ค่าที่พักวิทยากรภายนอก" (+บรรทัด ค่าที่พัก (อัตรา…)) แล้ว "N+1. ค่าสมนาคุณวิทยากรภายนอก"
+   • มีเดินทางอย่างเดียว      → "N. ค่าใช้จ่ายในการเดินทางของวิทยากร" (+บรรทัด ค่าพาหนะ (อัตรา…)) แล้ว "N+1. ค่าสมนาคุณฯ"
+   • มีทั้งสองอย่าง           → "N. ค่าใช้จ่ายในการเดินทางวิทยากรภายนอก" (+บรรทัด ค่าที่พัก… และ ค่าพาหนะ…) แล้ว "N+1. ค่าสมนาคุณฯ"
+   ธง L/T มาจากไฟล์ 05 (spkJson.hasLodging/hasTravel) หรือจากหมวดย่อยของใบเสร็จที่กรอกจริง
+───────────────────────────────────────────────────── */
+function extFlags06(rows){
+  const t = BUDGET05_TOGGLES || {};
+  const has = sub => (rows || []).some(r => (r.secV || r.sec) === SchemaTH.SEC.EXT && (r.subV || r.sub) === sub);
+  return { L: !!t.hasLodging || has(SchemaTH.SUB.EXT_LODGING), T: !!t.hasTravel || has(SchemaTH.SUB.EXT_TRAVEL) };
+}
+function extMajorKey06(r, f){
+  if(!(f.L || f.T)) return 'ext1';
+  return (r.subV === SchemaTH.SUB.EXT_LODGING || r.subV === SchemaTH.SUB.EXT_TRAVEL) ? 'ext1' : 'ext2';
+}
+function extMajorLabel06(key, f){
+  if(key === 'ext2' || !(f.L || f.T)) return 'ค่าสมนาคุณวิทยากรภายนอก';
+  if(f.L && f.T) return 'ค่าใช้จ่ายในการเดินทางวิทยากรภายนอก';
+  return f.L ? 'ค่าที่พักวิทยากรภายนอก' : 'ค่าใช้จ่ายในการเดินทางของวิทยากร';
+}
+// ข้อมูลอัตรา (ดึงจากไฟล์ 05) ใส่ในบรรทัดที่ผู้ใช้แก้ไขได้ในพรีวิว — ถ้าวิทยากรแต่ละคนอัตรา/จำนวนคืน/วัน
+// ไม่เท่ากัน หรือไม่มีข้อมูล จะขึ้นช่องว่าง (......) ให้เติมเอง
+const _extNum06 = n => Number(n || 0).toLocaleString('th-TH', { maximumFractionDigits: 2 });
+function _extSpeakers06(){ const l = BUDGET05_TOGGLES && BUDGET05_TOGGLES.EXT; return Array.isArray(l) ? l : []; }
+function extLodgingInfo06(){
+  const blank = '(อัตรา ......... บาท/คืน x ... คืน x ... ห้อง)';
+  const l = _extSpeakers06().filter(s => (s.hotelRate || 0) > 0 && (s.hotelNights || 0) > 0);
+  if(!l.length) return blank;
+  if(new Set(l.map(s => s.hotelRate)).size !== 1 || new Set(l.map(s => s.hotelNights)).size !== 1) return blank;
+  const rooms = l.reduce((a, s) => a + (Number(s.hotelRooms) || 1), 0);
+  return `(อัตรา ${_extNum06(l[0].hotelRate)} บาท/คืน x ${l[0].hotelNights} คืน x ${rooms} ห้อง)`;
+}
+function extTravelInfo06(){
+  const blank = '(อัตราเหมาจ่าย ......... บาท/วัน x ... วัน)';
+  const l = _extSpeakers06().filter(s => (s.travel || 0) > 0);
+  if(!l.length) return blank;
+  if(new Set(l.map(s => s.travel)).size !== 1 || new Set(l.map(s => s.travelDays || 1)).size !== 1) return blank;
+  return `(อัตราเหมาจ่าย ${_extNum06(l[0].travel)} บาท/วัน x ${l[0].travelDays || 1} วัน)`;
 }
 const DOC_OPTS = SchemaTH.DOC_OPTS;
 let smCnt = 0;
@@ -1121,6 +1172,9 @@ function sumValidateOrder(){
 
   let maxSecIdx = -1;
   let maxOfficeSubIdx = -1;
+  let maxExtSubIdx = -1;
+  // วิทยากรภายนอก: ที่พัก → เดินทาง → ค่าสมนาคุณ (หมวดย่อยว่างนับเป็นค่าสมนาคุณ) ตามลำดับข้อในไฟล์ 05
+  const EXT_SUB_ORDER = [SchemaTH.SUB.EXT_LODGING, SchemaTH.SUB.EXT_TRAVEL, SchemaTH.SUB.EXT_HONORARIUM];
   let ok = true;
 
   cards.forEach(card => {
@@ -1140,6 +1194,14 @@ function sumValidateOrder(){
       if(subIdx !== -1){
         if(subIdx < maxOfficeSubIdx) msgs.push('หมวดวัสดุสำนักงาน: ต้องกรอก "ค่าเครื่องเขียนแบบพิมพ์" ให้ครบก่อน แล้วค่อยกรอก "ค่าถ่ายเอกสารและเข้าเล่ม" ห้ามสลับกัน');
         else maxOfficeSubIdx = subIdx;
+      }
+    }
+
+    if(secV === SchemaTH.SEC.EXT){
+      const subIdx = subV ? EXT_SUB_ORDER.indexOf(subV) : EXT_SUB_ORDER.length - 1;
+      if(subIdx !== -1){
+        if(subIdx < maxExtSubIdx) msgs.push('วิทยากรภายนอก: ต้องกรอก "ค่าที่พักวิทยากร" → "ค่าพาหนะ/เดินทางวิทยากร" ให้ครบก่อน แล้วค่อยกรอก "ค่าสมนาคุณวิทยากร" ห้ามสลับกัน (ตามลำดับข้อในไฟล์ 05)');
+        else maxExtSubIdx = subIdx;
       }
     }
 
@@ -1858,6 +1920,7 @@ function sumBuildDoc(){
 
   // คำนวณเลขข้อ dynamic ตามหมวดที่มีรายการจริงในรายงานนี้ แล้วเติม label ให้แต่ละแถว
   const majorNums = computeMajorNumbers(rows);
+  const extF = extFlags06(rows);
   rows.forEach(r=>{
     const baseLabel = SEC_OPTS.find(s=>s.v===r.secV)?.l || '';
     r.secL = DYNAMIC_SEC_ORDER.includes(r.secV)
@@ -1876,11 +1939,25 @@ function sumBuildDoc(){
       r.subLabel = r.subV === SchemaTH.SUB.OFFICE_STATIONERY ? 'ค่าเครื่องเขียนแบบพิมพ์'
         : (r.subV === SchemaTH.SUB.OFFICE_COPY ? 'ค่าถ่ายเอกสารและเข้าเล่ม' : baseLabel);
       r.subAlways = true;
+    } else if (r.secV === SchemaTH.SEC.EXT) {
+      // วิทยากรภายนอก: แยกข้อตามหมวดย่อยของใบเสร็จ (ดู extFlags06 ด้านบน)
+      r.majorKey = extMajorKey06(r, extF);
+      r.secL = `${majorNums[r.majorKey] || ''}. ${extMajorLabel06(r.majorKey, extF)}`;
+      if (r.majorKey === 'ext1' && (extF.L || extF.T)) {
+        const isLodg = r.subV === SchemaTH.SUB.EXT_LODGING;
+        r.subLabel = isLodg ? 'ค่าที่พัก' : 'ค่าพาหนะ';
+        r.subInfo  = isLodg ? extLodgingInfo06() : extTravelInfo06();
+        r.subAlways = true;
+      } else {
+        r.subLabel = baseLabel;
+        r.subAlways = false;
+      }
     } else {
       r.subLabel = baseLabel;
       r.subAlways = false;
     }
-    r.segKey = `${r.secV}|${r.subLabel}|${r.w119}`;
+    if (!r.majorKey) r.majorKey = r.secV;
+    r.segKey = `${r.majorKey}|${r.subLabel}|${r.w119}`;
   });
 
   // ✅ แบ่งหน้าโดยวัดความสูงจริงที่ render ออกมา (ผ่าน PaginateTH.paginateByHeight ใน
@@ -1986,10 +2063,10 @@ function sumBuildDoc(){
       // ที่บรรทัดนี้เด็ดขาด เพราะหัวข้อย่อยข้อ 2 ด้านล่างเป็นคนแสดงแทนอยู่แล้ว — บั๊กเดิม: พอขึ้นหน้า
       // ใหม่กลางหมวด (lastSec รีเซ็ตทุกหน้า) ถ้าแถวแรกที่โผล่บนหน้าใหม่บังเอิญเป็นแถวที่ติ๊ก ว.119
       // หัวข้อหมวดใหญ่ที่ปริ๊นท์ซ้ำจะเผลอต่อท้าย (ว.119) ไปด้วยทั้งที่หมวดนั้นมีหัวข้อย่อยอยู่แล้ว
-      if (r.secV !== lastSec) {
+      if (r.majorKey !== lastSec) {
         const showMajorW119 = !r.subAlways && r.w119;
         pg += `<tr class="sm-grp"><td class="sm-ind1 sm-tl" colspan="7">${r.secL}${showMajorW119 ? ' (ว.119)' : ''}</td></tr>`;
-        lastSec = r.secV;
+        lastSec = r.majorKey;
         currentSegKey = null; // บังคับให้เช็คหัวข้อย่อยใหม่เสมอตอนเปลี่ยนหมวด (ข้อ 2)
       }
 
@@ -2000,7 +2077,9 @@ function sumBuildDoc(){
       if (r.segKey !== currentSegKey && (r.subAlways || currentSegKey !== null)) {
         pg += `<tr>
                  <td class="sm-tl" colspan="7" style="padding-left: 20px; font-weight: bold; font-style: normal;">
-                  &nbsp;&nbsp;&nbsp;${r.subLabel}${r.w119 ? ' (ว.119)' : ''}
+                  ${r.subInfo !== undefined
+                    ? `<div class="rpt-edit-cell" contenteditable="true" data-ridx="s${globalIdx}">&nbsp;&nbsp;&nbsp;${r.subLabel} ${r.subInfo}${r.w119 ? ' (ว.119)' : ''}</div>`
+                    : `&nbsp;&nbsp;&nbsp;${r.subLabel}${r.w119 ? ' (ว.119)' : ''}`}
                  </td>
                </tr>`;
       }
