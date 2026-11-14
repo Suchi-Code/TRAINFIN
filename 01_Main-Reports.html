@@ -134,7 +134,7 @@
 
     /* ===== Course detail panel ===== */
     .course-grid{display:grid;grid-template-columns:380px 1fr;gap:26px;padding:22px;align-items:center}
-    .course-image-wrap{position:relative;border-radius:12px;overflow:hidden;background:#e5ebef;aspect-ratio:4/3}
+    .course-image-wrap{position:relative;border-radius:12px;overflow:hidden;background:#e5ebef;aspect-ratio:3/2}
     .course-image-wrap img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .35s ease}
     .course-image-wrap::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(6,20,34,.82),rgba(6,20,34,.08) 55%,rgba(6,20,34,0) 75%);pointer-events:none}
     .img-badge{position:absolute;top:12px;left:12px;z-index:1;display:inline-flex;align-items:center;gap:6px;background:rgba(9,44,76,.72);color:#dff1fb;font-size:10.5px;padding:5px 10px;border-radius:999px;backdrop-filter:blur(2px)}
@@ -515,7 +515,9 @@
     // ── รูปหลักสูตรบน Cloudinary: gfr1/<ปีงบ พ.ศ.>/<เลขที่หลักสูตร> ──
     // ไม่ฮาร์ดโค้ดปีแล้ว: ลองปีงบของหลักสูตรก่อน แล้วค่อยลองปีงบปัจจุบัน/ก่อนหน้า/ถัดไป
     // (ปี 2571 ฯลฯ ใช้ได้เองโดยไม่ต้องแก้โค้ด) — ถ้าไม่เจอสักปีค่อย fallback เป็นรูป random
-    const CLOUDINARY_COURSE_BASE = 'https://res.cloudinary.com/daytjjgll/image/upload/f_auto,q_auto/gfr1/';
+    const CLOUDINARY_UPLOAD = 'https://res.cloudinary.com/daytjjgll/image/upload/';
+    // กรอบรูปเป็นสัดส่วน 3:2 ตรงกับรูปจากกล้อง จึงใช้ภาพต้นฉบับตรงๆ ไม่ต้องตัดภาพ
+    const CLOUDINARY_PLAIN = 'f_auto,q_auto';
 
     // ปีงบประมาณ (พ.ศ.) ของวันที่หนึ่งๆ — ปีงบใหม่เริ่ม 1 ต.ค.
     function fiscalYearBE(d) {
@@ -545,7 +547,8 @@
         const years = [courseFiscalYear(cr), cur, cur - 1, cur + 1]
             .map(String)
             .filter((y, i, a) => /^\d{4}$/.test(y) && a.indexOf(y) === i);
-        return years.map(y => `${CLOUDINARY_COURSE_BASE}${y}/${encodeURIComponent(no)}`);
+        const id = encodeURIComponent(no);
+        return years.map(y => `${CLOUDINARY_UPLOAD}${CLOUDINARY_PLAIN}/gfr1/${y}/${id}`);
     }
 
     const FALLBACK_GFR1_IMAGES = [
