@@ -133,7 +133,7 @@
     .bs-spk-list{margin-top:4px;font-size:12px;color:#5b3fc0;line-height:1.55}
 
     /* ===== Course detail panel ===== */
-    .course-grid{display:grid;grid-template-columns:380px 1fr;gap:26px;padding:22px}
+    .course-grid{display:grid;grid-template-columns:380px 1fr;gap:26px;padding:22px;align-items:center}
     .course-image-wrap{position:relative;border-radius:12px;overflow:hidden;background:#e5ebef;aspect-ratio:4/3}
     .course-image-wrap img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .35s ease}
     .course-image-wrap::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(6,20,34,.82),rgba(6,20,34,.08) 55%,rgba(6,20,34,0) 75%);pointer-events:none}
@@ -391,6 +391,26 @@
             </div>`;
     }
 
+    function escHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    // รายชื่อวิทยากรภายในจากไฟล์ 06: แถวใบเสร็จที่เลือกหมวด 'int' (รหัสหมวดวิทยากรภายในไม่เคยเปลี่ยน)
+    // ตัดชื่อซ้ำ/ว่างออก คงลำดับตามที่กรอกในไฟล์ 06
+    function internalSpeakerNames(a06) {
+        if (!a06 || !a06.rowsJson) return [];
+        let rows = [];
+        try { rows = typeof a06.rowsJson === 'string' ? JSON.parse(a06.rowsJson) : a06.rowsJson; } catch (e) { return []; }
+        if (!Array.isArray(rows)) return [];
+        const seen = new Set(), out = [];
+        rows.forEach(r => {
+            if (!r || r.sec !== 'int') return;
+            const n = String(r.name || '').trim();
+            if (n && !seen.has(n)) { seen.add(n); out.push(n); }
+        });
+        return out;
+    }
+
     function renderSummaryCards(slot) {
         const grid = document.getElementById('summary-grid');
         const updEl = document.getElementById('summary-updated');
@@ -455,20 +475,26 @@
         const pctGor    = (actualGorA !== null && borrowAmt > 0) ? (actualGorA / borrowAmt) * 100 : null; // ก. ใช้จริง ÷ เงินยืม
         const pctRefund = (refund !== null && borrowAmt > 0) ? (refund / borrowAmt) * 100 : null;   // เงินคืน ÷ เงินยืม
 
+        // ชื่อวิทยากรภายใน: ดึงจากรายการใบเสร็จที่บันทึกในไฟล์ 06 (actual06.rowsJson, หมวด 'int')
+        const intNames = internalSpeakerNames(a06);
+        const totalNames = spkNames.length + intNames.length;
+
         let spkValue = noData, spkExtra = '';
-        if (spkNames.length) {
-            spkValue = `${spkNames.length} ชื่อวิทยากร / บริษัท`;
-            spkExtra = spkNames.map(n => `<div class="bs-spk-list">👤 ${n}</div>`).join('');
+        if (totalNames) {
+            spkValue = `${totalNames} ชื่อวิทยากร / บริษัท`;
+            spkExtra = spkNames.map(n => `<div class="bs-spk-list">👤 ${escHtml(n)}</div>`).join('')
+                     + intNames.map(n => `<div class="spk-int">🏢 ${escHtml(n)} <span style="font-weight:400">(วิทยากรภายใน)</span></div>`).join('');
         }
-        if (hasInt) spkExtra += '<div class="spk-int">🏢 มีวิทยากรภายใน</div>';
-        if (!spkNames.length && hasInt) spkValue = '<span class="empty-val">ไม่มีวิทยากรภายนอก</span>';
+        // มีวิทยากรภายในในงบประมาณ แต่ยังไม่มีชื่อจากไฟล์ 06 → คงข้อความเดิม
+        if (hasInt && !intNames.length) spkExtra += '<div class="spk-int">🏢 มีวิทยากรภายใน</div>';
+        if (!totalNames && hasInt) spkValue = '<span class="empty-val">ไม่มีวิทยากรภายนอก</span>';
 
         grid.innerHTML = bsLayout(
             hasBudget ? moneyHtml(budgetTotal) : noData,
             bsCard('bs-green',  'w3', ICONS.sheet, 'ค่าใช้จ่ายเกิดจริงทั้งหมด',
                 hasActual ? moneyHtml(actualTotal) : noData, pctActual) +
             bsCard('bs-purple', 'w3', ICONS.user, 'ชื่อวิทยากร / บริษัท',
-                spkValue + spkExtra, null, spkNames.length ? '' : 'sm') +
+                spkValue + spkExtra, null, totalNames ? '' : 'sm') +
             bsCard('bs-blue',   'w2', ICONS.doc, 'จำนวนเงินยืมทดลองจ่าย',
                 hasBudget ? moneyHtml(borrowAmt) : noData) +
             bsCard('bs-orange', 'w2', ICONS.pie, 'ค่าใช้จ่ายรวม ก. เฉพาะเงินยืม',
