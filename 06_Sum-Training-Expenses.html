@@ -301,9 +301,9 @@ table.rpt tbody tr:last-child td{border-bottom:none}
       <button class="btn-back-form" onclick="sumGoForm()">◀ กลับแก้ไขข้อมูล</button>
       <div class="spacing-ctrl">
         <span>ระยะห่างบรรทัด</span>
-        <button class="btn-sp" id="sp_dec_06" onclick="rowSpacing06.adjust(-1)" title="ลดระยะห่าง">−</button>
+        <button class="btn-sp" id="sp_dec_06" onclick="rowSpacing06.adjust(-1);sumRebuildPreview06()" title="ลดระยะห่าง">−</button>
         <span class="sp-level" id="sp_level_06">ปกติ</span>
-        <button class="btn-sp" id="sp_inc_06" onclick="rowSpacing06.adjust(1)" title="เพิ่มระยะห่าง">＋</button>
+        <button class="btn-sp" id="sp_inc_06" onclick="rowSpacing06.adjust(1);sumRebuildPreview06()" title="เพิ่มระยะห่าง">＋</button>
       </div>
       <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
         <button class="btn-do-print" onclick="window.print()">🖨️ พิมพ์แบบฟอร์ม</button>
@@ -313,7 +313,7 @@ table.rpt tbody tr:last-child td{border-bottom:none}
         <button onclick="savePdf06(this)" style="background:linear-gradient(135deg,#1a56db,#1241b0);color:#fff;border:none;border-radius:8px;padding:10px 28px;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(26,86,219,.3);display:flex;align-items:center;gap:6px;transition:all .2s;">💾 บันทึก PDF</button>
         <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#6b7280;">
           <label for="pdf_scale_06">สเกลหน้ากระดาษ:</label>
-          <select id="pdf_scale_06" style="border:1px solid var(--gray-200);border-radius:5px;padding:2px 6px;font-family:'Sarabun',sans-serif;font-size:11px;color:#374151;cursor:pointer;">
+          <select id="pdf_scale_06" onchange="sumRebuildPreview06()" style="border:1px solid var(--gray-200);border-radius:5px;padding:2px 6px;font-family:'Sarabun',sans-serif;font-size:11px;color:#374151;cursor:pointer;">
             <option value="70">70%</option>
             <option value="75">75%</option>
             <option value="80">80%</option>
@@ -325,6 +325,11 @@ table.rpt tbody tr:last-child td{border-bottom:none}
         </div>
       </div>
     </div>
+    <div data-permission="write" class="no-print" style="text-align:center;font-size:12px;color:#6b7280;margin:-6px 0 12px;">
+      ✏️ คลิกที่ข้อความในคอลัมน์ "รายการ" หรือหัวเอกสารเพื่อแก้ไขได้ กด Enter เพื่อขึ้นบรรทัดใหม่ —
+      มีผลกับการพิมพ์/PDF รอบนี้เท่านั้น (ถ้ากลับไปแก้ไขข้อมูลแล้วกดดูตัวอย่างใหม่ ข้อความที่แก้จะหาย)
+    </div>
+    <div id="sm_overflow_warn" class="no-print" style="display:none;max-width:780px;margin:0 auto 12px;padding:9px 14px;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;color:#b91c1c;font-size:12.5px;font-weight:600;"></div>
     <div id="sm_doc" class="sum-print-wrap"></div>
 
   </div>
@@ -520,6 +525,12 @@ body.report-preview-mode footer{display:none!important;}
 .sm-ind1{padding-left:20px!important}
 .sm-ind2{padding-left:40px!important}
 .sm-lines div{margin-bottom:1px;line-height:1.4}
+.rpt-edit-cell{outline:none}
+@media screen{
+  .rpt-edit-cell[contenteditable="true"]:hover{background:#fffbe6}
+  .rpt-edit-cell[contenteditable="true"]:focus{background:#fff8d6;box-shadow:0 0 0 2px #f5c842 inset}
+  .sm-page.sm-overflow{outline:2px dashed #dc2626;outline-offset:-2px}
+}
 
 </style>
 
@@ -2036,6 +2047,7 @@ function sumBuildDoc(){
       pg += `<tr>
         ${showSeq ? `<td class="sm-tc" rowspan="${span}">${r.seq}</td>` : ''}
         <td class="sm-tl sm-lines">
+          <div class="rpt-edit-cell" contenteditable="true" data-ridx="${globalIdx}">
           <div>${r.doc}</div><div>${r.name}</div>
           ${r.branch ? `<div>${r.branch}</div>` : ''}
           ${r.taxid ? `<div>เลขประจำตัวผู้เสียภาษี ${r.taxid}</div>` : ''}
@@ -2043,6 +2055,7 @@ function sumBuildDoc(){
           ${addrLines.map(l => `<div>${l}</div>`).join('')}
             
           <div>ลงวันที่ ${sumFmtDate(r.date)}</div>
+          </div>
         </td>
         <td class="sm-tc">${r.acct}</td>
         <td class="sm-tr">${smFmt(r.val)}</td>
@@ -2073,8 +2086,9 @@ function sumBuildDoc(){
   // ตาม @page ของไฟล์นี้: บน 10mm ล่าง 15mm ซ้ายขวา 5mm) ตอนลองยังไม่รู้ว่าหน้าไหนจะเป็นหน้าสุดท้าย
   // จึงเผื่อพื้นที่แถว "ยกยอดไป" ไว้ก่อนเสมอ (isLast=false) — ถ้าพอดีทั้งหมดเป๊ะ หน้าสุดท้ายจริงจะมี
   // เนื้อที่เหลือเล็กน้อยจากที่เผื่อไว้เกินจำเป็น ยอมรับได้ (ปลอดภัยไว้ก่อนดีกว่าเสี่ยงล้น)
-  const PAGE_W_PX = PaginateTH.mmToPx(200); // 210mm - 5mm - 5mm
-  const PAGE_H_PX = PaginateTH.mmToPx(272); // 297mm - 10mm - 15mm
+  // ✅ พื้นที่พิมพ์ต่อหน้าคำนวณตามสเกล PDF ที่เลือกใน dropdown (sumPageGeom06) — เดิมตายตัวที่ 100%
+  // ทำให้ลดสเกลแล้วรายการไม่ถูกดันขึ้นมาเต็มหน้า (Puppeteer ย่อเนื้อหาทีหลังแต่ตัวแบ่งหน้าไม่รู้)
+  const { wPx: PAGE_W_PX, hPx: PAGE_H_PX } = sumPageGeom06();
   // ✅ ต้องส่งค่า --row-pad-v ปัจจุบัน (ที่ผู้ใช้อาจปรับไว้ผ่านปุ่มระยะห่างบรรทัด) ไปกับ holder
   // ตอนวัดความสูงด้วย ไม่งั้นวัดผิด (ดูคอมเมนต์ใน PaginateTH.measureHeight ของ js/print-layout.js)
   const rowPadV = ps.querySelector('.sum-print-wrap')?.style.getPropertyValue('--row-pad-v') || '5px';
@@ -2093,6 +2107,87 @@ function sumBuildDoc(){
   });
   ps.querySelector('#sm_doc').innerHTML = html;
   reapplyReadOnly06();
+  sumInitDocEditing06();
+  sumCheckOverflow06();
+}
+
+/* ============================================================
+   สเกล PDF + แก้ไขข้อความในพรีวิว (ช่องรายการใบเสร็จ / หัวเอกสาร)
+   ============================================================ */
+
+// พื้นที่พิมพ์ต่อหน้า (px) ตามสเกลที่เลือก — Puppeteer ย่อเนื้อหาตาม scale และจัดเลย์เอาต์ในพื้นที่
+// ที่กว้าง/สูงขึ้น (÷ scale) การแบ่งหน้าและตรวจหน้าล้นจึงต้องใช้เกณฑ์เดียวกัน
+//   hMax = ความสูงพิมพ์ได้จริง, hPx = เกณฑ์แบ่งหน้า (เผื่อ ~1.5% กันปัดเศษเมื่อสเกล < 100%
+//   — ที่ 100% คงค่าเดิมเป๊ะ)
+function sumPageGeom06(){
+  const scale = PaginateTH.getPdfScale('pdf_scale_06', 100);
+  const wPx  = PaginateTH.mmToPx(200) / scale;   // 210mm - 5mm - 5mm
+  const hMax = PaginateTH.mmToPx(272) / scale;   // 297mm - 10mm - 15mm
+  const hPx  = scale < 1 ? hMax * 0.985 : hMax;
+  const rowPadV = smPS().querySelector('.sum-print-wrap')?.style.getPropertyValue('--row-pad-v') || '5px';
+  return { scale, wPx, hPx, hMax, rowPadV };
+}
+
+// สร้างพรีวิวใหม่ (แบ่งหน้าใหม่ตามสเกล/ระยะห่างบรรทัดปัจจุบัน) โดยเก็บข้อความที่ผู้ใช้แก้ไขไว้คืนให้
+// — หัวเอกสาร 4 บรรทัด + ช่องรายการใบเสร็จที่ถูกแก้ (data-edited) อ้างด้วย data-ridx = ลำดับแถวรวม
+function sumRebuildPreview06(){
+  const ps = smPS();
+  if(!ps.querySelector('#sv-preview')?.classList.contains('sv-active')) return; // ยังไม่ได้อยู่หน้าพรีวิว
+  const hdr = Array.from(ps.querySelectorAll('#sm_doc .rpt-edit')).map(el => el.innerHTML);
+  const cells = {};
+  ps.querySelectorAll('#sm_doc .rpt-edit-cell[data-edited]').forEach(el => { cells[el.dataset.ridx] = el.innerHTML; });
+  sumBuildDoc();
+  ps.querySelectorAll('#sm_doc .rpt-edit').forEach((el, i) => { if(hdr[i] !== undefined) el.innerHTML = hdr[i]; });
+  Object.keys(cells).forEach(k => {
+    const el = ps.querySelector(`#sm_doc .rpt-edit-cell[data-ridx="${k}"]`);
+    if(el){ el.innerHTML = cells[k]; el.dataset.edited = '1'; }
+  });
+  sumCheckOverflow06();
+}
+
+// ผูก listener ครั้งเดียวที่ #sm_doc (element ถาวร — innerHTML ถูกแทนที่ได้โดย listener ไม่หาย)
+let _smDocEditInit = false;
+function sumInitDocEditing06(){
+  if(_smDocEditInit) return;
+  const doc = document.getElementById('sm_doc');
+  if(!doc) return;
+  _smDocEditInit = true;
+  let timer = null;
+  doc.addEventListener('input', e => {
+    const cell = e.target.closest && e.target.closest('.rpt-edit-cell');
+    if(cell) cell.dataset.edited = '1';
+    clearTimeout(timer);
+    timer = setTimeout(sumCheckOverflow06, 300);
+  });
+  // วางข้อความแบบ plain text เสมอ — กันฟอนต์/สไตล์จากที่อื่นติดเข้ามาในรายงาน
+  doc.addEventListener('paste', e => {
+    const el = e.target.closest && e.target.closest('.rpt-edit-cell, .rpt-edit');
+    if(!el) return;
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+    document.execCommand('insertText', false, text);
+  });
+}
+
+// ตรวจแต่ละหน้าว่าหลังแก้ไข (เพิ่มบรรทัด) ยังพอดีพื้นที่พิมพ์ไหม — ไม่แบ่งหน้าใหม่ให้อัตโนมัติ
+// (จะทำให้ข้อความที่เพิ่งแก้หลุด) แต่ขึ้นกรอบแดงที่หน้านั้น + ข้อความเตือนบนแถบเครื่องมือ
+function sumCheckOverflow06(){
+  const ps = smPS();
+  const pages = Array.from(ps.querySelectorAll('#sm_doc .sm-page'));
+  if(!pages.length) return;
+  const { wPx, hMax, rowPadV } = sumPageGeom06();
+  const bad = [];
+  pages.forEach((pg, i) => {
+    const h = PaginateTH.measureHeight(pg.outerHTML, wPx, `--row-pad-v:${rowPadV};`);
+    const over = h > hMax;
+    pg.classList.toggle('sm-overflow', over);
+    if(over) bad.push(i + 1);
+  });
+  const box = ps.querySelector('#sm_overflow_warn');
+  if(box){
+    box.style.display = bad.length ? '' : 'none';
+    if(bad.length) box.textContent = `⚠️ หน้า ${bad.join(', ')} ยาวเกินพื้นที่พิมพ์ ข้อความท้ายหน้าอาจถูกตัดหรือเลื่อนไปหน้าถัดไป — ลดจำนวนบรรทัดที่เพิ่ม หรือลดสเกล/ระยะห่างบรรทัด`;
+  }
 }
 
 /* ── CONFIRM BACK (3.2) ── */
@@ -2134,6 +2229,8 @@ async function savePdf06(btn){
   if (!canEdit06()) { alert('🔒 บัญชีนี้ไม่มีสิทธิ์บันทึก PDF (พิมพ์ได้อย่างเดียว)'); return; }
   const el = document.getElementById('sm_doc');
   if(!el || !el.innerHTML.trim()){ alert('กรุณาดูสรุปเอกสารก่อน'); return; }
+  const warnBox = document.getElementById('sm_overflow_warn');
+  if(warnBox && warnBox.style.display !== 'none' && !confirm(warnBox.textContent + '\n\nต้องการสร้าง PDF ต่อหรือไม่?')) return;
 
   const safe  = s => s.replace(/[/\\:*?"<>|]/g,'_').trim();
   const fname = safe(`สรุปค่าใช้จ่าย_${shGet('sm_title')||''}_รุ่น${shGet('sm_run')||''}_${shGet('sm_runno')||''}`) || 'sum_06';
@@ -2147,6 +2244,7 @@ async function savePdf06(btn){
     // แค่ถอด attribute contenteditable ออกก่อนส่ง render พอ ไม่ต้องแปลง tag ใดๆ เพิ่ม
     // (เนื้อหาที่ผู้ใช้แก้ไขระหว่างดูตัวอย่างจะอยู่ใน DOM ของ el อยู่แล้วเพราะเป็น contenteditable
     // จริงบน element เดียวกัน ไม่ใช่ .value ของ input ที่ต้องอ่านแยก)
+    clone.querySelectorAll('.sm-overflow').forEach(p => p.classList.remove('sm-overflow')); // กรอบแดงเตือนใช้บนจอเท่านั้น
     clone.querySelectorAll('[contenteditable]').forEach(el2 => {
       el2.removeAttribute('contenteditable');
       el2.style.outline = 'none';
