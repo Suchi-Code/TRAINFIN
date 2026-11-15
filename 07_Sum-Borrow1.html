@@ -725,7 +725,6 @@ function applySectionVisibility07(){
   updateSectionNumberLabels07();
 }
 
-/* ── RENDER SPEAKER SECTION (ล้อจาก 05 — budget readonly, actual editable) ── */
 /* ── สิทธิ์: viewer/manager นอก whitelist ดูตัวอย่าง+พิมพ์ได้ แต่แก้/บันทึกไม่ได้ ──
    การ์ดวิทยากรและรายการค่าเช่าสถานที่ถูกสร้างใหม่หลัง lockPageIfReadOnly() จึงล็อกซ้ำหลัง render */
 function canEdit07(){ return typeof canEditThisPage==='function' ? canEditThisPage(getCurrentRole()) : true; }
@@ -734,6 +733,7 @@ function reapplyReadOnly07(){
   document.querySelectorAll('#form-view input, #form-view select, #form-view textarea').forEach(el=>{ el.disabled = true; });
 }
 
+/* ── RENDER SPEAKER SECTION (ล้อจาก 05 — budget readonly, actual editable) ── */
 function renderSpk07(){
   const el = document.getElementById('spk_EXT_container');
   if(!el) return;
@@ -946,8 +946,9 @@ function applySlot07(slot){
     dinner: !!(sp.foodDinner && sp.foodDinner.on) || hasActualSub(SchemaTH.SEC.FOOD, SchemaTH.SUB.FOOD_DINNER),
     stafftravel: t.stafftravel !== false,
     external: (sp.hasExternal !== undefined) ? !!sp.hasExternal : true,
-    hasLodging: !!sp.hasLodging,
-    hasTravel: !!sp.hasTravel,
+    // ✅ เปิดช่อง ที่พัก/พาหนะ ถ้าไฟล์ 05 ติ๊กไว้ หรือไฟล์ 06 มีบิลหมวดย่อยนั้นจริง (ล้อ extFlags06)
+    hasLodging: !!sp.hasLodging || hasActualSub(SchemaTH.SEC.EXT, SchemaTH.SUB.EXT_LODGING),
+    hasTravel: !!sp.hasTravel || hasActualSub(SchemaTH.SEC.EXT, SchemaTH.SUB.EXT_TRAVEL),
     payType: sp.payType || 'hourly',
     internal: !!sp.hasInternal || (b.secInternal > 0),
     pres: !!(sp.pres && sp.pres.on),
@@ -1123,8 +1124,27 @@ function applyActuals07(slot){
     }
   });
 
+  // ✅ ยอดที่พัก/พาหนะที่จับคู่ชื่อไม่ได้ (เช่น บิลที่พักลงชื่อโรงแรมแทนชื่อวิทยากร) —
+  // รวมยอดจริงทั้งหมดของหมวดย่อยจาก 06 แล้วหักส่วนที่จับคู่ได้ ส่วนที่เหลือใส่ให้วิทยากรคนแรก
+  // (ช่อง "ใช้จริง" แก้ไขได้ ผู้ใช้ปรับเองได้) กันยอดรวมใบปะหน้าขาด
+  const sumSub = sub => extRows.filter(r => r.sub === sub).reduce((a,r)=>a+(parseFloat(r.total)||0), 0);
+  const realloc = [];
+  if(list.length){
+    [['aHotel', SchemaTH.SUB.EXT_LODGING, 'ที่พัก'], ['aTravel', SchemaTH.SUB.EXT_TRAVEL, 'พาหนะ']].forEach(([fld, sub, label]) => {
+      const totalReal = sumSub(sub);
+      if(!totalReal) return;
+      const assigned = list.reduce((a,x)=>a+(x[fld]||0), 0);
+      const rest = Math.round((totalReal - assigned) * 100) / 100;
+      if(rest > 0.005){
+        list[0][fld] = Math.round(((list[0][fld]||0) + rest) * 100) / 100;
+        realloc.push(label + ' ' + fmt(rest) + ' บาท → "' + (list[0].name||'วิทยากรคนที่ 1') + '"');
+      }
+    });
+  }
+
   const unmatched = byNameKeys.filter(k=>!matchedKeys.has(k)).map(k=>byNameComp[k].raw);
   const warnParts = [];
+  if(realloc.length) warnParts.push('ยอดที่จับคู่ชื่อไม่ได้ถูกใส่ให้วิทยากรคนแรก (โปรดตรวจ/ปรับเอง): '+realloc.join(' | '));
   if(fuzzyMatches.length) warnParts.push('จับคู่แบบไม่ตรงเป๊ะ (โปรดตรวจสอบ): '+fuzzyMatches.join(' | '));
   if(unmatched.length)    warnParts.push('ไม่พบคู่ในไฟล์ 05: '+unmatched.join(', '));
   if(warnParts.length){
@@ -2033,6 +2053,15 @@ async function savePdf07(btn){
        เป็นภาพ ไม่รองรับ border-collapse) ตอนนี้ส่ง CSS จริงไปให้ Puppeteer ทั้งชุดแล้ว
        (ดู originalStyles ด้านล่าง) เส้นบางๆ 0.5px ตามคลาส nb/nt/bb2/bt2/bb3 เดิมจะได้ผลลัพธ์
        เหมือนตอนพรีวิว/พิมพ์เป๊ะ ไม่ต้องบังคับเป็น 1px ทึบทับเองอีก (ซึ่งเคยทำให้เส้นหนาไม่เท่ากัน) */
+    /* ✅ ลบแถวหมายเหตุที่ว่างก่อนแปลง input→span (หลังแปลงแล้ว :placeholder-shown ใช้ไม่ได้ ทำให้
+       คำว่า "หมายเหตุ :" ค้างใน PDF) — ถ้าไม่เหลือแถวที่มีข้อความเลย ลบทั้งบล็อกรวม label */
+    const noteWrap = clone.querySelector('#noteExtraLines')?.parentElement?.parentElement;
+    clone.querySelectorAll('.note-row-1, .note-row-2').forEach(r => {
+      const inp = r.querySelector('input');
+      if(!inp || !inp.value.trim()) r.remove();
+    });
+    clone.querySelectorAll('.btn-add-note').forEach(b => b.remove());
+    if(noteWrap && !noteWrap.querySelector('.note-row-1, .note-row-2')) noteWrap.remove();
     /* แปลง input → span (inline) เพื่อให้ตัวเลขกับ "คน" อยู่บรรทัดเดียวกัน */
     clone.querySelectorAll('input').forEach(inp => {
       const cs = window.getComputedStyle(inp);
