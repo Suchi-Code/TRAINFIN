@@ -493,6 +493,10 @@ function buildRowsForYear(year){
     let dateActual = '', location = '', actualQuarter = null;
     const withDate = linked.filter(cr => cr.dateStart);
     const chosen = withDate[0] || linked[0] || null;
+    // เลขที่หลักสูตร/ปี/วันเริ่มของรุ่นที่เลือก — ใช้ดึงรูปจาก Cloudinary (courseImageUrls)
+    const courseNo = chosen ? String(chosen.no||'').trim() : '';
+    const courseYear = chosen ? normYear(chosen.year) : '';
+    const dateStartRaw = chosen ? (chosen.dateStart||'') : '';
     if(chosen){
       location = chosen.location || '';
       if(chosen.dateStart){
@@ -515,6 +519,7 @@ function buildRowsForYear(year){
       approved, actual, approvedOperation, approvedTravel, actualOperation, actualTravel,
       runsTotal, runsDone,
       status, location, dateActual,
+      courseNo, courseYear, dateStartRaw,
       linkedCourses: linked,
     };
   });
@@ -628,15 +633,52 @@ function renderStatusTable(){
 function effQuarter(r){ return r.actualQuarter || r.q; }
 function isMovedQuarter(r){ return !!(r.actualQuarter && r.q && r.actualQuarter!==r.q); }
 
-/* เรียงให้แผนที่ผูกรุ่น (planId) แล้วขึ้นก่อน — คงลำดับเดิมของ Google Sheet ภายในแต่ละกลุ่ม (stable) */
+/* เรียงตามความคืบหน้า: เสร็จสิ้น (ซ้ายสุด) → กำลังดำเนินการ → ที่เหลือ (ยังไม่เริ่ม/เลยกำหนด)
+   คงลำดับเดิมของ Google Sheet ภายในแต่ละกลุ่ม (stable) */
+const STATUS_RANK = { done:0, progress:1 };
 function linkedFirst(list){
   return list.map((r,i)=>({r,i}))
     .sort((a,b)=>{
-      const la = a.r.linkedCourses.length>0 ? 0 : 1;
-      const lb = b.r.linkedCourses.length>0 ? 0 : 1;
-      return la!==lb ? la-lb : a.i-b.i;
+      const ra = STATUS_RANK[a.r.status] ?? 2;
+      const rb = STATUS_RANK[b.r.status] ?? 2;
+      return ra!==rb ? ra-rb : a.i-b.i;
     })
     .map(x=>x.r);
+}
+
+/* ============================================================
+   รูปหลักสูตร (Cloudinary) — ใช้รูปแบบเดียวกับ 01_Main-Reports.html
+   gfr1/<ปีงบ พ.ศ.>/<เลขที่หลักสูตร> ลองปีงบของหลักสูตรก่อน แล้วปีงบที่กำลังดู ปีงบจากวันที่อบรม
+   ถ้าไม่เจอสักปี ใช้รูปค่าตั้งต้น (เลือกแบบคงที่ต่อหลักสูตร ไม่สุ่มใหม่ทุกครั้งที่กรอง)
+   ============================================================ */
+const CLOUDINARY_UPLOAD = 'https://res.cloudinary.com/daytjjgll/image/upload/';
+const FALLBACK_GFR1_IMAGES = ['gfr1/heftpyre6z4aiotufazm','gfr1/s5epptybf473sotkli4h'];
+
+function fiscalYearOfDate(iso){
+  const m = String(iso||'').match(/^(\d{4})-(\d{1,2})/);
+  if(!m) return '';
+  let y = parseInt(m[1],10);
+  if(y < 2400) y += 543;
+  return String(y + (parseInt(m[2],10) >= 10 ? 1 : 0));
+}
+
+function courseImageUrls(r, yearHint){
+  const no = encodeURIComponent(r.courseNo);
+  const years = [r.courseYear, yearHint, fiscalYearOfDate(DateTH.normalize(r.dateStartRaw))]
+    .map(y => String(y||'')).filter((y,i,a) => /^\d{4}$/.test(y) && a.indexOf(y)===i);
+  const urls = years.map(y => `${CLOUDINARY_UPLOAD}f_auto,q_auto,w_800/gfr1/${y}/${no}`);
+  const h = [...r.courseNo].reduce((s,c)=>s+c.charCodeAt(0),0);
+  urls.push(`${CLOUDINARY_UPLOAD}f_auto,q_auto,w_800/${FALLBACK_GFR1_IMAGES[h % FALLBACK_GFR1_IMAGES.length]}`);
+  return urls;
+}
+
+/* onerror ของรูปในการ์ด: ลอง URL ถัดไปทีละอัน (ปีงบอื่น → รูปค่าตั้งต้น) แล้วหยุด */
+function cardImgError(img){
+  const urls = (img.dataset.urls||'').split('|').filter(Boolean);
+  const i = (parseInt(img.dataset.i,10)||0) + 1;
+  if(i < urls.length){ img.dataset.i = i; img.src = urls[i]; return; }
+  img.onerror = null;
+  img.style.display = 'none';   // ไม่มีรูปเลย → กลับไปเห็นพื้นหลังไล่สี + 📸 เดิม
 }
 
 function renderQuarterDots(){
@@ -661,17 +703,24 @@ function diffCell(label, value){
 function cardHTML(r, idx){
   const done = r.status === 'done';
   const cancelled = r.status === 'cancelled';
+  // ผลต่าง 3 ช่อง (ตามลำดับที่แสดง): แผน−ใช้จริง / แผน−อนุมัติ / อนุมัติ−ใช้จริง
+  // ช่องที่ใช้ "ใช้จริง" แสดงเฉพาะหลักสูตรที่เสร็จสิ้นแล้ว (ทุกรุ่นมีไฟล์ 07) กันเทียบยอดที่ยังไม่ครบ
   const diff1 = done ? r.plan - r.actual : null;
-  const diff2 = r.approved>0 ? r.approved - r.plan : null;
-  const diff3 = r.approved>0 ? r.plan - r.approved : null;
+  const diff2 = r.approved>0 ? r.plan - r.approved : null;
+  const diff3 = (done && r.approved>0) ? r.approved - r.actual : null;
   const st = STATUS_LABEL[r.status];
   const statusBadgeCls = done ? 'done' : (cancelled ? 'cancelled' : (r.status==='progress' ? 'progress' : 'pending'));
   // การ์ดที่ยังไม่จัดอบรม (สถานะไม่ใช่ done ทั้งหมด — รวม progress/notstarted/cancelled) ใช้ภาพ placeholder
   // ที่ Kwang กำหนด แทน emoji เดิม; ต้องวางเป็นลูกตัวแรกใน .ccm-photo (ก่อน badge) ไม่งั้นจะไปทับ badge
   // เพราะ .ccm-photo-img เป็น position:absolute inset:0 เต็มกล่อง
   const NOT_HELD_IMG = 'https://res.cloudinary.com/daytjjgll/image/upload/fl_preserve_transparency/v1788005323/qtiq5vyjsvzs2i7bdmtv.jpg?_s=public-apps';
+  // การ์ดที่จัดแล้ว (done) ดึงรูปกิจกรรมจาก Cloudinary เหมือนไฟล์ 01 (gfr1/<ปีงบ>/<เลขที่หลักสูตร>)
+  // ระหว่างโหลด/ถ้าไม่มีรูปเลย จะเห็นพื้นหลังไล่สี + 📸 เดิม
   const photoInner = done
-    ? '📸'
+    ? (r.courseNo
+        ? (() => { const urls = courseImageUrls(r, currentYear);
+            return `📸<img class="ccm-photo-img" src="${urls[0]}" data-urls="${urls.join('|')}" data-i="0" onerror="cardImgError(this)" alt="ภาพกิจกรรม ${r.courseNo}" loading="lazy">`; })()
+        : '📸')
     : `<img class="ccm-photo-img" src="${NOT_HELD_IMG}" alt="ยังไม่จัดอบรม" loading="lazy">`;
   return `
   <div class="course-card-mini ${done?'':'muted'}">
@@ -689,8 +738,8 @@ function cardHTML(r, idx){
       <div class="ccm-cell"><label>อนุมัติ</label><strong>${r.approved?fmt(r.approved):'—'}</strong></div>
       <div class="ccm-cell"><label>ใช้จริง</label><strong>${r.actual?fmt(r.actual):'—'}</strong></div>
       ${diffCell('แผน−ใช้จริง', diff1)}
-      ${diffCell('อนุมัติ−แผน', diff2)}
-      ${diffCell('แผน−อนุมัติ', diff3)}
+      ${diffCell('แผน−อนุมัติ', diff2)}
+      ${diffCell('อนุมัติ−ใช้จริง', diff3)}
     </div>
   </div>`;
 }
