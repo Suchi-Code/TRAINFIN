@@ -14,8 +14,7 @@
 <script src="js/gas-api.js"></script>
 <script src="js/schema.js"></script>
 <script src="js/print-layout.js"></script>
-<script src="js/permissions.js"></script>
-<script>checkAuth(); lockPageIfReadOnly();</script>
+<script>checkAuth();</script>
 <style>
 /* ============================================================
    RESET & BASE
@@ -63,6 +62,22 @@ body{font-family:'Sarabun',sans-serif;background:#f3f4f6;color:#1e2533;font-size
 .ip-section-title{font-size:13px;font-weight:700;color:#0f2744;margin:14px 0 8px;border-left:3px solid #1d5fa8;padding-left:8px}
 
 /* ============================================================
+   TOOLBAR (ระยะห่างบรรทัด / สเกล PDF) — ล้อไฟล์ 06
+   ============================================================ */
+.print-toolbar{display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;margin-bottom:10px}
+.spacing-ctrl{display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid #dde1e9;border-radius:8px;padding:6px 8px 6px 14px;box-shadow:0 2px 6px rgba(0,0,0,.05)}
+.spacing-ctrl span{font-size:12px;font-weight:700;color:#374151;white-space:nowrap}
+.spacing-ctrl .sp-level{font-size:12px;font-weight:700;color:#1d5fa8;min-width:48px;text-align:center}
+.btn-sp{width:30px;height:30px;border:1.5px solid #dde1e9;background:#fff;border-radius:6px;font-size:16px;font-weight:700;color:#1d5fa8;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;line-height:1}
+.btn-sp:hover{background:#eaf2fc;border-color:#1d5fa8}
+.btn-sp:disabled{opacity:.35;cursor:not-allowed}
+.btn-sp:disabled:hover{background:#fff;border-color:#dde1e9}
+.scale-ctrl{display:flex;align-items:center;gap:6px;font-size:12px;color:#374151;font-weight:700;background:#fff;border:1.5px solid #dde1e9;border-radius:8px;padding:6px 12px;box-shadow:0 2px 6px rgba(0,0,0,.05)}
+.scale-ctrl select{border:1px solid #dde1e9;border-radius:5px;padding:2px 6px;font-family:'Sarabun',sans-serif;font-size:12px;color:#374151;cursor:pointer}
+#doc-note{text-align:center;font-size:12px;color:#6b7280;margin:0 0 10px}
+#doc_overflow_warn{display:none;max-width:780px;margin:0 auto 12px;padding:9px 14px;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;color:#b91c1c;font-size:12.5px;font-weight:600}
+
+/* ============================================================
    DOCUMENT CONTENT (screen display + print)
    ============================================================ */
 .doc-wrap{font-family:'Sarabun',sans-serif;font-size:13px;line-height:1.5;color:#000;}
@@ -75,8 +90,9 @@ body{font-family:'Sarabun',sans-serif;background:#f3f4f6;color:#1e2533;font-size
 }
 .hdr-inp:focus{border-bottom-color:#1d5fa8;background:#f0f7ff}
 @media print{.hdr-inp{border-bottom:none!important;background:transparent!important}}
+/* ✅ padding แนวตั้งผูกกับ --row-pad-v (ปุ่มปรับระยะห่างบรรทัด) เหมือนไฟล์ 06 */
 .doc-table{width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:10px}
-.doc-table th,.doc-table td{border:1px solid #000;padding:5px 7px;vertical-align:top}
+.doc-table th,.doc-table td{border:1px solid #000;padding:var(--row-pad-v,5px) 7px;vertical-align:top}
 .doc-table th{background:#e8ecf5;font-weight:700;text-align:center;white-space:nowrap}
 .doc-table td.tc{text-align:center;white-space:nowrap}
 .doc-table td.tr{text-align:right;white-space:nowrap}
@@ -89,13 +105,20 @@ body{font-family:'Sarabun',sans-serif;background:#f3f4f6;color:#1e2533;font-size
 .doc-page{page-break-after:always}
 .doc-page:last-child{page-break-after:avoid}
 .doc-table tbody tr{page-break-inside:avoid}
+/* ช่องรายการใบเสร็จแก้ไขข้อความได้ในพรีวิว (กด Enter ขึ้นบรรทัดใหม่) */
+.rpt-edit-cell{outline:none}
+@media screen{
+  .rpt-edit-cell[contenteditable="true"]:hover{background:#fffbe6}
+  .rpt-edit-cell[contenteditable="true"]:focus{background:#fff8d6;box-shadow:0 0 0 2px #f5c842 inset}
+  .doc-page.doc-overflow{outline:2px dashed #dc2626;outline-offset:-2px}
+}
 
 /* ============================================================
    PRINT MEDIA
    ============================================================ */
 @page{size:A4 portrait;margin:0.5in 0.47in 0 0.47in}
 @media print{
-  .site-header,#input-panel{display:none!important}
+  .site-header,#input-panel,.print-toolbar,#doc-note,#doc_overflow_warn{display:none!important}
   body{background:#fff!important}
   .page{max-width:100%!important;padding:0!important;margin:0!important}
   #doc-display{padding:0!important;border:none!important;border-radius:0!important;background:transparent!important}
@@ -123,7 +146,7 @@ body{font-family:'Sarabun',sans-serif;background:#f3f4f6;color:#1e2533;font-size
     <div style="display:flex;align-items:center;gap:8px">
       <a class="btn-back" href="01_Main-Reports.html">← ย้อนกลับ</a>
       <button class="btn-print-hdr" onclick="window.print()">🖨 พิมพ์แบบฟอร์ม</button>
-      <button class="btn-save-pdf" data-permission="write" onclick="savePdf(this)">💾 บันทึก PDF</button>
+      <button class="btn-save-pdf" onclick="savePdf(this)">💾 บันทึก PDF</button>
     </div>
   </div>
 </header>
@@ -165,6 +188,36 @@ body{font-family:'Sarabun',sans-serif;background:#f3f4f6;color:#1e2533;font-size
 </div>
 
 <!-- ============================================================
+     TOOLBAR — ระยะห่างบรรทัด + สเกลหน้ากระดาษ (ล้อไฟล์ 06)
+     ============================================================ -->
+<div class="print-toolbar">
+  <div class="spacing-ctrl">
+    <span>ระยะห่างบรรทัด</span>
+    <button class="btn-sp" id="sp_dec_09" onclick="rowSpacing09.adjust(-1);rebuildPreview()" title="ลดระยะห่าง">−</button>
+    <span class="sp-level" id="sp_level_09">ปกติ</span>
+    <button class="btn-sp" id="sp_inc_09" onclick="rowSpacing09.adjust(1);rebuildPreview()" title="เพิ่มระยะห่าง">＋</button>
+  </div>
+  <div class="scale-ctrl">
+    <label for="pdf_scale_09">สเกลหน้ากระดาษ (PDF):</label>
+    <select id="pdf_scale_09" onchange="rebuildPreview()">
+      <option value="70">70%</option>
+      <option value="75">75%</option>
+      <option value="80">80%</option>
+      <option value="85">85%</option>
+      <option value="90">90%</option>
+      <option value="95">95%</option>
+      <option value="100" selected>100%</option>
+    </select>
+  </div>
+  <span style="font-size:11px;color:#9ca3af">การสั่งพิมพ์ตรงจากเบราว์เซอร์ควรตั้งค่าหน้ากระดาษที่ 100%</span>
+</div>
+<div id="doc-note">
+  ✏️ คลิกที่ข้อความในคอลัมน์ "รายการ" หรือหัวเอกสารเพื่อแก้ไขได้ กด Enter เพื่อขึ้นบรรทัดใหม่ —
+  มีผลกับการพิมพ์/PDF รอบนี้เท่านั้น (รีเฟรชหน้าแล้วข้อความที่แก้จะหาย)
+</div>
+<div id="doc_overflow_warn"></div>
+
+<!-- ============================================================
      DOCUMENT DISPLAY (แสดงตัวอย่างพิมพ์ทันที — ดึงจาก sec=2)
      ============================================================ -->
 <div id="doc-display"></div>
@@ -180,9 +233,7 @@ body{font-family:'Sarabun',sans-serif;background:#f3f4f6;color:#1e2533;font-size
    ============================================================ */
 /* วันที่ไทย — logic ย้ายไปรวมที่ js/date-th.js แล้ว (DateTH.normalize/format/formatRange ใช้
    getUTCHours()/getUTCFullYear() เท่านั้น ชดเชย timezone +7 ให้ถูกต้องเสมอ ไม่ขึ้นกับ timezone
-   ของเครื่อง/เบราว์เซอร์ผู้ใช้) — ของเดิม toISODate() ใช้ Date methods แบบ local (getFullYear/
-   getMonth/getDate) เสี่ยงวันที่เพี้ยนไป 1 วันตาม timezone เครื่อง (ดู gotcha 6.5 ในคู่มือ)
-   เก็บชื่อฟังก์ชันเดิมไว้เป็น wrapper บางๆ กันไม่ต้องแก้จุดเรียกใช้ทั้งไฟล์ (ไม่มีจุดใดใช้ short=true) */
+   ของเครื่อง/เบราว์เซอร์ผู้ใช้) เก็บชื่อฟังก์ชันเดิมไว้เป็น wrapper บางๆ */
 function fmtDate(d, short){
   return DateTH.format(d, { month: short ? 'short' : 'long' });
 }
@@ -207,6 +258,16 @@ function toISODate(v){
    ROWS STATE (data only — ไม่มี editable DOM table อีกต่อไป)
    ============================================================ */
 let editRows = [];   // [{seq,doc,name,branch,taxid,addr1,tambon,amphoe,province,zip,date,acct,val,vat,wht,total}, ...]
+let docReady = false; // true เมื่อโหลดข้อมูลหลักสูตรสำเร็จแล้ว (กันปุ่มสเกล/ระยะห่างสร้างเอกสารเปล่าทับข้อความแจ้งเตือน)
+
+// ✅ ปุ่มปรับระยะห่างบรรทัด — ใช้ PaginateTH.makeRowSpacingControl ร่วมกับไฟล์ 05/06/07
+// (sessionKey ต้องไม่ซ้ำกับไฟล์อื่น)
+const rowSpacing09 = PaginateTH.makeRowSpacingControl({
+  containerSelector: '#doc-display',
+  sessionKey: 'rpt09_rowSpacing',
+  labelId: 'sp_level_09', decId: 'sp_dec_09', incId: 'sp_inc_09',
+});
+rowSpacing09.init();
 
 /* ============================================================
    ที่อยู่แบบยืดหยุ่น (ตัดขึ้นบรรทัดใหม่ + รองรับกรุงเทพฯ แขวง/เขต) — พอร์ตมาจาก
@@ -281,20 +342,14 @@ function esc(s){
    ============================================================ */
 
 /* ============================================================
-   หมวดรายการ — ย้ายไปใช้ SchemaTH (js/schema.js) แล้ว แทนก้อน SEC_OPTS/DYNAMIC_SEC_ORDER
-   ที่เคยก็อปวางซ้ำจากไฟล์ 06 (แก้บั๊กสำคัญ: ของเดิมใช้รหัสหมวดแบบเก่า '1'/'2'/'3'/'4'
-   ซึ่งไม่ตรงกับที่ไฟล์ 06 เขียนจริงหลัง refactor (SchemaTH.SEC.OFFICE='office' ฯลฯ) ทำให้
-   แถวหมวดวัสดุสำนักงาน/วัสดุเบ็ดเตล็ด/อาหาร/เดินทางเจ้าหน้าที่ที่ติ๊ก ว.119 ไม่เคยถูกดึงมา
-   แสดงเลยอย่างเงียบๆ — ดู bug ledger #11/#12 ที่แก้จุดเดียวกันในไฟล์ 07 ไปแล้ว)
+   หมวดรายการ — ใช้ SchemaTH (js/schema.js) ร่วมกับไฟล์ 06/07
    ============================================================ */
 const SEC_OPTS          = SchemaTH.SEC_OPTS;
 const DYNAMIC_SEC_ORDER = SchemaTH.DYNAMIC_SEC_ORDER;
 
 /* ============================================================
-   เลขข้อหมวดใหญ่ "1., 2., 3..." — เดิมล้อตามหมวดที่ "ตั้งงบประมาณไว้" ในไฟล์ 05 ทั้งหมด (ให้ตรง
-   เลขข้อกับรายงาน 06/07) เปลี่ยนตามที่ยืนยันแล้ว: นับเฉพาะหมวดที่มีรายการติ๊ก ว.119 จริงในรายงาน
-   นี้เท่านั้น เรียงตามลำดับ DYNAMIC_SEC_ORDER แบบต่อเนื่องไม่กระโดดข้ามหมวดที่ไม่มี ว.119 เลย
-   (แม้หมวดนั้นจะมีงบตั้งไว้ในไฟล์ 05 ก็ตาม) — ไม่ต้องพึ่ง budget/toggles จากไฟล์ 05 อีกต่อไป
+   เลขข้อหมวดใหญ่ "1., 2., 3..." — นับเฉพาะหมวดที่มีรายการติ๊ก ว.119 จริงในรายงานนี้เท่านั้น
+   เรียงตามลำดับ DYNAMIC_SEC_ORDER แบบต่อเนื่องไม่กระโดดข้ามหมวดที่ไม่มี ว.119 เลย
    ============================================================ */
 function computeW119SectionNumbers(w119Rows){
   const present = new Set((w119Rows||[]).map(r=>r.sec));
@@ -311,15 +366,12 @@ let SECTION_NUMS = {};
 
 /* ============================================================
    LEGACY CODE MIGRATION — actual06.rowsJson ของคอร์สที่บันทึกไว้ "ก่อน" ไฟล์ 06 ย้ายไปใช้
-   SchemaTH ยังเป็นรหัสหมวดแบบเก่า ('1','2','3','4') — แปลงตอนอ่านเข้ามาเท่านั้น (lazy migration
-   แบบเดียวกับ migrateLegacyRow06/07 ไม่ batch-migrate ข้อมูลใน Sheet จริง) ก่อนนำไปกรอง/นับหมวด
-   09 ใช้แค่ sec สำหรับจัดกลุ่ม/หาเลขข้อ ไม่ได้ใช้ sub เลย จึงไม่ต้อง map sub เหมือน 07
+   SchemaTH ยังเป็นรหัสหมวดแบบเก่า ('1','2','3','4') — แปลงตอนอ่านเข้ามาเท่านั้น (lazy migration)
    ============================================================ */
 const LEGACY_SEC09_MAP = {
   '1': SchemaTH.SEC.OFFICE, '2': SchemaTH.SEC.MISC, '3': SchemaTH.SEC.FOOD, '4': SchemaTH.SEC.STAFF_TRAVEL,
 };
-// ⚠️ เพิ่มใหม่: เดิม 09 ใช้แค่ sec ไม่ได้ใช้ sub เลย (ดูคอมเมนต์เดิม) แต่ตอนนี้ต้องใช้ sub เพื่อ
-// แสดงหัวข้อย่อย (เช่น "ค่าเครื่องเขียนแบบพิมพ์"/"ค่าถ่ายเอกสารและเข้าเล่ม") แบบเดียวกับไฟล์ 06/07
+// ใช้ sub เพื่อแสดงหัวข้อย่อย (เช่น "ค่าเครื่องเขียนแบบพิมพ์"/"ค่าถ่ายเอกสารและเข้าเล่ม") แบบเดียวกับไฟล์ 06/07
 // จึงต้อง migrate รหัสเก่า→ใหม่ของ sub ด้วย (คัดลอกจาก LEGACY_SUB07_MAP ทั้งชุด)
 const LEGACY_SUB09_MAP = {
   '1_1': SchemaTH.SUB.OFFICE_STATIONERY, '1_2': SchemaTH.SUB.OFFICE_COPY,
@@ -361,8 +413,6 @@ async function loadFromGSheet09(no){
     const g6 = gsRow.actual06 || {};
 
     // ── เติมข้อมูลหลักสูตรลง input-panel (read-only display) ──
-    // วันที่: รองรับหลายตำแหน่งที่อาจมาจาก backend (cr.dateStart/dateEnd เป็นหลัก
-    // แต่กันเหนียวกรณี backend ส่งมาที่ระดับบนสุดของ gsRow หรือใน actual06 แทน)
     const title    = cr.course    || '';
     const run      = cr.batch     || '';
     const runno    = cr.no        || no;
@@ -378,8 +428,7 @@ async function loadFromGSheet09(no){
     if(document.getElementById('f_location')) document.getElementById('f_location').value  = location;
 
     // ── กรองเฉพาะรายการที่ติ๊ก "ค่าใช้จ่ายตาม ว.119" (w119) จาก actual06.rowsJson ──
-    // หมายเหตุ: ไฟล์ 06 บันทึกคอลัมน์ "rowsJson" เป็น JSON string (ไม่ใช่ "rows")
-    // ต้อง parse ก่อนใช้งาน และรองรับกรณี backend คืนมาเป็น array อยู่แล้ว
+    // ไฟล์ 06 บันทึกคอลัมน์ "rowsJson" เป็น JSON string (ไม่ใช่ "rows") ต้อง parse ก่อนใช้งาน
     let allRows = [];
     const rawRows = g6.rowsJson ?? g6.rows ?? [];
     if(typeof rawRows === 'string'){
@@ -387,19 +436,13 @@ async function loadFromGSheet09(no){
     } else if(Array.isArray(rawRows)){
       allRows = rawRows;
     }
-    // normalize รหัสหมวดเก่า→ใหม่ (LEGACY_SEC09_MAP) ก่อนใช้งานเสมอ — เผื่อคอร์สนี้ยังไม่เคย
-    // ถูกบันทึกซ้ำด้วยไฟล์ 06 เวอร์ชันใหม่ (ดู bug ledger #12)
     allRows = allRows.map(migrateLegacyRow09);
 
-    // กรองเฉพาะรายการที่ติ๊ก ว.119 ก่อน แล้วค่อยคำนวณเลขข้อจากหมวดที่ "มีจริง" ในชุดนี้เท่านั้น
-    // (เปลี่ยนจากเดิมที่คำนวณจาก allRows ทั้งหมดโดยอิงงบที่ตั้งไว้ในไฟล์ 05 — ดูคอมเมนต์ที่
-    // computeW119SectionNumbers() ด้านบน)
     const w119Rows = allRows.filter(r=>r.w119===true || r.w119==='true');
     SECTION_NUMS = computeW119SectionNumbers(w119Rows);
 
     editRows = w119Rows.map(r=>{
       // กันเหนียว: ใช้ staff เฉพาะตอนเป็นหมวดค่าเดินทางเจ้าหน้าที่เท่านั้น
-      // ป้องกัน bug เดิมจากไฟล์ 06 ที่ select เจ้าหน้าที่ติดค่า default มาทุกแถว
       const nameVal = r.name || (r.sec === SchemaTH.SEC.STAFF_TRAVEL ? (r.staff||'') : '');
       const secLabel = (SEC_OPTS.find(s=>s.v===r.sec)?.l) || '';
       return {
@@ -410,8 +453,7 @@ async function loadFromGSheet09(no){
         doc   : r.doc    || '',
         name  : nameVal,
         branch: r.branch || '',
-        // ⚠️ เก็บฟิลด์ที่อยู่แบบแยกส่วน (ไม่รวมเป็นสตริงเดียวแบบ buildAddr() เดิม) เพื่อให้
-        // buildDocHtml() คำนวณการตัดบรรทัดที่อยู่แบบยืดหยุ่นได้ (ดู buildAddrLines())
+        // เก็บฟิลด์ที่อยู่แบบแยกส่วน เพื่อให้ buildDocHtml() คำนวณการตัดบรรทัดที่อยู่แบบยืดหยุ่นได้
         addr1   : r.addr1   || '',
         tambon  : r.tambon  || '',
         amphoe  : r.amphoe  || '',
@@ -434,6 +476,7 @@ async function loadFromGSheet09(no){
       showGsStatus('✅ โหลดข้อมูลสำเร็จ', 'ok');
     }
 
+    docReady = true;
     renderDocDisplay();
   }catch(e){
     hideGsLoader();
@@ -443,18 +486,49 @@ async function loadFromGSheet09(no){
 }
 
 /* ============================================================
-   AUTO-LOAD ON PAGE ENTER — key จาก sessionStorage (ไฟล์ 01 ส่งมา)
+   AUTO-LOAD ON PAGE ENTER — ล้อไฟล์ 06 (loadFromMain)
+   ลำดับความสำคัญของ "เลขที่หลักสูตร":
+     1. ?no=... ใน URL (ถ้ามี)
+     2. courseData จาก sessionStorage — ส่งมาโดย 01 ตอนเปิดหลักสูตรที่ user เลือกอยู่ตอนนี้
+     3. budgetSlotData จาก sessionStorage (เสริม กรณีไม่มี courseData)
+   ⚠️ ห้ามอ่าน localStorage.budgetSlotData เด็ดขาด — ค่านี้ค้างจากหลักสูตรที่เปิดครั้งก่อนๆ
+   (บัคเดิม: เปิด 01 ที่เลข 01321279 แต่ 09 ไปดึงข้อมูลของ 01321294 ที่ค้างอยู่)
    ============================================================ */
 function autoLoadFromFile01(){
-  let slot={};
-  try{
-    const raw = sessionStorage.getItem('budgetSlotData') || localStorage.getItem('budgetSlotData');
-    if(raw) slot = JSON.parse(raw);
-    else slot = JSON.parse(sessionStorage.getItem('courseData')||'{}');
-  }catch(e){}
+  let no = '';
+  try{ no = (new URLSearchParams(location.search).get('no') || '').trim(); }catch(e){}
 
-  const no = slot.no || slot.courseNo || '';
+  if(!no){
+    try{
+      const cd = JSON.parse(sessionStorage.getItem('courseData') || 'null');
+      if(cd) no = String(cd.no || cd.courseNo || '').trim();
+    }catch(e){}
+  }
+  if(!no){
+    try{
+      const slot = JSON.parse(sessionStorage.getItem('budgetSlotData') || 'null');
+      if(slot) no = String(slot.no || slot.courseNo || '').trim();
+    }catch(e){}
+  }
   loadFromGSheet09(no);
+}
+
+/* ============================================================
+   พื้นที่พิมพ์ต่อหน้า (px) ตามสเกลที่เลือก — ล้อ sumPageGeom06 ของไฟล์ 06
+   Puppeteer ย่อเนื้อหาตาม scale และจัดเลย์เอาต์ในพื้นที่ที่กว้าง/สูงขึ้น (÷ scale)
+   การแบ่งหน้าและตรวจหน้าล้นจึงต้องใช้เกณฑ์เดียวกัน
+   พื้นที่พิมพ์ตาม @page{size:A4 portrait;margin:0.5in 0.47in 0 0.47in}
+   (กว้าง 210-11.94*2≈186.1mm, สูง 297-12.7-0≈284.3mm)
+     hMax = ความสูงพิมพ์ได้จริง, hPx = เกณฑ์แบ่งหน้า (เผื่อ ~1.5% กันปัดเศษเมื่อสเกล < 100%
+     — ที่ 100% คงค่าเดิมเป๊ะ)
+   ============================================================ */
+function pageGeom09(){
+  const scale = PaginateTH.getPdfScale('pdf_scale_09', 100);
+  const wPx  = PaginateTH.mmToPx(186.1) / scale;
+  const hMax = PaginateTH.mmToPx(284.3) / scale;
+  const hPx  = scale < 1 ? hMax * 0.985 : hMax;
+  const rowPadV = document.getElementById('doc-display')?.style.getPropertyValue('--row-pad-v') || '5px';
+  return { scale, wPx, hPx, hMax, rowPadV };
 }
 
 /* ============================================================
@@ -497,8 +571,6 @@ function buildDocHtml(){
 
   // ✅ หัวข้อย่อย (ไม่มีเลขนำหน้า) — ล้อ pattern เดียวกับไฟล์ 06 (sumBuildDoc): บางหมวด
   // (วัสดุสำนักงาน/วัสดุเบ็ดเตล็ด) ต้องขึ้นหัวข้อย่อยทันทีหลังหัวข้อหมวดใหญ่เสมอ (subAlways=true)
-  // หมวดอื่นไม่มีหัวข้อย่อยจริง ใช้ secLabel เดิมแทน (subAlways=false) ทุกแถวในไฟล์นี้เป็น
-  // ว.119 อยู่แล้ว (กรองมาก่อนหน้านี้) จึงต่อ "(ว.119)" ท้ายทุกหัวข้อเสมอเหมือนพฤติกรรมเดิม
   rows.forEach(r=>{
     if (r.sec === SchemaTH.SEC.MISC) {
       r.subLabel = 'ค่าใช้จ่ายอื่นๆ';
@@ -535,10 +607,22 @@ function buildDocHtml(){
       </tr>
     </thead>`;
 
+  /* ---- หัวเอกสาร (อยู่ในหน้าแรกเสมอ — นับรวมในความสูงตอนแบ่งหน้า เหมือนไฟล์ 06) ---- */
+  const headerHtml = `<div class="doc-title">
+  <div class="hdr-inp" id="ph_title1" contenteditable="true"></div>
+  <div class="hdr-inp" id="ph_title2" contenteditable="true">รายละเอียดค่าใช้จ่ายกรณีจัดซื้อ / จัดจ้างพัสดุ</div>
+  <div class="hdr-inp" id="ph_title3" contenteditable="true">ที่เกี่ยวกับค่าใช้จ่ายในการบริหารงานที่มีวงเงินฯ ครั้งละไม่เกิน 10,000 บาท</div>
+</div>
+<div class="doc-meta">
+  <div class="hdr-inp" id="ph_line1" contenteditable="true">หลักสูตร "${title}" รุ่นที่ ${run}</div>
+  <div class="hdr-inp" id="ph_line2" contenteditable="true">เลขที่รุ่นหลักสูตร ${runno}${dateStr?' ในวันที่ '+dateStr:''}</div>
+  <div class="hdr-inp" id="ph_line3" contenteditable="true">${location?'ณ '+location:''}</div>
+  <div class="hdr-inp" id="ph_line4" contenteditable="true"></div>
+</div>`;
+
   /* ---- แถวข้อมูลของ "หนึ่งชุด" (chunk = rows.slice(startIdx,endIdx)) ----
      แทรกหัวข้อหมวดใหญ่/หัวข้อย่อยใหม่ตามปกติ — รีเซ็ต lastSec/currentSegKey ทุกครั้งที่ขึ้น
-     หน้าใหม่ (เหมือนไฟล์ 06) เพื่อให้หมวดที่ต่อเนื่องข้ามหน้าขึ้นหัวข้อซ้ำอีกครั้ง อ่านง่ายไม่ต้อง
-     เปิดย้อนไปหน้าก่อน — ไฟล์นี้ไม่มี "ยกยอดมา/ยกยอดไป" และไม่มีเลขหน้า ตามที่ตกลงกันไว้ */
+     หน้าใหม่ (เหมือนไฟล์ 06) เพื่อให้หมวดที่ต่อเนื่องข้ามหน้าขึ้นหัวข้อซ้ำอีกครั้ง */
   function renderRowsHtml(startIdx, endIdx, isFirstChunk){
     let out = '';
     if(isFirstChunk) out += `<tr class="row-cat"><td colspan="${colCount}">ก. ค่าดำเนินการฝึกอบรม</td></tr>`;
@@ -550,12 +634,11 @@ function buildDocHtml(){
 
     let lastSec = null;
     let currentSegKey = null;
-    rows.slice(startIdx, endIdx).forEach(r=>{
+    rows.slice(startIdx, endIdx).forEach((r, k)=>{
+      const globalIdx = startIdx + k;
       if(r.sec !== lastSec){
         const num = r.secNum ? r.secNum + '. ' : '';
-        // ✅ ถ้าหมวดนี้มีหัวข้อย่อยแสดงอยู่แล้ว (subAlways) ไม่ต้องซ้ำ "(ว.119)" ที่หัวข้อหมวดใหญ่
-        // — ติดป้าย (ว.119) ที่หัวข้อหมวดใหญ่เฉพาะหมวดที่ไม่มีหัวข้อย่อยเลยเท่านั้น (ทุกแถวในไฟล์
-        // นี้เป็น ว.119 อยู่แล้วเสมอ จึงเข้าเงื่อนไข "บิลทุกใบเป็น ว.119 ทั้งหมด" โดยอัตโนมัติ)
+        // ถ้าหมวดนี้มีหัวข้อย่อยแสดงอยู่แล้ว (subAlways) ไม่ต้องซ้ำ "(ว.119)" ที่หัวข้อหมวดใหญ่
         const mainW119Tag = r.subAlways ? '' : ' (ว.119)';
         out += `<tr class="row-sub"><td colspan="${colCount}">${num}${r.secLabel}${mainW119Tag}</td></tr>`;
         lastSec = r.sec;
@@ -574,9 +657,11 @@ function buildDocHtml(){
       buildAddrLines(r).forEach(l => detailLines.push(l));
       if(r.date)   detailLines.push('ลงวันที่ '+fmtDate(r.date));
 
+      // ✅ ช่องรายการแก้ไขข้อความได้ (contenteditable) — data-ridx = ลำดับแถวรวม ใช้เก็บ/คืนข้อความ
+      // ที่แก้ไว้เมื่อสร้างพรีวิวใหม่ (เปลี่ยนสเกล/ระยะห่างบรรทัด) เหมือนไฟล์ 06
       out += `<tr>
         <td class="tc">${r.seq}</td>
-        <td class="tl" style="line-height:1.55">${detailLines.map(l=>`<div>${l}</div>`).join('')}</td>
+        <td class="tl" style="line-height:1.55"><div class="rpt-edit-cell" contenteditable="true" data-ridx="${globalIdx}">${detailLines.map(l=>`<div>${l}</div>`).join('')}</div></td>
         <td class="tc">${r.acct}</td>
         <td class="tr">${fmtMoney(r.val)}</td>
         <td class="tr">${fmtMoney2(r.vat)}</td>
@@ -587,10 +672,11 @@ function buildDocHtml(){
     return out;
   }
 
-  /* ---- ตารางของ "หนึ่งหน้า" — thead ซ้ำทุกหน้า, แถวรวมท้ายตาราง (row-grand) แสดงเฉพาะ
-     หน้าสุดท้ายเท่านั้น (isLast=true) ---- */
+  /* ---- ตารางของ "หนึ่งหน้า" — thead ซ้ำทุกหน้า, หัวเอกสารเฉพาะหน้าแรก, แถวรวมท้ายตาราง
+     (row-grand) แสดงเฉพาะหน้าสุดท้าย (isLast=true) ---- */
   function renderPageHtml(startIdx, endIdx, isLast){
-    let pg = `<table class="doc-table">${theadHtml}<tbody>`;
+    let pg = startIdx === 0 ? headerHtml : '';
+    pg += `<table class="doc-table">${theadHtml}<tbody>`;
     pg += renderRowsHtml(startIdx, endIdx, startIdx === 0);
     if(isLast){
       pg += `<tr class="row-grand">
@@ -605,15 +691,12 @@ function buildDocHtml(){
     return pg;
   }
 
-  /* ---- แบ่งหน้าโดยวัดความสูงจริง (PaginateTH, js/print-layout.js) แทนการปล่อยให้เบราว์เซอร์
-     ตัดหน้าเอง — พื้นที่พิมพ์อ้างอิงจาก @page{size:A4 portrait;margin:0.5in 0.47in 0 0.47in}
-     ของไฟล์นี้ (กว้าง 210-11.94*2≈186.1mm, สูง 297-12.7-0≈284.3mm)
-     ระหว่าง "ลอง" วัดความสูง ให้ render เสมือนเป็นหน้าสุดท้าย (รวมแถว row-grand ด้วย) เพื่อเผื่อ
-     พื้นที่แถวสรุปท้ายตารางไว้ล่วงหน้าเสมอ กันหน้าสุดท้ายล้นพอดี (ไม่มียกยอด/เลขหน้าให้ต้องคำนวณ
-     เพิ่มแบบไฟล์ 06 จึงไม่ต้องมี "รอบวัด" กับ "รอบ render จริง" แยกความหมายกันเหมือนไฟล์นั้น) ---- */
-  const PAGE_W_PX = PaginateTH.mmToPx(186.1);
-  const PAGE_H_PX = PaginateTH.mmToPx(284.3);
-  const measure = (html) => PaginateTH.measureHeight(html, PAGE_W_PX);
+  /* ---- แบ่งหน้าโดยวัดความสูงจริง (PaginateTH, js/print-layout.js) — พื้นที่พิมพ์คำนวณตามสเกล PDF
+     ที่เลือก (pageGeom09) และส่ง --row-pad-v ปัจจุบันไปกับ holder ตอนวัดด้วย ไม่งั้นวัดผิด
+     ระหว่าง "ลอง" วัดความสูงให้ render เสมือนเป็นหน้าสุดท้าย (รวมแถว row-grand ด้วย) เพื่อเผื่อ
+     พื้นที่แถวสรุปท้ายตารางไว้ล่วงหน้าเสมอ กันหน้าสุดท้ายล้นพอดี ---- */
+  const { wPx: PAGE_W_PX, hPx: PAGE_H_PX, rowPadV } = pageGeom09();
+  const measure = (html) => PaginateTH.measureHeight(html, PAGE_W_PX, `--row-pad-v:${rowPadV};`);
   const chunks = rows.length
     ? PaginateTH.paginateByHeight({
         totalItems: rows.length,
@@ -629,24 +712,29 @@ function buildDocHtml(){
     tablesHtml += `<div class="doc-page">${renderPageHtml(c.start, c.end, isLast)}</div>`;
   });
 
-  return `<div class="doc-wrap">
-<div class="doc-title">
-  <div class="hdr-inp" id="ph_title1" contenteditable="true"></div>
-  <div class="hdr-inp" id="ph_title2" contenteditable="true">รายละเอียดค่าใช้จ่ายกรณีจัดซื้อ / จัดจ้างพัสดุ</div>
-  <div class="hdr-inp" id="ph_title3" contenteditable="true">ที่เกี่ยวกับค่าใช้จ่ายในการบริหารงานที่มีวงเงินฯ ครั้งละไม่เกิน 10,000 บาท</div>
-</div>
-<div class="doc-meta">
-  <div class="hdr-inp" id="ph_line1" contenteditable="true">หลักสูตร "${title}" รุ่นที่ ${run}</div>
-  <div class="hdr-inp" id="ph_line2" contenteditable="true">เลขที่รุ่นหลักสูตร ${runno}${dateStr?' ในวันที่ '+dateStr:''}</div>
-  <div class="hdr-inp" id="ph_line3" contenteditable="true">${location?'ณ '+location:''}</div>
-  <div class="hdr-inp" id="ph_line4" contenteditable="true"></div>
-</div>
-${tablesHtml}
-</div>`;
+  return `<div class="doc-wrap">${tablesHtml}</div>`;
 }
 
+/* ============================================================
+   สร้างพรีวิวใหม่ (แบ่งหน้าใหม่ตามสเกล/ระยะห่างบรรทัดปัจจุบัน) โดยเก็บข้อความที่ผู้ใช้แก้ไขไว้คืนให้
+   — หัวเอกสาร (ph_*) + ช่องรายการที่ถูกแก้ (data-edited) อ้างด้วย data-ridx = ลำดับแถวรวม
+   ============================================================ */
 function rebuildPreview(){
+  if(!docReady) return;
+  const box = document.getElementById('doc-display');
+  const hdr = {};
+  box.querySelectorAll('.hdr-inp[id]').forEach(el => { hdr[el.id] = el.innerHTML; });
+  const cells = {};
+  box.querySelectorAll('.rpt-edit-cell[data-edited]').forEach(el => { cells[el.dataset.ridx] = el.innerHTML; });
+
   renderDocDisplay();
+
+  Object.keys(hdr).forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = hdr[id]; });
+  Object.keys(cells).forEach(k => {
+    const el = box.querySelector(`.rpt-edit-cell[data-ridx="${k}"]`);
+    if(el){ el.innerHTML = cells[k]; el.dataset.edited = '1'; }
+  });
+  checkOverflow09();
 }
 
 /* ============================================================
@@ -656,14 +744,57 @@ function renderDocDisplay(){
   document.getElementById('doc-display').innerHTML = buildDocHtml();
   // ✅ แปลงเป็นเลขไทยเฉพาะหัวเอกสาร (title/meta ตรงกลางด้านบนของตาราง) เท่านั้น — ตัวเลขในตาราง
   // ทั้งหมด (ลำดับที่/รหัสบัญชี/เลขผู้เสียภาษี/จำนวนเงิน ฯลฯ) ต้องคงเป็นเลขอาราบิคเสมอ
-  // (ต่างจากไฟล์ 06 ที่แปลงทั้งก้อน — ยืนยันแล้วว่าไฟล์นี้ต้องการแค่ส่วนหัวเป็นเลขไทย)
   const docTitleEl = document.querySelector('#doc-display .doc-title');
   const docMetaEl  = document.querySelector('#doc-display .doc-meta');
   if (docTitleEl) convertToThaiNumerals(docTitleEl);
   if (docMetaEl)  convertToThaiNumerals(docMetaEl);
-  // สิทธิ์: viewer/manager นอก whitelist แก้หัวเอกสารไม่ได้ (พิมพ์ได้อย่างเดียว)
-  if(typeof canEditThisPage==='function' && !canEditThisPage(getCurrentRole())){
-    document.querySelectorAll('#doc-display [contenteditable]').forEach(el=>{ el.removeAttribute('contenteditable'); el.style.cursor='default'; });
+  checkOverflow09();
+}
+
+/* ============================================================
+   แก้ไขข้อความในพรีวิว + ตรวจหน้าล้น (ล้อ sumInitDocEditing06 / sumCheckOverflow06 ของไฟล์ 06)
+   ============================================================ */
+// ผูก listener ครั้งเดียวที่ #doc-display (element ถาวร — innerHTML ถูกแทนที่ได้โดย listener ไม่หาย)
+let _docEditInit = false;
+function initDocEditing09(){
+  if(_docEditInit) return;
+  const doc = document.getElementById('doc-display');
+  if(!doc) return;
+  _docEditInit = true;
+  let timer = null;
+  doc.addEventListener('input', e => {
+    const cell = e.target.closest && e.target.closest('.rpt-edit-cell');
+    if(cell) cell.dataset.edited = '1';
+    clearTimeout(timer);
+    timer = setTimeout(checkOverflow09, 300);
+  });
+  // วางข้อความแบบ plain text เสมอ — กันฟอนต์/สไตล์จากที่อื่นติดเข้ามาในรายงาน
+  doc.addEventListener('paste', e => {
+    const el = e.target.closest && e.target.closest('.rpt-edit-cell, .hdr-inp');
+    if(!el) return;
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+    document.execCommand('insertText', false, text);
+  });
+}
+
+// ตรวจแต่ละหน้าว่าหลังแก้ไข (เพิ่มบรรทัด) ยังพอดีพื้นที่พิมพ์ไหม — ไม่แบ่งหน้าใหม่ให้อัตโนมัติ
+// (จะทำให้ข้อความที่เพิ่งแก้หลุด) แต่ขึ้นกรอบแดงที่หน้านั้น + ข้อความเตือนบนแถบเครื่องมือ
+function checkOverflow09(){
+  const pages = Array.from(document.querySelectorAll('#doc-display .doc-page'));
+  const box = document.getElementById('doc_overflow_warn');
+  if(!pages.length){ if(box) box.style.display = 'none'; return; }
+  const { wPx, hMax, rowPadV } = pageGeom09();
+  const bad = [];
+  pages.forEach((pg, i) => {
+    const h = PaginateTH.measureHeight(pg.outerHTML, wPx, `--row-pad-v:${rowPadV};`);
+    const over = h > hMax;
+    pg.classList.toggle('doc-overflow', over);
+    if(over) bad.push(i + 1);
+  });
+  if(box){
+    box.style.display = bad.length ? 'block' : 'none';
+    if(bad.length) box.textContent = `⚠️ หน้า ${bad.join(', ')} ยาวเกินพื้นที่พิมพ์ ข้อความท้ายหน้าอาจถูกตัดหรือเลื่อนไปหน้าถัดไป — ลดจำนวนบรรทัดที่เพิ่ม หรือลดสเกล/ระยะห่างบรรทัด`;
   }
 }
 
@@ -671,6 +802,7 @@ function renderDocDisplay(){
    INIT
    ============================================================ */
 document.addEventListener('DOMContentLoaded', function(){
+  initDocEditing09();
   autoLoadFromFile01();
 });
 
@@ -678,12 +810,12 @@ document.addEventListener('DOMContentLoaded', function(){
    PDF_SERVER_URL / Supabase client / อัปโหลด PDF — ย้ายไปรวมที่ js/gas-api.js แล้ว
    (ใช้ saveReportPdf(courseNo, 'pdf09', blob) ซึ่งอัปโหลดแบบ versioning
    (pdf09-v1.pdf, pdf09-v2.pdf, ... แยกโฟลเดอร์ตามเลขที่หลักสูตร ไม่ทับของเก่า) และเขียนลิงก์
-   ล่าสุดกลับ Sheet คอลัมน์ pdf09/pdf09SavedAt ให้อัตโนมัติในตัว — แทนที่ html2canvas+jsPDF เดิม
-   ที่ดาวน์โหลดลงเครื่องอย่างเดียว ไม่เคยมีการอัปโหลดขึ้น Supabase หรือเขียนลิงก์กลับ Sheet เลย */
+   ล่าสุดกลับ Sheet คอลัมน์ pdf09/pdf09SavedAt ให้อัตโนมัติในตัว) */
 async function savePdf(btn){
-  if(typeof canEditThisPage==='function' && !canEditThisPage(getCurrentRole())){ alert('🔒 บัญชีนี้ไม่มีสิทธิ์บันทึก PDF (พิมพ์ได้อย่างเดียว)'); return; }
   const el = document.getElementById('doc-display');
-  if(!el || !el.innerHTML.trim()){ alert('ไม่พบข้อมูลเอกสาร'); return; }
+  if(!el || !el.innerHTML.trim() || !docReady){ alert('ไม่พบข้อมูลเอกสาร'); return; }
+  const warnBox = document.getElementById('doc_overflow_warn');
+  if(warnBox && warnBox.style.display !== 'none' && !confirm(warnBox.textContent + '\n\nต้องการสร้าง PDF ต่อหรือไม่?')) return;
 
   const title  = gv('f_title') || 'ค่าใช้จ่ายตาม ว.119';
   const run    = gv('f_run')   || '';
@@ -697,7 +829,7 @@ async function savePdf(btn){
     const clone = el.cloneNode(true);
 
     /* เอากรอบเทาจาง/padding/background ของ #doc-display (สำหรับแสดงผลบนหน้าจอ) ออก
-       ไม่ให้ติดไปในเอกสารที่ส่งให้ Puppeteer render */
+       ไม่ให้ติดไปในเอกสารที่ส่งให้ Puppeteer render (คง CSS var --row-pad-v ใน inline style ไว้) */
     clone.style.border       = 'none';
     clone.style.borderRadius = '0';
     clone.style.background   = 'transparent';
@@ -705,20 +837,16 @@ async function savePdf(btn){
     clone.style.margin       = '0';
     clone.style.boxShadow    = 'none';
 
-    /* แปลง input.hdr-inp (หัวเอกสารที่แก้ไขได้) → div ข้อความนิ่งๆ ก่อนส่งไป render
-       (เก็บ inline style เดิมไว้ — ปรับ text-align/weight ให้ล้อของเดิม) */
-    // ✅ หัวเอกสาร (ph_title1-3/ph_line1-4) ตอนนี้เป็น <div contenteditable> แล้ว (ไม่ใช่ <input>
-    // อีกต่อไป — ดู buildDocHtml) แค่ถอด attribute contenteditable ออกก่อนส่ง render พอ เนื้อหา
-    // ที่ผู้ใช้แก้ไขอยู่ใน DOM node เองอยู่แล้วเพราะเป็น contenteditable จริง ไม่ต้อง sync .value
-    // แยกเหมือนตอนเคยเป็น input (ล้อวิธีของไฟล์ 06 ทุกประการ)
+    clone.querySelectorAll('.doc-overflow').forEach(p => p.classList.remove('doc-overflow')); // กรอบแดงเตือนใช้บนจอเท่านั้น
+    // หัวเอกสารและช่องรายการเป็น <div contenteditable> — ถอด attribute ออกก่อนส่ง render พอ
+    // (ข้อความที่ผู้ใช้แก้อยู่ใน DOM ของ el อยู่แล้ว)
     clone.querySelectorAll('[contenteditable]').forEach(el2 => {
       el2.removeAttribute('contenteditable');
       el2.style.outline = 'none';
     });
+    clone.querySelectorAll('.rpt-edit-cell').forEach(el2 => { el2.removeAttribute('data-edited'); });
 
-    // ✅ ดึง CSS หลักของหน้าเว็บทั้งดวง (นิยาม .doc-table, .row-cat, .row-sub, .row-grand ฯลฯ)
-    // ไปแนบด้วย — ตารางจะได้เส้นขอบ/จัดหน้าตามที่ตั้งใจจาก Puppeteer render จริง (ไม่ต้องจำลอง
-    // border/canvas-slicing แบบที่ html2canvas เดิมต้องทำ)
+    // ดึง CSS หลักของหน้าเว็บทั้งดวง (นิยาม .doc-table, .row-cat, .row-sub, .row-grand ฯลฯ) ไปแนบด้วย
     const originalStyles = Array.from(document.querySelectorAll('style'))
       .map(s => s.innerHTML).join('\n');
 
@@ -746,10 +874,12 @@ ${originalStyles}
       body: JSON.stringify({
         html: fullHtml,
         filename: fname,
-        // ✅ pdfOptions เฉพาะของไฟล์ 09 — ล้อ @page{size:A4 portrait;margin:0.5in 0.47in 0 0.47in} เดิมของไฟล์นี้
+        // ✅ pdfOptions เฉพาะของไฟล์ 09 — ล้อ @page{size:A4 portrait;margin:0.5in 0.47in 0 0.47in}
+        // scale อ่านจาก dropdown สเกลหน้ากระดาษ (ค่าเริ่มต้น 100%) ซึ่งตัวแบ่งหน้าใช้ค่าเดียวกัน
         pdfOptions: {
           format: 'A4',
           landscape: false,
+          scale: PaginateTH.getPdfScale('pdf_scale_09', 100),
           margin: { top: '12.7mm', right: '11.9mm', bottom: '5mm', left: '11.9mm' },
           preferCSSPageSize: true,
           printBackground: true,
@@ -769,8 +899,7 @@ ${originalStyles}
     URL.revokeObjectURL(url);
 
     // อัปโหลดขึ้น Supabase Storage แบบ versioning ผ่าน saveReportPdf() (js/gas-api.js) —
-    // เก็บทุกเวอร์ชันไว้ (pdf09-v1.pdf, pdf09-v2.pdf, ...) ไม่ทับของเก่า และเขียนลิงก์ล่าสุด
-    // กลับ Sheet คอลัมน์ pdf09/pdf09SavedAt ให้เองในตัว (ไม่ต้องเรียก gsApi ซ้ำเอง)
+    // เก็บทุกเวอร์ชันไว้ ไม่ทับของเก่า และเขียนลิงก์ล่าสุดกลับ Sheet คอลัมน์ pdf09/pdf09SavedAt ให้เอง
     btn.textContent = '⏳ กำลังอัปโหลด...';
     const courseNo = runno;
     const uploadResult = courseNo ? await saveReportPdf(courseNo, 'pdf09', blob) : null;
