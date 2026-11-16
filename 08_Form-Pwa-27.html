@@ -108,8 +108,6 @@ td { font-size:15px; padding:2px 4px; }
 .btn-print-hdr:hover{background:#f5c842;}
 .btn-save-pdf{background:#1a7a4a;color:#fff;border:none;border-radius:6px;padding:7px 20px;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit;}
 .btn-save-pdf:hover{background:#22a05e;}
-/* ── โหมดดูอย่างเดียว: ช่องที่ถูก disabled ต้องยังพิมพ์เป็นสีดำปกติ ── */
-body.readonly-mode #form-wrap input:disabled{color:#000!important;-webkit-text-fill-color:#000!important;opacity:1!important}
 /* ── Print Logo ── */
 .pwa-print-logo{display:none;}
 @media print{
@@ -127,8 +125,7 @@ body.readonly-mode #form-wrap input:disabled{color:#000!important;-webkit-text-f
 <script src="js/auth.js"></script>
 <script src="js/date-th.js"></script>
 <script src="js/gas-api.js"></script>
-<script src="js/permissions.js"></script>
-<script>checkAuth(); lockPageIfReadOnly();</script>
+<script>checkAuth();</script>
 <!-- html2canvas/jsPDF ถูกลบออก — สร้าง PDF ผ่าน Puppeteer server ฝั่ง backend แทน (ดู savePdf08()) -->
 </head>
 <body>
@@ -151,7 +148,7 @@ body.readonly-mode #form-wrap input:disabled{color:#000!important;-webkit-text-f
     <div style="display:flex;align-items:center;gap:8px;">
       <a class="btn-back" href="01_Main-Reports.html">← ย้อนกลับ</a>
       <button class="btn-print-hdr" onclick="window.print()">🖨 พิมพ์แบบฟอร์ม</button>
-      <button class="btn-save-pdf" data-permission="write" onclick="savePdf08(this)">💾 บันทึก PDF</button>
+      <button class="btn-save-pdf" onclick="savePdf08(this)">💾 บันทึก PDF</button>
     </div>
   </div>
 </header>
@@ -178,7 +175,7 @@ body.readonly-mode #form-wrap input:disabled{color:#000!important;-webkit-text-f
     <div class="ip-field full">
       <label>4. รายการ</label>
       <input type="text" id="f_item" value="" oninput="sync()" />
-     
+
     </div>
   </div>
 
@@ -742,21 +739,29 @@ function closePreviewOutside(e) {
 /* sync() จะถูกเรียกหลัง loadFromGSheet เสร็จเท่านั้น */
 
 document.addEventListener('DOMContentLoaded', function() {
-  // ดึง no จาก sessionStorage (ส่งมาจากไฟล์ 01) เหมือนกับไฟล์ 05
+  // ดึง no จาก sessionStorage (ส่งมาจากไฟล์ 01) — ล้อไฟล์ 06 (loadFromMain)
+  // ลำดับความสำคัญ: 1. ?no= ใน URL  2. courseData (sessionStorage — หลักสูตรที่ user เลือกอยู่ตอนนี้)
+  // 3. budgetSlotData (sessionStorage — เสริม)
+  // ⚠️ ห้ามอ่าน localStorage.budgetSlotData เด็ดขาด — ค่านี้ค้างจากหลักสูตรที่เปิดครั้งก่อนๆ
+  // (บัคเดิม: เปิด 01 ที่เลข 01321279 แต่ 08 ไปดึงข้อมูลของ 01321294 ที่ค้างอยู่)
   let d = {};
   try {
-    const slotRaw = sessionStorage.getItem('budgetSlotData') || localStorage.getItem('budgetSlotData');
-    if (slotRaw) d = JSON.parse(slotRaw);
-    else d = JSON.parse(sessionStorage.getItem('courseData') || '{}');
+    const cd   = JSON.parse(sessionStorage.getItem('courseData')     || 'null');
+    const slot = JSON.parse(sessionStorage.getItem('budgetSlotData') || 'null');
+    d = cd || slot || {};
+  } catch(e) {}
+  try {
+    const qNo = (new URLSearchParams(location.search).get('no') || '').trim();
+    if (qNo && String(d.no || d.courseNo || '').trim() !== qNo) d = { no: qNo };
   } catch(e) {}
 
-  const no08    = d.no || d.courseNo || '';
+  const no08    = String(d.no || d.courseNo || '').trim();
   const course  = d.course || '';
   const batch   = d.batch  || '';
   // 🐛 bug fix (ledger #9): savePdf08() อ้างอิง window.__courseNo08 เพื่อบันทึกลิงก์ PDF กลับ Sheet
   // แต่ไม่เคยมีจุดใด assign ค่านี้เลย ทำให้ courseNo ว่างเปล่าเสมอ — ตั้งค่าตรงนี้จาก no08 ที่ดึงมาจริง
   window.__courseNo08 = no08;
-  console.log('[08] budgetSlotData:', d);
+  console.log('[08] courseData/slot:', d);
   console.log('[08] no08:', no08, '| course:', course, '| batch:', batch);
 
   // ข้อ 3: เลขที่หลักสูตร และชื่อหลักสูตร
@@ -779,51 +784,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof sync === 'function') sync();
   }
 });
-
-/* ── เติมรหัสพนักงาน + ชื่อผู้ขอหักล้าง จากผู้ใช้ที่ login อัตโนมัติ (แก้ไขทับได้ — เติมเฉพาะช่องที่ยังว่าง) ──
-   ลำดับ: 1) sessionStorage('currentUser') ที่ตั้งไว้ตอน login (เร็วสุด)
-          2) Supabase profiles (emp_id, full_name) ของ user ปัจจุบัน ถ้าใน session ยังไม่ครบ */
-let _userProfileClient08 = null;
-function getUserProfileClient08(){
-  if (_userProfileClient08) return _userProfileClient08;
-  const C = window.APP_CONFIG || {};
-  if (!window.supabase || !window.supabase.createClient) return null;
-  _userProfileClient08 = window.supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY);
-  return _userProfileClient08;
-}
-async function autofillUser08(){
-  const idEl = document.getElementById('f_empid');
-  const nameEl = document.getElementById('f_name');
-  if (!idEl || !nameEl) return;
-
-  let empId = '', name = '';
-  try {
-    const cu = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
-    if (cu) {
-      empId = cu.empId || '';
-      // index.html ใช้รหัสพนักงานแทนชื่อถ้าไม่พบชื่อใน profiles — ไม่นับเป็นชื่อจริง
-      name = (cu.name && cu.name !== cu.empId) ? cu.name : '';
-    }
-  } catch(e) {}
-
-  if (!empId || !name) {
-    const client = getUserProfileClient08();
-    if (client) {
-      try {
-        const { data: { user } } = await client.auth.getUser();
-        if (user) {
-          const { data: p } = await client.from('profiles').select('emp_id, full_name').eq('id', user.id).single();
-          if (p) { empId = empId || p.emp_id || ''; name = name || p.full_name || ''; }
-        }
-      } catch(e) { console.warn('[08] autofillUser08 error:', e); }
-    }
-  }
-
-  if (empId && !idEl.value.trim())   idEl.value = empId;
-  if (name  && !nameEl.value.trim()) nameEl.value = name;
-  if (typeof sync === 'function') sync();
-}
-document.addEventListener('DOMContentLoaded', autofillUser08);
 
 /* ฟังก์ชันช่วยแปลงฟอร์แมตวันที่ ISO (YYYY-MM-DD) เป็นวันที่ไทย
    — logic ย้ายไปรวมที่ js/date-th.js แล้ว (DateTH.format ชดเชย timezone +7 ให้ด้วย)
@@ -913,7 +873,6 @@ async function loadFromGSheet(no) {
    ⚠️ ของเดิมมีบั๊ก courseNo ว่างเปล่าเสมอ (window.__courseNo08 ไม่เคยถูก assign มาก่อน — แก้แล้ว
    ในจุด DOMContentLoaded ด้านบน) ทำให้ไม่เคยเขียนลิงก์กลับ Sheet สำเร็จเลยตั้งแต่โค้ดชุดนี้ถูกเขียน */
 async function savePdf08(btn){
-  if(typeof canEditThisPage==='function' && !canEditThisPage(getCurrentRole())){ alert('🔒 บัญชีนี้ไม่มีสิทธิ์บันทึก PDF (พิมพ์ได้อย่างเดียว)'); return; }
   const el = document.getElementById('form-wrap');
   if(!el){ alert('ไม่พบแบบฟอร์ม'); return; }
 
