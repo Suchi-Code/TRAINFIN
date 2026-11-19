@@ -87,7 +87,9 @@ const SIDEBAR_NAV_ITEMS = [
     title: 'ระบบงานฝึกอบรม',
     icon: '<path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>',
     children: [
-      { title: 'สร้างวุฒิบัตร/ป้ายชื่อ/ใบสำคัญรับเงิน', href: 'Training_Support_Tools_Center.html' },
+      { title: 'สร้างวุฒิบัตร', href: 'certificate.html' },
+      { title: 'สร้างป้ายชื่อ', href: 'badge.html' },
+      { title: 'สร้างใบสำคัญรับเงิน', href: 'speakerfee.html' },
       { title: 'ข้อสอบ Pre/Post-test', href: 'exam-admin.html' },
       { title: 'ระบบสั่งเครื่องดื่ม', href: 'drink-admin.html' }
     ]
