@@ -80,6 +80,8 @@ table{width:100%;border-collapse:collapse;font-size:14px}
 th{background:var(--navy);color:#fff;padding:8px 10px;text-align:left;white-space:nowrap}
 td{padding:7px 10px;border-bottom:1px solid #eef1f4;vertical-align:middle}
 .tag{font-size:12px;font-weight:700;padding:2px 9px;border-radius:99px;white-space:nowrap;display:inline-block}
+.grp{margin:18px 0 6px;font-size:14px;font-weight:700;color:var(--navy)} .grp .n{color:var(--muted);font-weight:400}
+tr.ended td{background:#f6f7f9;color:var(--muted)} tr.ended td b{color:var(--muted);font-weight:600} tr.ended .btn{opacity:.75}
 .tag.ok{background:#e3f7ee;color:#178a5c} .tag.no{background:#fdeeea;color:var(--red)} .tag.wait{background:#fff2d8;color:#8a5700} .tag.gray{background:#eef0f4;color:var(--muted)}
 .chip{display:inline-block;background:#eef5ff;color:var(--blue);border-radius:99px;padding:2px 10px;margin:2px 4px 2px 0;font-size:13px;font-weight:600}
 .err{background:#fdeeea;color:var(--red);border:1px solid #f3c7cf;border-radius:8px;padding:10px;margin:10px 0}
@@ -177,7 +179,7 @@ function stateTag(e){
   const s = evState(e);
   if(s === 'OPEN') return `<span class="tag ok">เปิดรับสั่ง${e.close_at ? ' · ปิด ' + esc(fmtClose(e.close_at)) : ''}</span>`;
   if(s === 'TIME') return '<span class="tag gray">หมดเวลารับสั่งแล้ว</span>';
-  if(s === 'EXPIRED') return '<span class="tag gray">สิ้นสุดแล้ว</span>';
+  if(s === 'EXPIRED') return '<span class="tag gray">จบแล้ว</span>';
   return '<span class="tag gray">ปิดรับสั่ง</span>';
 }
 function dateLabel(d){
@@ -200,11 +202,20 @@ async function viewEvents(){
         `</select></div>
         <button class="btn green" onclick="addEvent()" style="white-space:nowrap">＋ สร้าง</button></div>
       <p class="muted">1 รายการ = 1 วัน + ชุดรายชื่อ + 1 ลิงก์ · เลือกวันที่ล่วงหน้าได้ ผู้ใช้สั่งได้ตั้งแต่สร้างจนถึงสิ้นวันที่เลือก · อบรมหลายวันให้สร้างรายการแยกรายวัน (คัดลอกรายชื่อจากรายการเดิมได้)</p></div>
-    <div class="card"><h2>รายการทั้งหมด</h2>` + (events.length ?
-    `<table><thead><tr><th>วันที่สั่ง</th><th>ชื่อรายการ</th><th>รายชื่อ</th><th>สถานะ</th><th></th></tr></thead><tbody>` +
-    events.map(e => `<tr><td>${esc(dateLabel(e.order_date))}</td><td><b>${esc(e.title)}</b></td><td>${cnt[e.id] || 0} คน</td>
-      <td>${stateTag(e)}</td><td><button class="btn sm" onclick="openEvent('${esc(e.id)}')">เปิด</button></td></tr>`).join('') + '</tbody></table>'
-    : '<p class="muted">ยังไม่มีรายการ</p>') + '</div>';
+    <div class="card"><h2>รายการทั้งหมด</h2>` + (events.length ? drinkGroups(cnt) : '<p class="muted">ยังไม่มีรายการ</p>') + '</div>';
+}
+// ตารางรายการ แยก 2 กลุ่ม (รูปแบบเดียวกับหน้าแอดมินข้อสอบ): จบแล้ว = เลยวันที่ของรายการ
+function drinkGroups(cnt){
+  const rowHtml = e => {
+    const ended = evState(e) === 'EXPIRED';
+    return `<tr class="${ended ? 'ended' : ''}"><td>${esc(dateLabel(e.order_date))}</td><td><b>${esc(e.title)}</b></td>
+      <td><span class="muted">${cnt[e.id] || 0} คน</span></td>
+      <td>${stateTag(e)}</td><td><button class="btn sm" onclick="openEvent('${esc(e.id)}')">เปิด</button></td></tr>`;
+  };
+  const table = list => '<table><thead><tr><th>วันที่</th><th>ชื่อรายการ</th><th>รายละเอียด</th><th>สถานะ</th><th></th></tr></thead><tbody>' + list.map(rowHtml).join('') + '</tbody></table>';
+  const act = events.filter(e => evState(e) !== 'EXPIRED'), done = events.filter(e => evState(e) === 'EXPIRED');
+  return `<div class="grp">กำลังดำเนินการ <span class="n">(${act.length})</span></div>` + (act.length ? table(act) : '<p class="muted">ไม่มีรายการที่กำลังดำเนินการ</p>') +
+    `<div class="grp">จบแล้ว <span class="n">(${done.length}) · เลยวันที่ของรายการแล้ว</span></div>` + (done.length ? table(done) : '<p class="muted">ยังไม่มีรายการที่จบ</p>');
 }
 async function addEvent(){
   const title = $('n_title').value.trim(), date = $('n_date').value, src = $('n_copy').value;
@@ -553,10 +564,37 @@ async function importFromExam(){
 function toBkkLocal(iso){ return iso ? new Date(iso).toLocaleString('sv-SE', { timeZone: 'Asia/Bangkok' }).replace(' ', 'T').slice(0, 16) : ''; }
 function fromBkkLocal(v){ return v ? new Date(v + ':00+07:00').toISOString() : null; }
 function studentLink(){ return location.href.split('?')[0].split('#')[0].replace(/[^\/]*$/, '') + 'drink-order.html?e=' + cur.id; }
+/* ===== ข้อความ LINE (hard code — อยากเปลี่ยนรูปแบบให้แก้ในฟังก์ชันนี้) ===== */
+function lineText(link){
+  return `🥤☕ สั่งเครื่องดื่ม วันที่ ${thaiDate(cur.order_date, 'long')} ☕🥤
+
+เรียนท่านผู้เข้าอบรมทุกท่าน 🙏
+ขอเชิญสั่งเครื่องดื่มสำหรับ ${cur.title} ตามลิงก์ด้านล่างนี้ครับ 👇
+
+🔗 ${link}
+
+📝 วิธีสั่ง
+1. กดลิงก์ แล้วเลือกชื่อของตัวเอง
+2. เลือกเมนู (ร้อน/เย็น) และระดับความหวาน 🍯
+3. กดยืนยัน ✅
+
+⚠️ สั่งได้คนละ 1 แก้ว
+⏰ เครื่องดื่มจะได้รับตอนเบรคบ่ายนะครับ
+
+ขอบคุณครับ 😊🙏`;
+}
+function copyLine(){
+  const el = $('line_msg');
+  navigator.clipboard.writeText(el.value).then(() => toast('คัดลอกข้อความแล้ว — วางใน LINE ได้เลย'), () => { el.select(); toast('คัดลอกอัตโนมัติไม่ได้ กด Ctrl+C เอง'); });
+}
 function settingsHtml(){
   const link = studentLink();
   const stText = { OPEN: 'กำลังเปิดรับสั่ง', MANUAL: 'ปิดอยู่ (แอดมินกดปิด)', TIME: 'ปิดแล้ว (เลยเวลาปิดอัตโนมัติ)', EXPIRED: 'สิ้นสุดแล้ว (เลยวันที่ของรายการ)' }[evState(cur)];
-  return `<div class="card"><h2>ลิงก์สั่งเครื่องดื่ม</h2>
+  return `<div class="card"><h2>ข้อความส่ง LINE</h2>
+      <p class="muted">เติมวันที่ ชื่อรายการ และลิงก์ให้อัตโนมัติ · แก้ข้อความในกล่องได้ก่อนคัดลอก (ไม่ถูกบันทึก)</p>
+      <textarea id="line_msg" rows="17" style="width:100%;font-family:inherit">${esc(lineText(link))}</textarea>
+      <div class="row" style="margin-top:8px"><button class="btn" onclick="copyLine()">📋 คัดลอกข้อความ</button></div></div>
+    <div class="card"><h2>ลิงก์สั่งเครื่องดื่ม</h2>
       <div class="linkbox">${esc(link)}</div>
       <div class="row" style="margin-top:8px"><button class="btn" onclick="navigator.clipboard.writeText('${esc(link)}').then(()=>toast('คัดลอกลิงก์แล้ว'))">📋 คัดลอกลิงก์</button></div>
       <p style="margin-top:10px"><img alt="QR" width="180" height="180" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(link)}"><br><span class="muted">QR (สร้างผ่าน qrserver.com — ต้องมีอินเทอร์เน็ต) · ไฟล์ drink-order.html ต้องอยู่โฟลเดอร์เดียวกับไฟล์นี้บนเว็บ</span></p></div>
