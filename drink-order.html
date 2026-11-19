@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>สั่งเครื่องดื่ม</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--navy:#0f2744;--blue:#1d5fa8;--bg:#f3f6f8;--line:#dde3ea;--green:#1a7a4a;--red:#b03030;--muted:#627587}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#1e2533;font-family:'Sarabun',sans-serif;font-size:16px;line-height:1.55}
+header{background:var(--navy);color:#fff;padding:14px 16px}
+header h1{margin:0;font-size:17px;font-weight:700}
+header p{margin:2px 0 0;font-size:13px;opacity:.75}
+main{max-width:720px;margin:0 auto;padding:16px 14px 60px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:14px}
+h2{margin:0 0 10px;font-size:18px;color:var(--navy)}
+h3{margin:16px 0 8px;font-size:15px;color:var(--navy)}
+.muted{color:var(--muted);font-size:14px}
+.btn{display:block;width:100%;border:none;border-radius:10px;padding:14px;font:inherit;font-size:16px;font-weight:700;cursor:pointer;background:var(--blue);color:#fff;margin-top:10px}
+.btn:hover{filter:brightness(.93)}
+.btn:disabled{background:#b8c4d0;cursor:not-allowed}
+.btn.ghost{background:#fff;color:var(--blue);border:2px solid var(--blue)}
+.btn.green{background:var(--green)}
+input[type=text],textarea{width:100%;padding:12px 14px;border:2px solid var(--line);border-radius:10px;font:inherit;font-size:16px}
+input[type=text]:focus,textarea:focus{outline:none;border-color:var(--blue)}
+.plist{margin-top:10px;max-height:52vh;overflow:auto}
+.pitem{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer;background:#fff}
+.pitem:hover{border-color:var(--blue);background:#f4f9ff}
+.pitem small{color:var(--muted)}
+.tag{font-size:12px;font-weight:700;padding:3px 9px;border-radius:99px;background:#e3f7ee;color:#178a5c;white-space:nowrap}
+.tag.grp{background:#eef0f4;color:var(--muted);margin-left:6px}
+.kv{display:grid;grid-template-columns:90px 1fr;gap:6px 10px;margin:10px 0}
+.kv b{color:var(--muted);font-weight:600}
+.mopt{display:flex;gap:10px;align-items:center;padding:12px 14px;border:2px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer;background:#fff;font-weight:600}
+.mopt:hover{border-color:#9fc6e0}
+.mopt.sel{border-color:var(--blue);background:#eef5ff}
+.mopt.skip{font-weight:500;color:var(--muted)}
+.mopt .dot{width:20px;height:20px;border:2px solid #b8c4d0;border-radius:50%;flex:0 0 auto;position:relative}
+.mopt.sel .dot{border-color:var(--blue)}
+.mopt.sel .dot::after{content:'';position:absolute;inset:3px;background:var(--blue);border-radius:50%}
+.chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.chip{padding:11px 8px;border:2px solid var(--line);border-radius:10px;text-align:center;cursor:pointer;background:#fff;font-weight:600}
+.chip:hover{border-color:#9fc6e0}
+.chip.sel{border-color:var(--blue);background:#eef5ff;color:var(--blue)}
+.hide{display:none}
+.big{font-size:22px;font-weight:700;color:var(--navy)}
+.center{text-align:center}
+.okmark{font-size:46px;line-height:1}
+.err{background:#fdeeea;color:var(--red);border:1px solid #f3c7cf;border-radius:10px;padding:12px;margin-bottom:12px}
+.mback{position:fixed;inset:0;background:rgba(10,20,40,.55);display:flex;align-items:center;justify-content:center;padding:18px;z-index:100}
+.mbox{background:#fff;border-radius:14px;max-width:380px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.mbox h3{margin:0 0 8px;font-size:18px}
+.mbox p{margin:0 0 6px;color:#394556}
+</style>
+</head>
+<body>
+<header><h1 id="hTitle">สั่งเครื่องดื่ม</h1><p id="hSub"></p></header>
+<main id="app"><div class="card muted">กำลังโหลด...</div></main>
+
+<script>
+/* ===== ตั้งค่า Supabase (anon key เป็นค่าสาธารณะ ปลอดภัยเพราะตารางถูกล็อกด้วย RLS) ===== */
+const SUPABASE_URL = 'https://dcaydbxyjisegqzzildq.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjYXlkYnh5amlzZWdxenppbGRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2OTk5NDgsImV4cCI6MjEwMDI3NTk0OH0.cEk8k90NeTTnkZV0Sny7nuN8UbW15_eW8S_HTQSBwwA';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const EVENT_ID = new URLSearchParams(location.search).get('e') || '';
+const app = document.getElementById('app');
+let E = null;          // ข้อมูลรายการ + เมนู + ระดับความหวาน
+let people = [];
+let me = null;
+let selMenu = null;    // object เมนูที่เลือก
+let selTemp = null;    // 'ร้อน' | 'เย็น'
+let selSweet = null;   // ข้อความระดับความหวาน
+const TEMPS = ['ร้อน', 'เย็น'];
+let skip = false;      // เลือก "ไม่รับเครื่องดื่ม"
+let submitting = false;
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ERR_TH = {
+  LOCKED: 'คุณสั่งเครื่องดื่มไปแล้ว ไม่สามารถสั่งซ้ำได้',
+  BAD_TEMP: 'กรุณาเลือกร้อนหรือเย็น',
+  CLOSED: 'ขณะนี้ปิดรับการสั่งเครื่องดื่มแล้ว',
+  NOT_FOUND: 'ไม่พบรายชื่อนี้ในระบบ',
+  BAD_MENU: 'เมนูนี้ไม่พร้อมให้สั่งแล้ว กรุณาเลือกใหม่',
+  BAD_SWEET: 'ระดับความหวานไม่ถูกต้อง กรุณาเลือกใหม่',
+};
+const errText = e => ERR_TH[(e && e.message || '').trim()] || ('เกิดข้อผิดพลาด: ' + ((e && e.message) || 'ไม่ทราบสาเหตุ'));
+function show(html){ app.innerHTML = html; window.scrollTo(0, 0); }
+function thaiDate(iso){
+  const [y, m, d] = String(iso || '').split('-').map(Number);
+  if(!y) return '';
+  return new Date(y, m - 1, d).toLocaleDateString('th-TH', { dateStyle: 'full' });
+}
+function sortPeople(list){
+  return list.slice().sort((a, b) =>
+    ((a.emp_id === '') - (b.emp_id === '')) ||
+    String(a.emp_id).localeCompare(String(b.emp_id), 'th', { numeric: true }) ||
+    String(a.full_name).localeCompare(String(b.full_name), 'th'));
+}
+
+/* ===== 0) โหลดข้อมูล ===== */
+async function init(){
+  if(!EVENT_ID){ show('<div class="err">ลิงก์ไม่ถูกต้อง (ไม่พบรหัสรายการ) กรุณาขอลิงก์ใหม่จากผู้ดูแล</div>'); return; }
+  const { data, error } = await sb.rpc('drink_get_event', { p_event: EVENT_ID });
+  if(error || !data){ show('<div class="err">ไม่พบรายการสั่งเครื่องดื่มนี้ กรุณาตรวจสอบลิงก์</div>'); return; }
+  E = data;
+  document.title = 'สั่งเครื่องดื่ม ' + E.title;
+  document.getElementById('hTitle').textContent = E.title;
+  document.getElementById('hSub').textContent = '🥤 สั่งเครื่องดื่ม · สำหรับวันที่ ' + thaiDate(E.order_date);
+  if(E.state !== 'OPEN'){ show(closedHtml()); return; }
+  if(!(E.menu || []).length){ show(`<div class="card center"><h2>ยังไม่มีเมนูให้เลือก</h2><p class="muted">กรุณารอสักครู่ แล้วเปิดลิงก์นี้อีกครั้ง</p></div>`); return; }
+  await loadPeople();
+}
+function closeTimeText(){
+  return E.close_at ? new Date(E.close_at).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Bangkok' }) + ' น.' : '';
+}
+function closedHtml(){
+  if(E.state === 'TIME') return `<div class="card center"><h2>หมดเวลารับสั่งแล้ว</h2><p class="muted">ปิดรับสั่งเมื่อ ${esc(closeTimeText())}</p></div>`;
+  if(E.state === 'EXPIRED') return `<div class="card center"><h2>รายการนี้สิ้นสุดแล้ว</h2><p class="muted">รายการสำหรับวันที่ ${esc(thaiDate(E.order_date))} ผ่านไปแล้ว</p></div>`;
+  return `<div class="card center"><h2>ปิดรับการสั่งเครื่องดื่ม</h2><p class="muted">ขณะนี้ปิดรับสั่งแล้ว</p></div>`;
+}
+async function loadPeople(){
+  show('<div class="card muted">กำลังโหลดรายชื่อ...</div>');
+  const { data, error } = await sb.rpc('drink_list_people', { p_event: EVENT_ID });
+  if(error){ show(`<div class="err">${esc(errText(error))}</div><button class="btn ghost" onclick="loadPeople()">ลองใหม่</button>`); return; }
+  people = sortPeople(data || []);
+  viewPickName();
+}
+
+/* ===== 1) ค้นหาชื่อ ===== */
+function viewPickName(){
+  show(`<div class="card">
+    <h2>เลือกชื่อของคุณ</h2>
+    <p class="muted">พิมพ์ชื่อหรือรหัสพนักงาน แล้วแตะชื่อของคุณ · สั่งได้คนละ 1 แก้ว${E.close_at ? `<br>ปิดรับสั่ง ${esc(closeTimeText())}` : ''}</p>
+    <input type="text" id="q" placeholder="ค้นหาชื่อ / รหัสพนักงาน" oninput="renderPeople()" autocomplete="off">
+    <div class="plist" id="plist"></div>
+  </div>`);
+  renderPeople();
+}
+function renderPeople(){
+  const q = (document.getElementById('q').value || '').trim().toLowerCase();
+  const box = document.getElementById('plist');
+  if(!people.length){ box.innerHTML = '<p class="muted">ยังไม่มีรายชื่อในรายการนี้ โปรดแจ้งผู้ดูแล</p>'; return; }
+  const list = people.filter(p => !q || p.full_name.toLowerCase().includes(q) || p.emp_id.toLowerCase().includes(q));
+  if(!list.length){ box.innerHTML = '<p class="muted">ไม่พบรายชื่อที่ค้นหา</p>'; return; }
+  box.innerHTML = list.slice(0, 80).map(p => `<div class="pitem" onclick="pickPerson('${esc(p.id)}')">
+      <div><b>${esc(p.full_name)}</b>${p.grp && p.grp !== 'ผู้เข้าอบรม' ? `<span class="tag grp">${esc(p.grp)}</span>` : ''}<br>
+        <small>${[p.emp_id, p.unit].filter(Boolean).map(esc).join(' · ')}</small></div>
+      ${p.ordered ? '<span class="tag">สั่งแล้ว</span>' : ''}
+    </div>`).join('') + (list.length > 80 ? '<p class="muted">แสดง 80 รายการแรก พิมพ์เพิ่มเพื่อกรอง</p>' : '');
+}
+
+/* ===== 2) เลือกชื่อแล้ว ===== */
+async function pickPerson(id){
+  me = people.find(p => p.id === id);
+  if(!me) return;
+  if(me.ordered){ await viewAlready(); return; }
+  selMenu = null; selTemp = null; selSweet = null; skip = false;
+  viewOrder();
+}
+async function viewAlready(){
+  show('<div class="card muted">กำลังตรวจสอบ...</div>');
+  const { data } = await sb.rpc('drink_my_order', { p_person: me.id });
+  show(`<div class="card">
+    <h2>${esc(me.full_name)}</h2>
+    <div class="err" style="background:#fff6e0;color:#9c6200;border-color:#f0dca8">${esc(ERR_TH.LOCKED)}</div>
+    ${data ? summaryHtml(data) : ''}
+    <button class="btn ghost" onclick="viewPickName()">← กลับไปเลือกชื่อ</button>
+  </div>`);
+}
+function summaryHtml(o){
+  if(o.skipped) return `<div class="kv"><b>รายการ</b><div>ไม่รับเครื่องดื่ม</div></div>`;
+  return `<div class="kv"><b>เมนู</b><div><b style="color:#1e2533">${esc(o.menu_name)}</b></div>
+    ${o.temp ? `<b>ร้อน/เย็น</b><div>${esc(o.temp)}</div>` : ''}
+    ${o.sweetness ? `<b>ความหวาน</b><div>${esc(o.sweetness)}</div>` : ''}
+    ${o.note ? `<b>หมายเหตุ</b><div>${esc(o.note)}</div>` : ''}</div>`;
+}
+
+/* ===== 3) เลือกเมนู ===== */
+function viewOrder(){
+  const menu = E.menu || [];
+  show(`<div class="card">
+    <h2>${esc(me.full_name)}</h2>
+    <div class="kv">
+      <b>รหัส</b><div>${esc(me.emp_id || '-')}</div>
+      <b>สังกัด</b><div>${esc(me.unit || '-')}</div>
+    </div>
+    <h3>เลือกเครื่องดื่ม</h3>
+    ${menu.map((m, i) => `<div class="mopt" id="m_${i}" onclick="chooseMenu(${i})"><span class="dot"></span><span>${esc(m.name)}</span></div>`).join('')}
+    <div class="mopt skip" id="m_skip" onclick="chooseMenu(-1)"><span class="dot"></span><span>ไม่รับเครื่องดื่ม</span></div>
+
+    <div id="tempBox" class="hide">
+      <h3>ร้อน / เย็น</h3>
+      <div class="chips">${TEMPS.map((t, k) => `<div class="chip" id="t_${k}" onclick="chooseTemp(${k})">${k === 0 ? '🔥' : '🧊'} ${esc(t)}</div>`).join('')}</div>
+    </div>
+    <div id="sweetBox" class="hide">
+      <h3>ระดับความหวาน</h3>
+      <div class="chips">${(E.sweetness || []).map((s, k) => `<div class="chip" id="s_${k}" onclick="chooseSweet(${k})">${esc(s)}</div>`).join('')}</div>
+    </div>
+    <div id="noteBox" class="hide">
+      <h3>หมายเหตุ (ไม่บังคับ)</h3>
+      <input type="text" id="note" maxlength="100" placeholder="เช่น ไม่ใส่นม">
+    </div>
+
+    <button class="btn green" id="btnOrder" disabled onclick="submitOrder()">สั่งเครื่องดื่ม</button>
+    <button class="btn ghost" onclick="viewPickName()">← กลับไปเลือกชื่อ</button>
+  </div>`);
+}
+function chooseMenu(i){
+  skip = i < 0;
+  selMenu = skip ? null : E.menu[i];
+  if(!selMenu || !selMenu.has_temp) selTemp = null;
+  if(!selMenu || !selMenu.has_sweetness) selSweet = null;
+  (E.menu || []).forEach((_, k) => document.getElementById('m_' + k).classList.toggle('sel', k === i));
+  document.getElementById('m_skip').classList.toggle('sel', skip);
+  document.getElementById('tempBox').classList.toggle('hide', !(selMenu && selMenu.has_temp));
+  document.getElementById('sweetBox').classList.toggle('hide', !(selMenu && selMenu.has_sweetness));
+  document.getElementById('noteBox').classList.toggle('hide', skip);
+  TEMPS.forEach((t, k) => document.getElementById('t_' + k).classList.toggle('sel', t === selTemp));
+  (E.sweetness || []).forEach((s, k) => document.getElementById('s_' + k).classList.toggle('sel', s === selSweet));
+  updateOrderBtn();
+}
+function chooseTemp(k){
+  selTemp = TEMPS[k];
+  TEMPS.forEach((t, j) => document.getElementById('t_' + j).classList.toggle('sel', j === k));
+  updateOrderBtn();
+}
+function chooseSweet(k){
+  selSweet = E.sweetness[k];
+  (E.sweetness || []).forEach((s, j) => document.getElementById('s_' + j).classList.toggle('sel', j === k));
+  updateOrderBtn();
+}
+function updateOrderBtn(){
+  const ok = skip || (selMenu && (!selMenu.has_temp || selTemp) && (!selMenu.has_sweetness || selSweet));
+  document.getElementById('btnOrder').disabled = !ok;
+}
+
+/* ===== ป๊อปอัปยืนยัน (ไม่ใช้ confirm ของเบราว์เซอร์) ===== */
+function confirmModal(title, bodyHtml, okText){
+  return new Promise(resolve => {
+    const m = document.createElement('div');
+    m.className = 'mback';
+    m.innerHTML = `<div class="mbox"><h3>${esc(title)}</h3><p>${bodyHtml}</p>
+      <button class="btn green" id="mOk">${esc(okText || 'ตกลง')}</button>
+      <button class="btn ghost" id="mNo">กลับไปแก้ไข</button></div>`;
+    document.body.appendChild(m);
+    const done = v => { m.remove(); resolve(v); };
+    m.querySelector('#mOk').onclick = () => done(true);
+    m.querySelector('#mNo').onclick = () => done(false);
+  });
+}
+
+/* ===== 4) ส่งคำสั่งซื้อ ===== */
+async function submitOrder(){
+  if(submitting) return;
+  const note = skip ? '' : (document.getElementById('note').value || '').trim();
+  const sum = skip ? 'ไม่รับเครื่องดื่ม'
+    : `<b>${esc(selMenu.name)}</b>${selTemp ? ' · ' + esc(selTemp) : ''}${selSweet ? ' · ' + esc(selSweet) : ''}${note ? '<br>หมายเหตุ: ' + esc(note) : ''}`;
+  const ok = await confirmModal('ยืนยันการสั่ง?', `${esc(me.full_name)}<br>${sum}`, 'ยืนยันสั่ง');
+  if(!ok) return;
+  submitting = true;
+  const btn = document.getElementById('btnOrder');
+  btn.disabled = true; btn.textContent = 'กำลังส่ง...';
+  const { data, error } = await sb.rpc('drink_order', {
+    p_person: me.id, p_menu: skip ? null : selMenu.id, p_temp: skip ? null : selTemp,
+    p_sweetness: skip ? null : selSweet, p_note: note, p_skip: skip });
+  submitting = false;
+  if(error){
+    const msg = (error.message || '');
+    if(msg.includes('LOCKED')) me.ordered = true;
+    const retry = !(msg.includes('LOCKED') || msg.includes('CLOSED'));
+    show(`<div class="err">${esc(errText(error))}</div>` +
+      (retry ? `<button class="btn" onclick="pickPerson('${esc(me.id)}')">กลับไปเลือกใหม่</button>` : '') +
+      '<button class="btn ghost" onclick="loadPeople()">กลับไปเลือกชื่อ</button>');
+    return;
+  }
+  me.ordered = true;
+  viewDone(data);
+}
+function viewDone(o){
+  show(`<div class="card center">
+    <div class="okmark">✅</div>
+    <h2 style="margin-top:8px">สั่งเรียบร้อยแล้ว</h2>
+    <div class="big">${esc(me.full_name)}</div>
+    <div style="text-align:left;max-width:320px;margin:12px auto 0">${summaryHtml(o)}</div>
+    <button class="btn ghost" onclick="loadPeople()">กลับหน้าหลัก</button>
+  </div>`);
+}
+
+init();
+</script>
+</body>
+</html>

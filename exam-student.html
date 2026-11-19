@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>แบบทดสอบ</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--navy:#0f2744;--blue:#1d5fa8;--bg:#f3f6f8;--line:#dde3ea;--green:#1a7a4a;--red:#b03030;--muted:#627587}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#1e2533;font-family:'Sarabun',sans-serif;font-size:16px;line-height:1.55}
+header{background:var(--navy);color:#fff;padding:14px 16px}
+header h1{margin:0;font-size:17px;font-weight:700}
+header p{margin:2px 0 0;font-size:13px;opacity:.7}
+main{max-width:720px;margin:0 auto;padding:16px 14px 60px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:14px}
+h2{margin:0 0 10px;font-size:18px;color:var(--navy)}
+.muted{color:var(--muted);font-size:14px}
+.btn{display:block;width:100%;border:none;border-radius:10px;padding:14px;font:inherit;font-size:16px;font-weight:700;cursor:pointer;background:var(--blue);color:#fff;margin-top:10px}
+.btn:hover{filter:brightness(.93)}
+.btn:disabled{background:#b8c4d0;cursor:not-allowed}
+.btn.ghost{background:#fff;color:var(--blue);border:2px solid var(--blue)}
+.btn.green{background:var(--green)}
+input[type=text]{width:100%;padding:12px 14px;border:2px solid var(--line);border-radius:10px;font:inherit;font-size:16px}
+input[type=text]:focus{outline:none;border-color:var(--blue)}
+.plist{margin-top:10px;max-height:52vh;overflow:auto}
+.pitem{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer;background:#fff}
+.pitem:hover{border-color:var(--blue);background:#f4f9ff}
+.pitem small{color:var(--muted)}
+.tag{font-size:12px;font-weight:700;padding:3px 9px;border-radius:99px;background:#e3f7ee;color:#178a5c;white-space:nowrap}
+.tag.warn{background:#fff2d8;color:#9c6200}
+.kv{display:grid;grid-template-columns:90px 1fr;gap:6px 10px;margin:10px 0}
+.kv b{color:var(--muted);font-weight:600}
+.q{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:12px}
+.q .qt{font-weight:600;margin-bottom:12px;background:#e6eefa;border-left:5px solid var(--blue);border-radius:8px;padding:11px 13px}
+.mback{position:fixed;inset:0;background:rgba(10,20,40,.55);display:flex;align-items:center;justify-content:center;padding:18px;z-index:100}
+.mbox{background:#fff;border-radius:14px;max-width:380px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.mbox h3{margin:0 0 8px;font-size:18px;color:var(--navy)}
+.mbox p{margin:0 0 6px;color:#394556}
+.mbox .warn{background:#fff6e0;color:#9c6200;border:1px solid #f0dca8;border-radius:8px;padding:8px 10px;margin-top:8px;font-weight:600}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:2px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer}
+.opt input{margin-top:5px;flex:0 0 auto}
+.opt.sel{border-color:var(--blue);background:#eef5ff}
+.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding:8px 0}
+.bar .track{height:8px;background:#e2e8ee;border-radius:99px;overflow:hidden}
+.bar .fill{height:100%;background:var(--blue);width:0;transition:width .2s}
+.bar span{font-size:13px;color:var(--muted)}
+.score{text-align:center;padding:10px 0}
+.score .big{font-size:52px;font-weight:700;color:var(--navy);line-height:1.1}
+.badge{display:inline-block;padding:8px 20px;border-radius:99px;font-weight:700;font-size:17px;margin-top:8px}
+.badge.ok{background:#e3f7ee;color:var(--green)}
+.badge.no{background:#fdeeea;color:var(--red)}
+.res{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #eef1f4;align-items:flex-start}
+.res:last-child{border-bottom:none}
+.res .mark{font-weight:700;flex:0 0 26px}
+.res.c .mark{color:var(--green)} .res.w .mark{color:var(--red)}
+.err{background:#fdeeea;color:var(--red);border:1px solid #f3c7cf;border-radius:10px;padding:12px;margin-bottom:12px}
+</style>
+</head>
+<body>
+<header><h1 id="hTitle">แบบทดสอบ</h1><p id="hSub"></p></header>
+<main id="app"><div class="card muted">กำลังโหลด...</div></main>
+
+<script>
+/* ===== ตั้งค่า Supabase (anon key เป็นค่าสาธารณะอยู่แล้ว ปลอดภัยเพราะตารางถูกล็อกด้วย RLS) ===== */
+const SUPABASE_URL = 'https://dcaydbxyjisegqzzildq.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjYXlkYnh5amlzZWdxenppbGRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2OTk5NDgsImV4cCI6MjEwMDI3NTk0OH0.cEk8k90NeTTnkZV0Sny7nuN8UbW15_eW8S_HTQSBwwA';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const SESSION_ID = new URLSearchParams(location.search).get('s') || '';
+const LETTERS = ['ก','ข','ค','ง','จ'];
+const app = document.getElementById('app');
+let S = null;            // session info
+let people = [];         // รายชื่อ
+let kind = null;         // 'pre' | 'post'
+let me = null;           // participant ที่เลือก
+let exam = null;         // ข้อมูลข้อสอบจาก exam_start
+let answers = {};        // qid -> ดัชนีตัวเลือกเดิม
+let submitting = false;
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const KIND_TH = { pre: 'ก่อนอบรม (Pre-test)', post: 'หลังอบรม (Post-test)' };
+const ERR_TH = {
+  LOCKED: 'คุณทำแบบทดสอบนี้ไปแล้ว ไม่สามารถทำซ้ำได้ (หากต้องการทำใหม่ โปรดแจ้งผู้ดูแล)',
+  CLOSED: 'แบบทดสอบนี้ยังไม่เปิดให้ทำ หรือปิดแล้ว โปรดสอบถามผู้ดูแล',
+  NOT_FOUND: 'ไม่พบรายชื่อนี้ในระบบ',
+  NO_QUESTIONS: 'ยังไม่มีข้อสอบในชุดนี้',
+};
+const errText = e => ERR_TH[(e && e.message || '').trim()] || ('เกิดข้อผิดพลาด: ' + ((e && e.message) || 'ไม่ทราบสาเหตุ'));
+
+function shuffle(a){ a = a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function show(html){ app.innerHTML = html; window.scrollTo(0,0); }
+
+/* ===== 0) โหลดข้อมูลการสอบ ===== */
+async function init(){
+  if(!SESSION_ID){ show('<div class="err">ลิงก์ไม่ถูกต้อง (ไม่พบรหัสแบบทดสอบ) กรุณาขอลิงก์ใหม่จากผู้ดูแล</div>'); return; }
+  const { data, error } = await sb.rpc('exam_get_session', { p_session: SESSION_ID });
+  if(error || !data){ show('<div class="err">ไม่พบแบบทดสอบนี้ กรุณาตรวจสอบลิงก์</div>'); return; }
+  S = data;
+  document.title = 'แบบทดสอบ ' + S.title;
+  document.getElementById('hTitle').textContent = S.title;
+  document.getElementById('hSub').textContent = [S.batch ? 'รุ่นที่ ' + S.batch : '', S.course_no ? 'เลขที่หลักสูตร ' + S.course_no : ''].filter(Boolean).join(' · ');
+  viewPickKind();
+}
+
+/* ===== 1) เลือกชนิดข้อสอบ ===== */
+function viewPickKind(){
+  show(`<div class="card">
+    <h2>เลือกแบบทดสอบ</h2>
+    <p class="muted">จำนวน ${esc(S.question_count)} ข้อ</p>
+    <button class="btn" ${S.pre_open?'':'disabled'} onclick="pickKind('pre')">📝 ${KIND_TH.pre}${S.pre_open?'':' (ยังไม่เปิด)'}</button>
+    ${S.post_open ? `<button class="btn ghost" onclick="pickKind('post')">✅ ${KIND_TH.post}</button>` : ''}
+  </div>`);
+}
+async function pickKind(k){
+  kind = k;
+  show('<div class="card muted">กำลังโหลดรายชื่อ...</div>');
+  const { data, error } = await sb.rpc('exam_list_participants', { p_session: SESSION_ID });
+  if(error){ show(`<div class="err">${esc(errText(error))}</div><button class="btn ghost" onclick="viewPickKind()">กลับ</button>`); return; }
+  people = (data || []).slice().sort((a, b) => String(a.emp_id).localeCompare(String(b.emp_id), 'th', { numeric: true }));
+  viewPickName();
+}
+
+/* ===== 2) ค้นหาชื่อ ===== */
+function viewPickName(){
+  show(`<div class="card">
+    <h2>${KIND_TH[kind]}</h2>
+    <p class="muted">พิมพ์ชื่อหรือรหัสพนักงาน แล้วแตะชื่อของคุณ</p>
+    <input type="text" id="q" placeholder="ค้นหาชื่อ / รหัสพนักงาน" oninput="renderPeople()" autocomplete="off">
+    <div class="plist" id="plist"></div>
+    <button class="btn ghost" onclick="viewPickKind()">← กลับ</button>
+  </div>`);
+  renderPeople();
+}
+function renderPeople(){
+  const q = (document.getElementById('q').value || '').trim().toLowerCase();
+  const list = people.filter(p => !q || p.full_name.toLowerCase().includes(q) || p.emp_id.toLowerCase().includes(q));
+  const box = document.getElementById('plist');
+  if(!people.length){ box.innerHTML = '<p class="muted">ยังไม่มีรายชื่อผู้เข้าอบรมในรุ่นนี้ โปรดแจ้งผู้ดูแล</p>'; return; }
+  if(!list.length){ box.innerHTML = '<p class="muted">ไม่พบรายชื่อที่ค้นหา</p>'; return; }
+  box.innerHTML = list.slice(0, 80).map(p => {
+    const done = kind === 'pre' ? p.pre_done : p.post_done;
+    let tagHtml = '';
+    if(kind === 'post' && S.post_repeat){
+      if(p.post_done) tagHtml = p.post_passed ? '<span class="tag">ผ่านแล้ว</span>' : '<span class="tag warn">ยังไม่ผ่าน</span>';
+    } else if(done){
+      tagHtml = '<span class="tag warn">ทำแล้ว</span>';
+    }
+    return `<div class="pitem" onclick="pickPerson('${esc(p.id)}')">
+      <div><b>${esc(p.full_name)}</b><br><small>${esc(p.emp_id)}${p.unit ? ' · ' + esc(p.unit) : ''}</small></div>
+      ${tagHtml}
+    </div>`;
+  }).join('') + (list.length > 80 ? '<p class="muted">แสดง 80 รายการแรก พิมพ์เพิ่มเพื่อกรอง</p>' : '');
+}
+
+/* ===== 3) ยืนยันตัวตน ===== */
+function pickPerson(id){
+  me = people.find(p => p.id === id);
+  if(!me) return;
+  const repeatMode = kind === 'post' && S.post_repeat;
+  const done = (kind === 'pre' ? me.pre_done : me.post_done) && !repeatMode;   // โหมดทำซ้ำได้ ไม่ล็อก
+  const prevNote = repeatMode && me.post_done
+    ? `<div class="warn" style="background:#fff6e0;color:#9c6200;border:1px solid #f0dca8;border-radius:8px;padding:10px;margin:8px 0">คุณเคยทำแบบทดสอบนี้แล้ว (${me.post_passed ? 'ผ่านแล้ว' : 'ยังไม่ผ่าน'}) สามารถทำซ้ำได้</div>` : '';
+  show(`<div class="card">
+    <h2>ยืนยันว่าเป็นคุณ</h2>
+    <div class="kv">
+      <b>ชื่อ</b><div>${esc(me.full_name)}</div>
+      <b>รหัส</b><div>${esc(me.emp_id)}</div>
+      <b>ตำแหน่ง</b><div>${esc(me.job_title || '-')}</div>
+      <b>สังกัด</b><div>${esc(me.unit || '-')}</div>
+      <b>แบบทดสอบ</b><div>${KIND_TH[kind]}</div>
+    </div>
+    ${done ? `<div class="err">${esc(ERR_TH.LOCKED)}</div>` : '<p class="muted">เมื่อกดส่งคำตอบแล้ว จะไม่สามารถแก้ไขหรือทำซ้ำได้</p>'}
+    <button class="btn green" ${done?'disabled':''} onclick="startExam()">ใช่ ข้อมูลถูกต้อง เริ่มทำแบบทดสอบ</button>
+    <button class="btn ghost" onclick="viewPickName()">ไม่ใช่ เลือกใหม่</button>
+  </div>`);
+}
+
+/* ===== 4) ทำข้อสอบ ===== */
+async function startExam(){
+  show('<div class="card muted">กำลังโหลดข้อสอบ...</div>');
+  const { data, error } = await sb.rpc('exam_start', { p_participant: me.id, p_kind: kind });
+  if(error){ show(`<div class="err">${esc(errText(error))}</div><button class="btn ghost" onclick="viewPickKind()">กลับหน้าแรก</button>`); return; }
+  exam = data;
+  answers = {};
+  let qs = exam.questions || [];
+  if(exam.shuffle_questions) qs = shuffle(qs);
+  qs = qs.map(q => {
+    const order = q.options.map((_, i) => i);
+    return { ...q, order: exam.shuffle_options ? shuffle(order) : order };
+  });
+  exam.questions = qs;
+  renderExam();
+}
+function renderExam(){
+  const qs = exam.questions;
+  show(`<div class="bar"><div class="track"><div class="fill" id="fill"></div></div><span id="cnt"></span></div>` +
+    qs.map((q, n) => `<div class="q"><div class="qt">${n+1}. ${esc(q.question)}</div>` +
+      q.order.map((oi, k) => `<label class="opt" id="o_${esc(q.id)}_${oi}">
+        <input type="radio" name="q_${esc(q.id)}" onchange="choose('${esc(q.id)}',${oi})">
+        <span><b>${LETTERS[k]}.</b> ${esc(q.options[oi])}</span></label>`).join('') + '</div>').join('') +
+    `<button class="btn green" id="btnSubmit" onclick="submitExam()">ส่งคำตอบ</button>`);
+  updateProgress();
+}
+function choose(qid, oi){
+  answers[qid] = oi;
+  const q = exam.questions.find(x => x.id === qid);
+  q.order.forEach(i => document.getElementById(`o_${qid}_${i}`).classList.toggle('sel', i === oi));
+  updateProgress();
+}
+function updateProgress(){
+  const total = exam.questions.length, done = Object.keys(answers).length;
+  document.getElementById('fill').style.width = (done / total * 100) + '%';
+  document.getElementById('cnt').textContent = `ตอบแล้ว ${done}/${total} ข้อ`;
+}
+
+/* ===== ป๊อปอัปยืนยัน (แทน confirm ของเบราว์เซอร์) ===== */
+function confirmModal(title, bodyHtml, okText){
+  return new Promise(resolve => {
+    const m = document.createElement('div');
+    m.className = 'mback';
+    m.innerHTML = `<div class="mbox"><h3>${esc(title)}</h3><p>${bodyHtml}</p>
+      <button class="btn green" id="mOk">${esc(okText || 'ตกลง')}</button>
+      <button class="btn ghost" id="mNo">กลับไปตรวจคำตอบ</button></div>`;
+    document.body.appendChild(m);
+    const done = v => { m.remove(); resolve(v); };
+    m.querySelector('#mOk').onclick = () => done(true);
+    m.querySelector('#mNo').onclick = () => done(false);
+  });
+}
+
+/* ===== 5) ส่งคำตอบ ===== */
+async function submitExam(){
+  if(submitting) return;
+  const total = exam.questions.length, left = total - Object.keys(answers).length;
+  const ok = await confirmModal('ยืนยันส่งคำตอบ?',
+    'ส่งแล้วจะแก้ไขหรือทำซ้ำไม่ได้' + (left > 0 ? `<div class="warn">ยังไม่ได้ตอบ ${left} ข้อ (จะนับเป็นข้อผิด)</div>` : ''),
+    left > 0 ? 'ส่งเลย' : 'ยืนยันส่ง');
+  if(!ok) return;
+  submitting = true;
+  const btn = document.getElementById('btnSubmit');
+  btn.disabled = true; btn.textContent = 'กำลังส่ง...';
+  const { data, error } = await sb.rpc('exam_submit', { p_participant: me.id, p_kind: kind, p_answers: answers });
+  submitting = false;
+  if(error){
+    const locked = (error.message || '').includes('LOCKED');
+    show(`<div class="err">${esc(errText(error))}</div>` +
+      (locked ? '' : '<button class="btn" onclick="renderExam()">กลับไปทำต่อ / ลองส่งใหม่</button>'));
+    return;
+  }
+  viewResult(data);
+}
+
+/* ===== 6) ผลลัพธ์ ===== */
+function viewResult(r){
+  if(kind === 'pre'){
+    show(`<div class="card score">
+      <div class="muted">คะแนน Pre-test ของ ${esc(me.full_name)}</div>
+      <div class="big">${r.score}<span style="font-size:24px"> / ${r.total}</span></div>
+      <p class="muted">บันทึกผลเรียบร้อยแล้ว ขอบคุณที่ทำแบบทดสอบ</p>
+    </div>`);
+    return;
+  }
+  const resByPos = {};
+  (r.results || []).forEach(x => { resByPos[x.position] = x.correct; });
+  const rows = exam.questions.map((q, n) => {
+    const ok = !!resByPos[q.position];
+    const t = q.question.length > 70 ? q.question.slice(0, 70) + '…' : q.question;
+    const k = q.order.indexOf(answers[q.id]);   // ตำแหน่งตัวเลือกที่ผู้ทำเห็นบนจอ
+    const note = ok && k >= 0 ? `<br><small style="color:var(--green);font-weight:600">ถูกต้อง: ตัวเลือก ${LETTERS[k]}</small>` : '';
+    return `<div class="res ${ok?'c':'w'}"><div class="mark">${ok?'✓':'✗'}</div><div>ข้อ ${n+1}. ${esc(t)}${note}</div></div>`;
+  }).join('');
+  show(`<div class="card score">
+      <div class="muted">คะแนน Post-test ของ ${esc(me.full_name)}</div>
+      <div class="big">${r.score}<span style="font-size:24px"> / ${r.total}</span></div>
+      <div class="badge ${r.passed?'ok':'no'}">${r.passed ? '🎉 คุณผ่านเกณฑ์' : 'ยังไม่ผ่านเกณฑ์'}</div>
+      <p class="muted">เกณฑ์ผ่าน ${esc(r.pass_percent)}%</p>
+      ${(!r.passed && S.post_repeat) ? '<button class="btn" onclick="startExam()">🔄 ทำแบบทดสอบอีกครั้ง</button>' : ''}
+    </div>
+    <div class="card"><h2>ผลรายข้อ</h2>${rows}</div>
+    ${(!r.passed && S.post_repeat) ? '<button class="btn" onclick="startExam()">🔄 ทำแบบทดสอบอีกครั้ง</button>' : ''}`);
+}
+
+init();
+</script>
+</body>
+</html>

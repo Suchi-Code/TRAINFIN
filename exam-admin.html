@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>แอดมินแบบทดสอบ Pre/Post</title>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="js/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/auth.js"></script>
+<script src="js/permissions.js"></script>
+<script src="js/sidebar.js"></script>
+<script>checkAuth();</script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root{--navy:#092c4c;--blue:#0b6aab;--sky:#eaf4fb;--line:#dce5ec;--ink:#1b2a38;--muted:#627587;--green:#197a5d;--amber:#bf7800;--purple:#7865c8;--red:#c0364f;--red-bg:#fdeeea;--green-bg:#eafaf5;--bg:#f3f6f8}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Prompt',sans-serif;font-size:14px;line-height:1.55}
+/* ===== PWA layout (ตาม Sidebar-Page-Guide.md §3) ===== */
+.layout{display:flex;min-height:100vh}
+.sidebar{position:sticky;top:0;align-self:flex-start;height:100vh;width:260px;flex:0 0 260px;background:var(--navy);color:#dce8f2;padding:20px 16px;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;transition:width .22s ease,flex-basis .22s ease,padding .22s ease}
+.sidebar.collapsed{width:76px;flex-basis:76px;padding-left:12px;padding-right:12px}
+.main{width:calc(100% - 260px);max-width:calc(100% - 260px);padding:30px 34px 42px;min-width:0;transition:width .22s ease,max-width .22s ease;overflow-x:hidden}
+.main.wide{width:calc(100% - 76px);max-width:calc(100% - 76px)}
+.sidebar-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:0 6px 20px;border-bottom:1px solid rgba(255,255,255,.15)}
+.brand{display:flex;align-items:center;gap:11px;min-width:0;overflow:hidden}
+.sidebar .mark{height:37px;width:37px;flex:0 0 37px;border-radius:10px;object-fit:cover;background:#fff}
+.brand-text{min-width:0}
+.brand b{display:block;color:#fff;font-size:15px;white-space:nowrap}
+.brand span{font-size:10.5px;color:#a9c3d6;white-space:normal;line-height:1.3;display:block}
+.nav{padding-top:20px}
+.nav-label{font-size:11px;letter-spacing:.08em;color:#82a4bd;padding:0 12px 10px;white-space:nowrap;overflow:hidden}
+.nav a{display:flex;align-items:center;gap:12px;text-decoration:none;color:#c9dae7;padding:12px;border-radius:8px;margin:3px 0;transition:.15s;white-space:nowrap;overflow:hidden}
+.nav a:hover{background:rgba(255,255,255,.08)}
+.nav a.active{background:#1275b4;color:#fff;font-weight:700;box-shadow:inset 3px 0 #91d8ff}
+.nav svg{width:19px;height:19px;flex:0 0 19px;fill:none;stroke:currentColor;stroke-width:1.8}
+.user{margin-top:auto;background:rgba(255,255,255,.07);padding:13px;border-radius:9px;font-size:12px;overflow:hidden;white-space:nowrap;flex:0 0 auto}
+.user b{color:#fff;display:block;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis}
+.user span{color:#a9c3d6}
+.sidebar-toggle{flex:0 0 26px;width:26px;height:26px;background:transparent;border:0;color:#cfe0ee;cursor:pointer;display:grid;place-items:center;transition:.15s;margin-top:2px;padding:0}
+.sidebar-toggle:hover{color:#fff}
+.sidebar-toggle svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.2;transition:transform .22s ease}
+.sidebar-toggle.collapsed svg{transform:rotate(180deg)}
+.sidebar.collapsed .sidebar-head{flex-direction:column;align-items:center;gap:12px;padding-left:0;padding-right:0}
+.sidebar.collapsed .brand{justify-content:center}
+.sidebar.collapsed .brand-text,.sidebar.collapsed .nav-label,.sidebar.collapsed .user{display:none}
+.sidebar.collapsed .nav a{justify-content:center;padding-left:8px;padding-right:8px}
+.sidebar.collapsed .nav a span{display:none}
+@media(max-width:1050px){.main{padding:22px;width:calc(100% - 215px);max-width:calc(100% - 215px)}.sidebar{width:215px;flex-basis:215px}}
+@media(max-width:720px){.sidebar{display:none}.main{width:100%;max-width:100%;padding:18px}}
+.topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px}
+.topbar h1{margin:0;font-size:22px;color:var(--navy)}
+.topbar p{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
+.card{overflow-x:auto}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+h2{margin:0 0 10px;font-size:18px;color:var(--navy)}
+h3{margin:0 0 8px;font-size:15px;color:var(--navy)}
+.muted{color:var(--muted);font-size:13px}
+.btn{border:none;border-radius:8px;padding:8px 14px;font:inherit;font-weight:600;cursor:pointer;background:var(--blue);color:#fff}
+.btn:hover{filter:brightness(.92)} .btn:disabled{background:#b8c4d0;cursor:not-allowed}
+.btn.ghost{background:#fff;color:var(--blue);border:1.5px solid var(--blue)}
+.btn.red{background:#fdeeea;color:var(--red);border:1px solid #f3c7cf}
+.btn.green{background:var(--green)}
+.btn.sm{padding:4px 10px;font-size:13px}
+input[type=text],input[type=password],input[type=number],textarea,select{width:100%;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;font:inherit;background:#fff}
+input:focus,textarea:focus{outline:none;border-color:var(--blue)}
+label.f{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:10px 0 3px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tabs{display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap}
+.tab{padding:9px 16px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;color:var(--muted)}
+.tab.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0}
+.stat{background:#f7fafc;border:1px solid var(--line);border-radius:10px;padding:12px}
+.stat .n{font-size:26px;font-weight:700;color:var(--navy);line-height:1.2}
+.stat .l{font-size:12px;color:var(--muted)}
+.stat.click{cursor:pointer;border-color:#9fc6e0}
+.stat.click:hover{background:#eef6fc}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{background:var(--navy);color:#fff;padding:8px 10px;text-align:left;white-space:nowrap}
+td{padding:7px 10px;border-bottom:1px solid #eef1f4;vertical-align:middle}
+.tag{font-size:12px;font-weight:700;padding:2px 9px;border-radius:99px;white-space:nowrap;display:inline-block}
+.tag.ok{background:#e3f7ee;color:#178a5c} .tag.no{background:#fdeeea;color:var(--red)} .tag.wait{background:#fff2d8;color:#8a5700} .tag.gray{background:#eef0f4;color:var(--muted)}
+.q{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff}
+.q .opts div{padding:1px 0;font-size:14px}
+.q .opts .c{color:var(--green);font-weight:700}
+.err{background:#fdeeea;color:var(--red);border:1px solid #f3c7cf;border-radius:8px;padding:10px;margin:10px 0}
+.warn{background:#fff6e0;color:#8a5700;border:1px solid #f0dca8;border-radius:8px;padding:10px;margin:10px 0}
+.modal{position:fixed;inset:0;background:rgba(10,20,40,.5);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
+.modal .box{background:#fff;border-radius:12px;max-width:760px;width:100%;max-height:88vh;overflow:auto;padding:18px}
+.res{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid #eef1f4}
+.res .mark{font-weight:700;flex:0 0 22px}
+.res.c .mark{color:var(--green)} .res.w .mark{color:var(--red)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1f2937;color:#fff;padding:10px 20px;border-radius:8px;z-index:99;font-weight:600}
+.linkbox{background:#f0f4f8;border:1px dashed #9fb4c8;border-radius:8px;padding:10px;word-break:break-all;font-size:13px}
+@media(max-width:700px){.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="layout">
+  <div id="sidebarRoot"></div>
+  <script>renderSidebar('training-support');</script>
+  <main class="main">
+    <header class="topbar"><div><h1>📝 แอดมินแบบทดสอบ Pre/Post-test</h1><p>การประปาส่วนภูมิภาค · กฝภ.1 · ระบบงานฝึกอบรม</p></div><div id="hRight"></div></header>
+    <div id="app"><div class="card muted">กำลังโหลด...</div></div>
+  </main>
+</div>
+
+<script>
+/* ===== Supabase ===== */
+const sb = window.supabase.createClient(APP_CONFIG.SUPABASE_URL, APP_CONFIG.SUPABASE_ANON_KEY);
+
+const LETTERS = ['ก','ข','ค','ง','จ'];
+const MAX_Q = 20;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtT = t => t ? new Date(t).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : '';
+function toast(m){ const t = document.createElement('div'); t.className = 'toast'; t.textContent = m; document.body.appendChild(t); setTimeout(() => t.remove(), 2600); }
+
+/* ===== state ===== */
+let user = null, sessions = [], cur = null;
+let questions = [], keys = {}, people = [], attempts = [];
+let tab = 'dash', dashKind = 'pre', openPending = false, openFail = false;
+let editingQ = null;   // null | 'new' | question id
+let channel = null, pollTimer = null, rtStatus = '', reloadTimer = null;
+
+/* ===== boot — ใช้ session + role ของระบบ PWA (ไม่มีหน้า login แยกแล้ว) ===== */
+async function boot(){
+  const { data: { session } } = await sb.auth.getSession();
+  if(!session) return;                     // checkAuth() เด้งกลับหน้า login ให้แล้ว
+  user = session.user;
+  await loadCurrentUser();                 // เติมชื่อใน sidebar + cache role ลง sessionStorage
+  if(!canEditThisPage(getCurrentRole())){ viewNoAccess(); return; }
+  viewSessions();
+}
+function viewNoAccess(){
+  $('app').innerHTML = `<div class="card" style="max-width:520px;margin:30px auto;text-align:center">
+    <div style="font-size:42px">🔒</div><h2>ไม่มีสิทธิ์เข้าใช้งานหน้านี้</h2>
+    <p class="muted">หน้านี้สำหรับผู้ดูแลระบบ (admin) และผู้บริหาร (manager) เท่านั้น<br>หากต้องการใช้งาน กรุณาติดต่อผู้ดูแลระบบเพื่อขอปรับสิทธิ์ แล้วออกจากระบบและเข้าสู่ระบบใหม่</p></div>`;
+}
+
+/* ===== รายการการสอบ ===== */
+async function viewSessions(){
+  leaveSession();
+  $('app').innerHTML = '<div class="card muted">กำลังโหลด...</div>';
+  const { data, error } = await sb.from('exam_sessions').select('*').order('created_at', { ascending: false });
+  if(error){ $('app').innerHTML = `<div class="err">${esc(error.message)}</div>`; return; }
+  sessions = data || [];
+  $('app').innerHTML = `<div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">แบบทดสอบทั้งหมด</h2>
+      <button class="btn" onclick="viewNewSession()">＋ สร้างแบบทดสอบใหม่</button></div>
+    ${sessions.length ? `<table style="margin-top:12px"><thead><tr><th>หลักสูตร</th><th>เลขที่</th><th>รุ่น</th><th>สร้างเมื่อ</th><th></th></tr></thead><tbody>` +
+      sessions.map(s => `<tr><td><b>${esc(s.title)}</b></td><td>${esc(s.course_no)}</td><td>${esc(s.batch)}</td><td>${fmtT(s.created_at)}</td>
+        <td><button class="btn sm" onclick="openSession('${s.id}')">เปิด</button></td></tr>`).join('') + '</tbody></table>'
+      : '<p class="muted">ยังไม่มีแบบทดสอบ กด "สร้างแบบทดสอบใหม่"</p>'}</div>`;
+}
+function viewNewSession(){
+  $('app').innerHTML = `<div class="card" style="max-width:640px"><h2>สร้างแบบทดสอบใหม่</h2>
+    <label class="f">ชื่อหลักสูตร *</label><input type="text" id="n_title">
+    <div class="grid2"><div><label class="f">เลขที่หลักสูตร</label><input type="text" id="n_no"></div>
+    <div><label class="f">รุ่น</label><input type="text" id="n_batch"></div>
+    <div><label class="f">เกณฑ์ผ่าน (%)</label><select id="n_pass"><option value="80" selected>80%</option><option value="70">70%</option></select></div></div>
+    <div class="row" style="margin-top:12px"><label><input type="checkbox" id="n_sq"> สลับลำดับข้อ</label><label><input type="checkbox" id="n_so"> สลับตัวเลือก</label></div>
+    <div class="row" style="margin-top:16px"><button class="btn green" onclick="createSession()">สร้าง</button><button class="btn ghost" onclick="viewSessions()">ยกเลิก</button></div></div>`;
+}
+async function createSession(){
+  const title = $('n_title').value.trim();
+  if(!title){ toast('กรุณาใส่ชื่อหลักสูตร'); return; }
+  const row = { title, course_no: $('n_no').value.trim(), batch: $('n_batch').value.trim(),
+    pass_percent: Math.min(100, Math.max(1, parseInt($('n_pass').value) || 80)),
+    shuffle_questions: $('n_sq').checked, shuffle_options: $('n_so').checked,
+    post_repeat: true };   // ค่าตั้งต้น: Post-test ทำซ้ำได้ (ไม่ล็อก) — แอดมินเปลี่ยนได้ในแท็บตั้งค่า
+  const { data, error } = await sb.from('exam_sessions').insert(row).select().single();
+  if(error){ toast('ผิดพลาด: ' + error.message); return; }
+  await openSession(data.id, 'q');
+}
+
+/* ===== เปิดการสอบ + โหลดข้อมูล ===== */
+async function openSession(id, startTab){
+  leaveSession();
+  tab = startTab || 'dash'; dashKind = 'pre'; openPending = openFail = false; editingQ = null;
+  $('app').innerHTML = '<div class="card muted">กำลังโหลด...</div>';
+  const { data, error } = await sb.from('exam_sessions').select('*').eq('id', id).single();
+  if(error){ $('app').innerHTML = `<div class="err">${esc(error.message)}</div>`; return; }
+  cur = data;
+  await loadAll();
+  subscribe();
+  renderDetail();
+}
+async function loadAll(){
+  const id = cur.id;
+  const [qs, pp, at] = await Promise.all([
+    sb.from('exam_questions').select('*').eq('session_id', id).order('position'),
+    sb.from('exam_participants').select('*').eq('session_id', id).order('full_name'),
+    sb.from('exam_attempts').select('*').eq('session_id', id).range(0, 9999),
+  ]);
+  questions = qs.data || [];
+  people = (pp.data || []).slice().sort((a, b) => String(a.emp_id).localeCompare(String(b.emp_id), 'th', { numeric: true }));   // เรียงตามรหัสพนักงาน
+  attempts = at.data || [];
+  keys = {};
+  if(questions.length){
+    const { data: ks } = await sb.from('exam_answer_keys').select('*').in('question_id', questions.map(q => q.id));
+    (ks || []).forEach(k => { keys[k.question_id] = k.correct_index; });
+  }
+  const { data: s } = await sb.from('exam_sessions').select('*').eq('id', id).single();
+  if(s) cur = s;
+}
+function subscribe(){
+  channel = sb.channel('exam-' + cur.id)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'exam_attempts', filter: 'session_id=eq.' + cur.id }, scheduleReload)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'exam_participants', filter: 'session_id=eq.' + cur.id }, scheduleReload)
+    .subscribe(st => { rtStatus = st === 'SUBSCRIBED' ? '🟢 Real time เชื่อมต่อแล้ว' : '🟡 กำลังเชื่อมต่อ Real time...'; const el = $('rt'); if(el) el.textContent = rtStatus; });
+  pollTimer = setInterval(() => { if(tab === 'dash' && !document.hidden) scheduleReload(); }, 20000);   // สำรองเผื่อ Realtime หลุด
+}
+function scheduleReload(){
+  clearTimeout(reloadTimer);
+  reloadTimer = setTimeout(async () => { if(!cur) return; await loadAll(); if(tab === 'dash' || tab === 'people') renderTab(); }, 300);
+}
+function leaveSession(){
+  if(channel){ sb.removeChannel(channel); channel = null; }
+  clearInterval(pollTimer); clearTimeout(reloadTimer); cur = null;
+}
+
+/* ===== โครงหน้ารายละเอียด ===== */
+function renderDetail(){
+  $('app').innerHTML = `<div class="row" style="justify-content:space-between;margin-bottom:10px">
+      <div><button class="btn ghost sm" onclick="viewSessions()">← กลับรายการ</button>
+      <h2 style="display:inline;margin-left:10px">${esc(cur.title)}</h2>
+      <span class="muted"> ${cur.batch ? 'รุ่น ' + esc(cur.batch) : ''} ${cur.course_no ? '· เลขที่ ' + esc(cur.course_no) : ''}</span></div>
+      <span class="muted" id="rt">${esc(rtStatus)}</span></div>
+    <div class="tabs">${[['dash','📊 แดชบอร์ด'],['q','❓ ข้อสอบ'],['people','👥 รายชื่อ'],['set','⚙️ ตั้งค่า/ลิงก์']].map(([k, l]) =>
+      `<div class="tab ${tab === k ? 'on' : ''}" onclick="setTab('${k}')">${l}</div>`).join('')}</div>
+    <div id="tabBody"></div>`;
+  renderTab();
+}
+function setTab(t){ tab = t; editingQ = null; renderDetail(); }
+function renderTab(){
+  const el = $('tabBody'); if(!el) return;
+  if(tab === 'dash') el.innerHTML = dashHtml();
+  else if(tab === 'q') el.innerHTML = questionsHtml();
+  else if(tab === 'people') el.innerHTML = peopleHtml();
+  else el.innerHTML = settingsHtml();
+}
+
+/* ===== แดชบอร์ด ===== */
+// ผลที่ "นับ" = ครั้งล่าสุดที่ไม่ถูกปลดล็อก (โหมดล็อกมีได้ครั้งเดียว / โหมดทำซ้ำได้มีหลายครั้ง ใช้ครั้งล่าสุด)
+function currentAttempt(pid, kind){
+  const l = attempts.filter(a => a.participant_id === pid && a.kind === kind && !a.unlocked)
+    .sort((a, b) => b.submitted_at.localeCompare(a.submitted_at));
+  return l[0] || null;
+}
+function lastUnlocked(pid, kind){
+  const l = attempts.filter(a => a.participant_id === pid && a.kind === kind && a.unlocked).sort((a, b) => b.submitted_at.localeCompare(a.submitted_at));
+  return l[0] || null;
+}
+function attemptCount(pid, kind){ return attempts.filter(a => a.participant_id === pid && a.kind === kind).length; }
+function scoreCell(pid, kind){
+  const a = currentAttempt(pid, kind);
+  if(a){
+    const badge = kind === 'post' ? (a.passed ? ' <span class="tag ok">ผ่าน</span>' : ' <span class="tag no">ไม่ผ่าน</span>') : '';
+    const n = attemptCount(pid, kind);
+    return `${a.score}/${a.total}${badge}${n > 1 ? ` <span class="muted">(ครั้งที่ ${n})</span>` : ''}`;
+  }
+  const u = lastUnlocked(pid, kind);
+  return u ? `<span class="tag wait">ปลดล็อกแล้ว (เดิม ${u.score}/${u.total})</span>` : '<span class="muted">—</span>';
+}
+function dashHtml(){
+  if(!people.length) return '<div class="card"><p class="muted">ยังไม่มีรายชื่อผู้เข้าอบรม ไปที่แท็บ "รายชื่อ" เพื่อนำเข้า</p></div>';
+  const kind = dashKind, total = people.length;
+  const answeredList = people.filter(p => currentAttempt(p.id, kind));
+  const pendingList = people.filter(p => !currentAttempt(p.id, kind));
+  const cur_ = answeredList.map(p => currentAttempt(p.id, kind));
+  const avg = cur_.length ? cur_.reduce((s, a) => s + a.score, 0) / cur_.length : 0;
+  const qn = cur_.length ? cur_[0].total : questions.length;
+  const failList = kind === 'post' ? answeredList.filter(p => !currentAttempt(p.id, 'post').passed) : [];
+  const passN = cur_.filter(a => a.passed).length;
+
+  let h = `<div class="card"><div class="row" style="justify-content:space-between">
+      <div class="row"><button class="btn ${kind === 'pre' ? '' : 'ghost'}" onclick="setKind('pre')">Pre-test</button><button class="btn ${kind === 'post' ? '' : 'ghost'}" onclick="setKind('post')">Post-test</button></div>
+      <button class="btn green" onclick="exportExcel()">⬇ Export Excel</button></div>
+    <div class="stats">
+      <div class="stat"><div class="n">${answeredList.length}/${total}</div><div class="l">ตอบแล้ว</div></div>
+      <div class="stat"><div class="n">${cur_.length ? avg.toFixed(2) : '—'}</div><div class="l">คะแนนเฉลี่ย (เต็ม ${qn}) ${cur_.length && qn ? '· ' + (avg / qn * 100).toFixed(1) + '%' : ''}</div></div>
+      <div class="stat click" onclick="openPending=!openPending;renderTab()"><div class="n">${pendingList.length}</div><div class="l">ยังไม่ตอบ (กดดูรายชื่อ)</div></div>`;
+  if(kind === 'post'){
+    h += `<div class="stat"><div class="n" style="color:var(--green)">${passN}</div><div class="l">ผ่านเกณฑ์ ${cur.pass_percent}%</div></div>
+      <div class="stat click" onclick="openFail=!openFail;renderTab()"><div class="n" style="color:var(--red)">${failList.length}</div><div class="l">ไม่ผ่าน (กดดู/ปลดล็อก)</div></div>`;
+  }
+  h += '</div>';
+  if(openPending){
+    h += `<h3>ยังไม่ตอบ (${pendingList.length})</h3>` + (pendingList.length ? '<div>' + pendingList.map(p => {
+      const u = lastUnlocked(p.id, kind);
+      return `<span class="tag ${u ? 'wait' : 'gray'}" style="margin:2px">${esc(p.full_name)}${u ? ' (รอทำใหม่)' : ''}</span>`;
+    }).join('') + '</div>' : '<p class="muted">ตอบครบทุกคนแล้ว 🎉</p>');
+  }
+  if(kind === 'post' && openFail){
+    h += `<h3 style="margin-top:12px">ไม่ผ่านเกณฑ์ (${failList.length})</h3>` + (failList.length ? `<table><thead><tr><th>ชื่อ</th><th>คะแนน</th><th>ครั้งที่</th><th></th></tr></thead><tbody>` +
+      failList.map(p => { const a = currentAttempt(p.id, 'post'); return `<tr><td>${esc(p.full_name)}</td><td>${a.score}/${a.total}</td><td>${attemptCount(p.id, 'post')}</td>
+        <td class="row"><button class="btn ghost sm" onclick="showAttempt('${a.id}')">ดูข้อที่ผิด</button>${cur.post_repeat ? '<span class="muted">ทำซ้ำได้เอง</span>' : `<button class="btn red sm" onclick="unlock('${a.id}')">ปลดล็อกให้ทำใหม่</button>`}</td></tr>`; }).join('') + '</tbody></table>' : '<p class="muted">ไม่มีผู้ไม่ผ่าน</p>');
+  }
+  h += '</div>';
+
+  h += `<div class="card"><h3>ผลรายคน</h3><div style="overflow:auto"><table><thead><tr><th>รหัส</th><th>ชื่อ-นามสกุล</th><th>สังกัด</th><th>Pre</th><th>Post</th><th>ส่งล่าสุด</th><th></th></tr></thead><tbody>` +
+    people.map(p => {
+      const pre = currentAttempt(p.id, 'pre'), post = currentAttempt(p.id, 'post');
+      const latest = [pre, post].filter(Boolean).sort((a, b) => b.submitted_at.localeCompare(a.submitted_at))[0];
+      let act = '';
+      if(pre) act += `<button class="btn ghost sm" onclick="showAttempt('${pre.id}')">ดู Pre</button> `;
+      if(post) act += `<button class="btn ghost sm" onclick="showAttempt('${post.id}')">ดู Post</button> ` + (!post.passed && !cur.post_repeat ? `<button class="btn red sm" onclick="unlock('${post.id}')">ปลดล็อก Post</button>` : '');
+      return `<tr><td>${esc(p.emp_id)}</td><td>${esc(p.full_name)}</td><td>${esc(p.unit)}</td><td>${scoreCell(p.id, 'pre')}</td><td>${scoreCell(p.id, 'post')}</td><td>${latest ? fmtT(latest.submitted_at) : ''}</td><td>${act}</td></tr>`;
+    }).join('') + '</tbody></table></div></div>';
+  return h;
+}
+function setKind(k){ dashKind = k; renderTab(); }
+
+async function unlock(aid){
+  const a = attempts.find(x => x.id === aid); if(!a) return;
+  const p = people.find(x => x.id === a.participant_id);
+  if(!confirm(`ปลดล็อก ${a.kind === 'pre' ? 'Pre-test' : 'Post-test'} ของ ${p ? p.full_name : ''} ให้ทำใหม่?\n(ผลครั้งเดิมยังเก็บไว้)`)) return;
+  const { error } = await sb.from('exam_attempts').update({ unlocked: true }).eq('id', aid);
+  if(error){ toast('ผิดพลาด: ' + error.message); return; }
+  toast('ปลดล็อกแล้ว'); await loadAll(); renderTab();
+}
+function wrongRows(a){
+  return questions.map((q, i) => {
+    const chosen = a.answers ? a.answers[q.id] : undefined;
+    const ci = keys[q.id];
+    const ok = chosen !== undefined && Number(chosen) === ci;
+    return { i, q, chosen, ci, ok };
+  });
+}
+function showAttempt(aid){
+  const a = attempts.find(x => x.id === aid); if(!a) return;
+  const p = people.find(x => x.id === a.participant_id);
+  const rows = wrongRows(a);
+  const m = document.createElement('div'); m.className = 'modal'; m.onclick = e => { if(e.target === m) m.remove(); };
+  m.innerHTML = `<div class="box"><div class="row" style="justify-content:space-between"><h2 style="margin:0">${esc(p ? p.full_name : '')} — ${a.kind === 'pre' ? 'Pre' : 'Post'} ${a.score}/${a.total}</h2><button class="btn ghost sm" onclick="this.closest('.modal').remove()">ปิด</button></div>
+    <p class="muted">ส่งเมื่อ ${fmtT(a.submitted_at)} · ผิด ${rows.filter(r => !r.ok).length} ข้อ</p>` +
+    rows.map(r => `<div class="res ${r.ok ? 'c' : 'w'}"><div class="mark">${r.ok ? '✓' : '✗'}</div><div><b>${r.i + 1}. ${esc(r.q.question)}</b><br>
+      <span class="muted">ตอบ: ${r.chosen === undefined ? 'ไม่ได้ตอบ' : LETTERS[r.chosen] + '. ' + esc(r.q.options[r.chosen])}</span>
+      ${r.ok ? '' : `<br><span style="color:var(--green);font-size:13px">เฉลย: ${LETTERS[r.ci]}. ${esc(r.q.options[r.ci])}</span>`}</div></div>`).join('') + '</div>';
+  document.body.appendChild(m);
+}
+
+function exportExcel(){
+  const wb = XLSX.utils.book_new();
+  const sum = [['รหัสพนักงาน','ชื่อ-นามสกุล','ตำแหน่ง','สังกัด','Pre คะแนน','Pre เวลาส่ง','Post คะแนน','Post ผล','Post เวลาส่ง','จำนวนครั้ง Post']];
+  people.forEach(p => {
+    const pre = currentAttempt(p.id, 'pre'), post = currentAttempt(p.id, 'post');
+    sum.push([p.emp_id, p.full_name, p.job_title, p.unit,
+      pre ? `${pre.score}/${pre.total}` : '', pre ? fmtT(pre.submitted_at) : '',
+      post ? `${post.score}/${post.total}` : '', post ? (post.passed ? 'ผ่าน' : 'ไม่ผ่าน') : '', post ? fmtT(post.submitted_at) : '', attemptCount(p.id, 'post') || '']);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sum), 'สรุปผล');
+  const hist = [['รหัสพนักงาน','ชื่อ-นามสกุล','ชนิด','ครั้งที่','คะแนน','เต็ม','ผล','เวลาส่ง']];
+  people.forEach(p => ['pre', 'post'].forEach(kind => {
+    attempts.filter(a => a.participant_id === p.id && a.kind === kind)
+      .sort((a, b) => a.submitted_at.localeCompare(b.submitted_at))
+      .forEach((a, i) => hist.push([p.emp_id, p.full_name, kind === 'pre' ? 'Pre' : 'Post', i + 1, a.score, a.total,
+        kind === 'post' ? (a.passed ? 'ผ่าน' : 'ไม่ผ่าน') : '', fmtT(a.submitted_at)]));
+  }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(hist), 'ประวัติทุกครั้ง');
+  ['pre', 'post'].forEach(kind => {
+    const rows = [['รหัสพนักงาน', 'ชื่อ-นามสกุล', ...questions.map((_, i) => 'ข้อ ' + (i + 1)), 'คะแนน']];
+    people.forEach(p => {
+      const a = currentAttempt(p.id, kind); if(!a) return;
+      rows.push([p.emp_id, p.full_name, ...wrongRows(a).map(r => r.ok ? 1 : 0), a.score]);
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'รายข้อ ' + (kind === 'pre' ? 'Pre' : 'Post'));
+  });
+  XLSX.writeFile(wb, `ผลสอบ_${cur.title}_${cur.batch || ''}.xlsx`.replace(/[\\/:*?"<>|]/g, '_'));
+}
+
+/* ===== ข้อสอบ ===== */
+function qLocked(){ return attempts.length > 0; }
+function questionsHtml(){
+  const locked = qLocked();
+  let h = `<div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">ข้อสอบ ${questions.length}/${MAX_Q} ข้อ</h2>
+    <div class="row"><button class="btn" ${locked || questions.length >= MAX_Q ? 'disabled' : ''} onclick="editingQ='new';renderTab()">＋ เพิ่มข้อ</button>
+    <button class="btn ghost" ${locked ? 'disabled' : ''} onclick="$('fq').click()">⬆ นำเข้า Excel/CSV</button>
+    <button class="btn ghost" onclick="downloadTemplate('q')">⬇ ไฟล์ตัวอย่าง</button></div></div>
+    <input type="file" id="fq" accept=".xlsx,.xls,.csv" style="display:none" onchange="importQuestions(this)">
+    <p class="muted">คอลัมน์: โจทย์ | ก | ข | ค | ง | จ (ไม่มีก็เว้นว่าง) | เฉลย (ก-จ หรือ 1-5)</p>
+    ${locked ? '<div class="warn">มีผู้ส่งคำตอบแล้ว จึงล็อกการแก้ไขข้อสอบ (กันคะแนนไม่ตรงกับโจทย์) ถ้าเป็นการทดลองระบบ ไปที่แท็บ "ตั้งค่า" แล้วกด "ล้างผลสอบทั้งหมด"</div>' : ''}</div>`;
+  if(editingQ !== null && !locked) h += questionForm();
+  h += questions.map((q, i) => `<div class="q"><div class="row" style="justify-content:space-between"><b>${i + 1}. ${esc(q.question)}</b>
+    <span class="row"><button class="btn ghost sm" ${locked || i === 0 ? 'disabled' : ''} onclick="moveQ(${i},-1)">↑</button><button class="btn ghost sm" ${locked || i === questions.length - 1 ? 'disabled' : ''} onclick="moveQ(${i},1)">↓</button>
+    <button class="btn ghost sm" ${locked ? 'disabled' : ''} onclick="editingQ='${q.id}';renderTab()">แก้ไข</button><button class="btn red sm" ${locked ? 'disabled' : ''} onclick="delQ('${q.id}')">ลบ</button></span></div>
+    <div class="opts">${q.options.map((o, k) => `<div class="${keys[q.id] === k ? 'c' : ''}">${LETTERS[k]}. ${esc(o)}${keys[q.id] === k ? ' ✓' : ''}</div>`).join('')}</div></div>`).join('');
+  if(!questions.length) h += '<p class="muted">ยังไม่มีข้อสอบ</p>';
+  return h;
+}
+function questionForm(){
+  const q = editingQ === 'new' ? null : questions.find(x => x.id === editingQ);
+  const opts = q ? q.options : ['', '', '', ''];
+  const ck = q ? keys[q.id] : 0;
+  return `<div class="card" style="border:2px solid var(--blue)"><h3>${q ? 'แก้ไขข้อสอบ' : 'เพิ่มข้อสอบใหม่'}</h3>
+    <label class="f">โจทย์</label><textarea id="qf_q" rows="3">${esc(q ? q.question : '')}</textarea>
+    <label class="f">ตัวเลือก (ก–ง จำเป็น, จ เว้นว่างได้) และติ๊กข้อที่ถูก</label>` +
+    [0, 1, 2, 3, 4].map(k => `<div class="row" style="margin-bottom:6px;flex-wrap:nowrap"><input type="radio" name="qf_c" value="${k}" ${ck === k ? 'checked' : ''}><b style="width:20px">${LETTERS[k]}</b><input type="text" id="qf_o${k}" value="${esc(opts[k] || '')}"></div>`).join('') +
+    `<div class="row" style="margin-top:10px"><button class="btn green" onclick="saveQuestion()">บันทึก</button><button class="btn ghost" onclick="editingQ=null;renderTab()">ยกเลิก</button></div></div>`;
+}
+async function saveQuestion(){
+  const text = $('qf_q').value.trim();
+  const opts = [0, 1, 2, 3, 4].map(k => $('qf_o' + k).value.trim());
+  if(!text){ toast('กรุณาใส่โจทย์'); return; }
+  if(opts.slice(0, 4).some(o => !o)){ toast('ตัวเลือก ก–ง ต้องไม่ว่าง'); return; }
+  const options = opts[4] ? opts : opts.slice(0, 4);
+  const sel = document.querySelector('input[name=qf_c]:checked');
+  const ci = sel ? parseInt(sel.value) : -1;
+  if(ci < 0 || ci >= options.length){ toast('กรุณาเลือกข้อที่ถูกต้อง (ในตัวเลือกที่มี)'); return; }
+  if(editingQ === 'new'){
+    if(questions.length >= MAX_Q){ toast('ครบ ' + MAX_Q + ' ข้อแล้ว'); return; }
+    const id = crypto.randomUUID(), pos = questions.length ? Math.max(...questions.map(q => q.position)) + 1 : 1;
+    let r = await sb.from('exam_questions').insert({ id, session_id: cur.id, position: pos, question: text, options });
+    if(r.error){ toast('ผิดพลาด: ' + r.error.message); return; }
+    r = await sb.from('exam_answer_keys').insert({ question_id: id, correct_index: ci });
+    if(r.error){ toast('ผิดพลาด: ' + r.error.message); return; }
+  } else {
+    let r = await sb.from('exam_questions').update({ question: text, options }).eq('id', editingQ);
+    if(r.error){ toast('ผิดพลาด: ' + r.error.message); return; }
+    r = await sb.from('exam_answer_keys').upsert({ question_id: editingQ, correct_index: ci });
+    if(r.error){ toast('ผิดพลาด: ' + r.error.message); return; }
+  }
+  editingQ = null; toast('บันทึกแล้ว'); await loadAll(); renderTab();
+}
+async function delQ(id){
+  if(!confirm('ลบข้อสอบข้อนี้?')) return;
+  const { error } = await sb.from('exam_questions').delete().eq('id', id);
+  if(error){ toast('ผิดพลาด: ' + error.message); return; }
+  await loadAll();
+  for(let i = 0; i < questions.length; i++){ if(questions[i].position !== i + 1) await sb.from('exam_questions').update({ position: i + 1 }).eq('id', questions[i].id); }
+  await loadAll(); renderTab();
+}
+async function moveQ(i, d){
+  const a = questions[i], b = questions[i + d]; if(!a || !b) return;
+  await sb.from('exam_questions').update({ position: b.position }).eq('id', a.id);
+  await sb.from('exam_questions').update({ position: a.position }).eq('id', b.id);
+  await loadAll(); renderTab();
+}
+
+/* ===== นำเข้าไฟล์ ===== */
+function readSheet(file){
+  return new Promise((res, rej) => {
+    const fr = new FileReader(), csv = /\.csv$/i.test(file.name);
+    fr.onload = () => { try {
+      const wb = XLSX.read(fr.result, { type: csv ? 'string' : 'array' });
+      res(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' }));
+    } catch(e){ rej(e); } };
+    fr.onerror = rej;
+    csv ? fr.readAsText(file, 'utf-8') : fr.readAsArrayBuffer(file);
+  });
+}
+const ANS_MAP = { 'ก':0,'ข':1,'ค':2,'ง':3,'จ':4,'a':0,'b':1,'c':2,'d':3,'e':4,'1':0,'2':1,'3':2,'4':3,'5':4 };
+async function importQuestions(inp){
+  const file = inp.files[0]; inp.value = ''; if(!file) return;
+  let rows;
+  try { rows = await readSheet(file); } catch(e){ toast('อ่านไฟล์ไม่สำเร็จ'); return; }
+  rows = rows.filter(r => r.some(c => String(c).trim() !== ''));
+  if(rows.length && String(rows[0][0]).includes('โจทย์')) rows.shift();
+  const out = [], errs = [];
+  rows.forEach((r, i) => {
+    const text = String(r[0]).trim(), o = [1, 2, 3, 4, 5].map(k => String(r[k] ?? '').trim());
+    const ans = ANS_MAP[String(r[6] ?? '').trim().toLowerCase()];
+    const n = i + 1;
+    if(!text) return errs.push(`แถว ${n}: ไม่มีโจทย์`);
+    if(o.slice(0, 4).some(x => !x)) return errs.push(`แถว ${n}: ตัวเลือก ก–ง ต้องไม่ว่าง`);
+    const options = o[4] ? o : o.slice(0, 4);
+    if(ans === undefined || ans >= options.length) return errs.push(`แถว ${n}: เฉลยไม่ถูกต้อง`);
+    out.push({ text, options, ans });
+  });
+  if(questions.length + out.length > MAX_Q) errs.push(`รวมแล้วเกิน ${MAX_Q} ข้อ (มีอยู่ ${questions.length} + นำเข้า ${out.length})`);
+  if(!out.length && !errs.length) errs.push('ไม่พบข้อมูลในไฟล์');
+  if(errs.length){ alert('นำเข้าไม่สำเร็จ ยังไม่มีอะไรถูกบันทึก:\n\n' + errs.slice(0, 15).join('\n')); return; }
+  if(!confirm(`นำเข้า ${out.length} ข้อ ต่อท้ายข้อสอบเดิม ${questions.length} ข้อ?`)) return;
+  let pos = questions.length ? Math.max(...questions.map(q => q.position)) : 0;
+  const qrows = out.map(x => ({ id: crypto.randomUUID(), session_id: cur.id, position: ++pos, question: x.text, options: x.options }));
+  let r = await sb.from('exam_questions').insert(qrows);
+  if(r.error){ toast('ผิดพลาด: ' + r.error.message); return; }
+  r = await sb.from('exam_answer_keys').insert(qrows.map((q, i) => ({ question_id: q.id, correct_index: out[i].ans })));
+  if(r.error){ toast('ผิดพลาด (เฉลย): ' + r.error.message); return; }
+  toast('นำเข้า ' + out.length + ' ข้อแล้ว'); await loadAll(); renderTab();
+}
+function downloadTemplate(kind){
+  const aoa = kind === 'q'
+    ? [['โจทย์','ก','ข','ค','ง','จ','เฉลย'], ['ตัวอย่าง: 1 + 1 เท่ากับเท่าใด','1','2','3','4','','ข']]
+    : [['รหัสพนักงาน','ชื่อ-นามสกุล','ตำแหน่ง','สังกัด'], ['123456','นายสมชาย ใจดี','นักวิชาการ','กปภ.สาขาตัวอย่าง']];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), 'Sheet1');
+  XLSX.writeFile(wb, kind === 'q' ? 'ตัวอย่าง_ข้อสอบ.xlsx' : 'ตัวอย่าง_รายชื่อ.xlsx');
+}
+
+/* ===== รายชื่อ ===== */
+function peopleHtml(){
+  return `<div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">รายชื่อผู้เข้าอบรม ${people.length} คน</h2>
+      <div class="row"><button class="btn" onclick="$('fp').click()">⬆ นำเข้า Excel/CSV</button><button class="btn ghost" onclick="downloadTemplate('p')">⬇ ไฟล์ตัวอย่าง</button></div></div>
+    <input type="file" id="fp" accept=".xlsx,.xls,.csv" style="display:none" onchange="importPeople(this)">
+    <p class="muted">คอลัมน์: รหัสพนักงาน | ชื่อ-นามสกุล | ตำแหน่ง | สังกัด · นำเข้าซ้ำได้ (รหัสเดิมจะถูกอัปเดต ไม่ซ้ำ)</p>
+    <div class="grid2" style="grid-template-columns:1fr 2fr 1fr 1fr auto;align-items:end"><div><label class="f">รหัส</label><input type="text" id="np_id"></div><div><label class="f">ชื่อ-นามสกุล</label><input type="text" id="np_name"></div>
+      <div><label class="f">ตำแหน่ง</label><input type="text" id="np_job"></div><div><label class="f">สังกัด</label><input type="text" id="np_unit"></div><button class="btn green" onclick="addPerson()">เพิ่ม</button></div></div>
+    <div class="card" style="overflow:auto"><table><thead><tr><th>รหัส</th><th>ชื่อ-นามสกุล</th><th>ตำแหน่ง</th><th>สังกัด</th><th></th></tr></thead><tbody>` +
+    people.map(p => `<tr><td>${esc(p.emp_id)}</td><td>${esc(p.full_name)}</td><td>${esc(p.job_title)}</td><td>${esc(p.unit)}</td><td><button class="btn red sm" onclick="delPerson('${p.id}')">ลบ</button></td></tr>`).join('') +
+    `</tbody></table>${people.length ? '' : '<p class="muted">ยังไม่มีรายชื่อ</p>'}</div>`;
+}
+async function importPeople(inp){
+  const file = inp.files[0]; inp.value = ''; if(!file) return;
+  let rows;
+  try { rows = await readSheet(file); } catch(e){ toast('อ่านไฟล์ไม่สำเร็จ'); return; }
+  rows = rows.filter(r => r.some(c => String(c).trim() !== ''));
+  if(rows.length && String(rows[0][0]).includes('รหัส')) rows.shift();
+  const map = new Map(), errs = [];
+  rows.forEach((r, i) => {
+    const emp = String(r[0]).trim(), name = String(r[1]).trim();
+    if(!emp || !name) return errs.push(`แถว ${i + 1}: ต้องมีรหัสและชื่อ`);
+    map.set(emp, { session_id: cur.id, emp_id: emp, full_name: name, job_title: String(r[2] ?? '').trim(), unit: String(r[3] ?? '').trim() });
+  });
+  if(errs.length){ alert('นำเข้าไม่สำเร็จ:\n\n' + errs.slice(0, 15).join('\n')); return; }
+  if(!map.size){ toast('ไม่พบข้อมูลในไฟล์'); return; }
+  const { error } = await sb.from('exam_participants').upsert([...map.values()], { onConflict: 'session_id,emp_id' });
+  if(error){ toast('ผิดพลาด: ' + error.message); return; }
+  toast('นำเข้า ' + map.size + ' คนแล้ว'); await loadAll(); renderTab();
+}
+async function addPerson(){
+  const emp = $('np_id').value.trim(), name = $('np_name').value.trim();
+  if(!emp || !name){ toast('ต้องมีรหัสและชื่อ'); return; }
+  const { error } = await sb.from('exam_participants').upsert({ session_id: cur.id, emp_id: emp, full_name: name, job_title: $('np_job').value.trim(), unit: $('np_unit').value.trim() }, { onConflict: 'session_id,emp_id' });
+  if(error){ toast('ผิดพลาด: ' + error.message); return; }
+  await loadAll(); renderTab();
+}
+async function delPerson(id){
+  const p = people.find(x => x.id === id);
+  if(!confirm(`ลบ ${p ? p.full_name : ''} ? (ผลสอบของคนนี้จะถูกลบด้วย)`)) return;
+  const { error } = await sb.from('exam_participants').delete().eq('id', id);
+  if(error){ toast('ผิดพลาด: ' + error.message); return; }
+  await loadAll(); renderTab();
+}
+
+/* ===== ตั้งค่า / ลิงก์ ===== */
+function studentLink(){ return location.href.split('?')[0].split('#')[0].replace(/[^\/]*$/, '') + 'exam-student.html?s=' + cur.id; }
+/* ===== ข้อความ LINE (hard code — อยากเปลี่ยนรูปแบบให้แก้ในสองฟังก์ชันนี้) ===== */
+function linePreText(link){
+  return `📝✨ แบบทดสอบ Pre-test  ✨📝
+
+เรียนท่านผู้เข้าอบรมทุกท่าน 🙏
+ขอเชิญทำแบบทดสอบก่อนการอบรม (Pre-test) ตามลิงก์ด้านล่างนี้ครับ 👇
+
+🔗 ${link}
+
+📌 วิธีทำ
+1. กดลิงก์ แล้วเลือกชื่อของตัวเอง
+2. เลือก Pre-test (ก่อนอบรม)
+3. ตอบคำถามให้ครบทุกข้อ แล้วกดส่งคำตอบ ✅
+
+ขอบคุณครับ 😊🙏`;
+}
+function linePostText(link){
+  const p = cur.pass_percent;
+  const retry = cur.post_repeat
+    ? `     ท่านไหนทำไม่ถึง ${p}% สามารถกดทำใหม่ได้เลยครับ`
+    : `     ท่านไหนทำไม่ถึง ${p}% แจ้งเจ้าหน้าที่เพื่อปลดล็อกให้ทำใหม่ครับ`;
+  return `✨ แบบทดสอบ Post-test  ✨📝
+
+เรียนท่านผู้เข้าอบรมทุกท่าน 🙏
+ขอเชิญทำแบบทดสอบหลังการอบรม (Post-test) ตามลิงก์ด้านล่างนี้ครับ 👇
+
+🔗 ${link}
+
+📌 วิธีทำ
+1. กดลิงก์ แล้วเลือกชื่อของตัวเอง
+2. เลือก Post-test (หลังอบรม)
+3. ตอบคำถามให้ครบทุกข้อ แล้วกดส่งคำตอบ ✅
+
+🎯 Post-test เกณฑ์ผ่าน ${p}%
+${retry}
+
+ขอบคุณครับ 😊🙏`;
+}
+function copyLine(id){
+  const t = $(id).value;
+  navigator.clipboard.writeText(t).then(() => toast('คัดลอกข้อความแล้ว — วางใน LINE ได้เลย'), () => { $(id).select(); toast('คัดลอกอัตโนมัติไม่ได้ กด Ctrl+C เอง'); });
+}
+function lineCardHtml(link){
+  return `<div class="card"><h2>ข้อความส่ง LINE</h2>
+      <p class="muted">เติมลิงก์ให้อัตโนมัติ · แก้ข้อความในกล่องได้ก่อนคัดลอก (ไม่ถูกบันทึก)</p>
+      <label class="f">📝 Pre-test (ส่งก่อนอบรม)</label>
+      <textarea id="line_pre" rows="14" style="width:100%;font-family:inherit">${esc(linePreText(link))}</textarea>
+      <div class="row" style="margin:8px 0 14px"><button class="btn" onclick="copyLine('line_pre')">📋 คัดลอกข้อความ Pre-test</button></div>
+      <label class="f">✨ Post-test (ส่งตอนจบอบรม)</label>
+      <textarea id="line_post" rows="16" style="width:100%;font-family:inherit">${esc(linePostText(link))}</textarea>
+      <div class="row" style="margin-top:8px"><button class="btn" onclick="copyLine('line_post')">📋 คัดลอกข้อความ Post-test</button></div></div>`;
+}
+function settingsHtml(){
+  const link = studentLink();
+  return lineCardHtml(link) + `<div class="card"><h2>ลิงก์ให้ผู้เข้าอบรม</h2>
+      <div class="linkbox" id="lnk">${esc(link)}</div>
+      <div class="row" style="margin-top:8px"><button class="btn" onclick="navigator.clipboard.writeText('${esc(link)}').then(()=>toast('คัดลอกลิงก์แล้ว'))">📋 คัดลอกลิงก์</button></div>
+      <p style="margin-top:10px"><img alt="QR" width="180" height="180" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(link)}"><br><span class="muted">QR (สร้างผ่าน qrserver.com — ต้องมีอินเทอร์เน็ต) · ไฟล์ exam-student.html ต้องอยู่โฟลเดอร์เดียวกับไฟล์นี้บนเว็บ</span></p></div>
+    <div class="card"><h2>เปิด/ปิดการทำแบบทดสอบ</h2>
+      <label class="row"><input type="checkbox" ${cur.pre_open ? 'checked' : ''} onchange="setOpen('pre_open',this.checked)"> เปิด Pre-test</label>
+      <label class="row" style="margin-top:6px"><input type="checkbox" ${cur.post_open ? 'checked' : ''} onchange="setOpen('post_open',this.checked)"> เปิด Post-test (เปิดตอนจบการอบรม)</label></div>
+    <div class="card"><h2>การทำซ้ำ Post-test</h2>
+      <label class="row"><input type="radio" name="rep" ${!cur.post_repeat ? 'checked' : ''} onchange="setOpen('post_repeat',false)"> ล็อก — ทำได้ครั้งเดียว (ผู้ไม่ผ่านต้องให้แอดมินปลดล็อก)</label>
+      <label class="row" style="margin-top:6px"><input type="radio" name="rep" ${cur.post_repeat ? 'checked' : ''} onchange="setOpen('post_repeat',true)"> ทำซ้ำได้ไม่จำกัด (แม้ผ่านแล้ว) — คะแนนที่นับคือครั้งล่าสุด เก็บประวัติทุกครั้ง</label>
+      <p class="muted">มีผลกับ Post-test เท่านั้น Pre-test ล็อกทำได้ครั้งเดียวเสมอ · โหมดทำซ้ำได้จะแสดงผลรายข้อทุกครั้ง</p></div>
+    <div class="card"><h2>ข้อมูลและเกณฑ์</h2>
+      <label class="f">ชื่อหลักสูตร</label><input type="text" id="s_title" value="${esc(cur.title)}">
+      <div class="grid2"><div><label class="f">เลขที่หลักสูตร</label><input type="text" id="s_no" value="${esc(cur.course_no)}"></div><div><label class="f">รุ่น</label><input type="text" id="s_batch" value="${esc(cur.batch)}"></div>
+      <div><label class="f">เกณฑ์ผ่าน (%)</label><select id="s_pass">${[...new Set([80, 70, cur.pass_percent])].sort((a, b) => b - a).map(v => `<option value="${v}" ${v === cur.pass_percent ? 'selected' : ''}>${v}%</option>`).join('')}</select></div></div>
+      <div class="row" style="margin-top:10px"><label><input type="checkbox" id="s_sq" ${cur.shuffle_questions ? 'checked' : ''}> สลับลำดับข้อ</label><label><input type="checkbox" id="s_so" ${cur.shuffle_options ? 'checked' : ''}> สลับตัวเลือก</label></div>
+      <button class="btn green" style="margin-top:12px" onclick="saveSettings()">บันทึก</button></div>
+    <div class="card"><h2>โซนอันตราย</h2>
+      <div class="row"><button class="btn red" onclick="resetResults()">ล้างผลสอบทั้งหมด (ใช้ตอนทดลองระบบ)</button><button class="btn red" onclick="deleteSession()">ลบแบบทดสอบนี้ทั้งหมด</button></div></div>`;
+}
+async function setOpen(field, val){
+  const { error } = await sb.from('exam_sessions').update({ [field]: val }).eq('id', cur.id);
+  if(error){ toast('ผิดพลาด: ' + error.message); return; }
+  cur[field] = val; toast('บันทึกแล้ว');
+  if(field === 'post_repeat') renderTab();   // ให้ข้อความ LINE ของ Post-test เปลี่ยนตามโหมด
+}
+async function saveSettings(){
+  const title = $('s_title').value.trim(); if(!title){ toast('ต้องมีชื่อหลักสูตร'); return; }
+  const { error } = await sb.from('exam_sessions').update({ title, course_no: $('s_no').value.trim(), batch: $('s_batch').value.trim(),
+    pass_percent: Math.min(100, Math.max(1, parseInt($('s_pass').value) || 80)), shuffle_questions: $('s_sq').checked, shuffle_options: $('s_so').checked }).eq('id', cur.id);
+  if(error){ toast('ผิดพลาด: ' + error.message); return; }
+  toast('บันทึกแล้ว'); await loadAll(); renderDetail();
+}
+async function resetResults(){
+  if(!confirm('ล้างผลสอบ (Pre/Post) ของทุกคนในแบบทดสอบนี้? ย้อนกลับไม่ได้')) return;
+  if(!confirm('ยืนยันอีกครั้ง: ผลสอบทั้งหมดจะหายถาวร')) return;
+  const { error } = await sb.from('exam_attempts').delete().eq('session_id', cur.id);
+  if(error){ toast('ผิดพลาด: ' + error.message); return; }
+  toast('ล้างผลสอบแล้ว'); await loadAll(); renderTab();
+}
+async function deleteSession(){
+  if(!confirm('ลบแบบทดสอบนี้ พร้อมข้อสอบ รายชื่อ และผลสอบทั้งหมด? ย้อนกลับไม่ได้')) return;
+  const id = cur.id;
+  const { error } = await sb.from('exam_sessions').delete().eq('id', id);
+  if(error){ toast('ผิดพลาด: ' + error.message); return; }
+  toast('ลบแล้ว'); viewSessions();
+}
+
+boot();
+</script>
+</body>
+</html>
