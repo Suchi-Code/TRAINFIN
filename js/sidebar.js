@@ -88,8 +88,8 @@ const SIDEBAR_NAV_ITEMS = [
     icon: '<path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>',
     children: [
       { title: 'สร้างวุฒิบัตร/ป้ายชื่อ/ใบสำคัญรับเงิน', href: 'Training_Support_Tools_Center.html' },
-      { title: 'แอดมินแบบทดสอบ', href: 'exam-admin.html' },
-      { title: 'แอดมินสั่งเครื่องดื่ม', href: 'drink-admin.html' }
+      { title: 'ข้อสอบ Pre/Post-test', href: 'exam-admin.html' },
+      { title: 'ระบบสั่งเครื่องดื่ม', href: 'drink-admin.html' }
     ]
   },
   {
