@@ -80,6 +80,8 @@ table{width:100%;border-collapse:collapse;font-size:14px}
 th{background:var(--navy);color:#fff;padding:8px 10px;text-align:left;white-space:nowrap}
 td{padding:7px 10px;border-bottom:1px solid #eef1f4;vertical-align:middle}
 .tag{font-size:12px;font-weight:700;padding:2px 9px;border-radius:99px;white-space:nowrap;display:inline-block}
+.grp{margin:18px 0 6px;font-size:14px;font-weight:700;color:var(--navy)} .grp .n{color:var(--muted);font-weight:400}
+tr.ended td{background:#f6f7f9;color:var(--muted)} tr.ended td b{color:var(--muted);font-weight:600} tr.ended .btn{opacity:.75}
 .tag.ok{background:#e3f7ee;color:#178a5c} .tag.no{background:#fdeeea;color:var(--red)} .tag.wait{background:#fff2d8;color:#8a5700} .tag.gray{background:#eef0f4;color:var(--muted)}
 .q{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff}
 .q .opts div{padding:1px 0;font-size:14px}
@@ -143,16 +145,36 @@ function viewNoAccess(){
 async function viewSessions(){
   leaveSession();
   $('app').innerHTML = '<div class="card muted">กำลังโหลด...</div>';
-  const { data, error } = await sb.from('exam_sessions').select('*').order('created_at', { ascending: false });
-  if(error){ $('app').innerHTML = `<div class="err">${esc(error.message)}</div>`; return; }
-  sessions = data || [];
+  const [ss, pp, aa] = await Promise.all([
+    sb.from('exam_sessions').select('*').order('created_at', { ascending: false }),
+    sb.from('exam_participants').select('id,session_id').range(0, 9999),
+    sb.from('exam_attempts').select('session_id,participant_id,kind').range(0, 9999)]);
+  if(ss.error){ $('app').innerHTML = `<div class="err">${esc(ss.error.message)}</div>`; return; }
+  sessions = ss.data || [];
+  // นับความคืบหน้าต่อแบบทดสอบ: จำนวนรายชื่อ / คนที่ส่ง Pre / คนที่ส่ง Post
+  const st = {};
+  (pp.data || []).forEach(p => { (st[p.session_id] = st[p.session_id] || { n: 0, pre: new Set(), post: new Set() }).n++; });
+  (aa.data || []).forEach(a => { const x = st[a.session_id]; if(x && (a.kind === 'pre' || a.kind === 'post')) x[a.kind].add(a.participant_id); });
+  // จบหลักสูตร = มีรายชื่อ และทุกคนส่ง Post-test ครบแล้ว
+  const isEnded = s => { const x = st[s.id]; return !!x && x.n > 0 && x.post.size >= x.n; };
+  const rowHtml = s => {
+    const x = st[s.id] || { n: 0, pre: new Set(), post: new Set() }, ended = isEnded(s);
+    const info = [s.course_no ? 'เลขที่ ' + esc(s.course_no) : '', s.batch ? 'รุ่น ' + esc(s.batch) : ''].filter(Boolean).join(' · ');
+    return `<tr class="${ended ? 'ended' : ''}"><td>${esc(sesDate(s.created_at))}</td><td><b>${esc(s.title)}</b></td>
+      <td>${info || '<span class="muted">—</span>'}<br><span class="muted">${x.n} คน · Pre ${x.pre.size}/${x.n} · Post ${x.post.size}/${x.n}</span></td>
+      <td>${ended ? '<span class="tag gray">จบแล้ว</span>' : '<span class="tag ok">กำลังดำเนินการ</span>'}</td>
+      <td><button class="btn sm" onclick="openSession('${s.id}')">เปิด</button></td></tr>`;
+  };
+  const table = list => '<table><thead><tr><th>วันที่</th><th>หลักสูตร</th><th>รายละเอียด</th><th>สถานะ</th><th></th></tr></thead><tbody>' + list.map(rowHtml).join('') + '</tbody></table>';
+  const act = sessions.filter(s => !isEnded(s)), done = sessions.filter(isEnded);
   $('app').innerHTML = `<div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">แบบทดสอบทั้งหมด</h2>
-      <button class="btn" onclick="viewNewSession()">＋ สร้างแบบทดสอบใหม่</button></div>
-    ${sessions.length ? `<table style="margin-top:12px"><thead><tr><th>หลักสูตร</th><th>เลขที่</th><th>รุ่น</th><th>สร้างเมื่อ</th><th></th></tr></thead><tbody>` +
-      sessions.map(s => `<tr><td><b>${esc(s.title)}</b></td><td>${esc(s.course_no)}</td><td>${esc(s.batch)}</td><td>${fmtT(s.created_at)}</td>
-        <td><button class="btn sm" onclick="openSession('${s.id}')">เปิด</button></td></tr>`).join('') + '</tbody></table>'
-      : '<p class="muted">ยังไม่มีแบบทดสอบ กด "สร้างแบบทดสอบใหม่"</p>'}</div>`;
+      <button class="btn" onclick="viewNewSession()">＋ สร้างแบบทดสอบใหม่</button></div>` +
+    (sessions.length ?
+      `<div class="grp">กำลังดำเนินการ <span class="n">(${act.length})</span></div>` + (act.length ? table(act) : '<p class="muted">ไม่มีรายการที่กำลังดำเนินการ</p>') +
+      `<div class="grp">จบแล้ว <span class="n">(${done.length}) · ทุกคนส่ง Post-test ครบแล้ว</span></div>` + (done.length ? table(done) : '<p class="muted">ยังไม่มีรายการที่จบ</p>')
+      : '<p class="muted">ยังไม่มีแบบทดสอบ กด "สร้างแบบทดสอบใหม่"</p>') + '</div>';
 }
+function sesDate(iso){ return iso ? new Date(iso).toLocaleDateString('th-TH', { dateStyle: 'medium', timeZone: 'Asia/Bangkok' }) : '—'; }
 function viewNewSession(){
   $('app').innerHTML = `<div class="card" style="max-width:640px"><h2>สร้างแบบทดสอบใหม่</h2>
     <label class="f">ชื่อหลักสูตร *</label><input type="text" id="n_title">
