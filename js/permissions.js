@@ -37,6 +37,8 @@
       '08_Form-Pwa-27.html',
       '09_V199.html',
       '11_Memo-Borrow-Reconcile.html',
+      'exam-admin.html',
+      'drink-admin.html',
     ],
   };
 
