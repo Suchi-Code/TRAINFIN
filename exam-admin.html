@@ -12,6 +12,7 @@
 <script src="js/sidebar.js"></script>
 <script>checkAuth();</script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <style>
 :root{--navy:#092c4c;--blue:#0b6aab;--sky:#eaf4fb;--line:#dce5ec;--ink:#1b2a38;--muted:#627587;--green:#197a5d;--amber:#bf7800;--purple:#7865c8;--red:#c0364f;--red-bg:#fdeeea;--green-bg:#eafaf5;--bg:#f3f6f8}
 *{box-sizing:border-box}
@@ -121,7 +122,8 @@ function toast(m){ const t = document.createElement('div'); t.className = 'toast
 
 /* ===== state ===== */
 let user = null, sessions = [], cur = null;
-let questions = [], keys = {}, people = [], attempts = [];
+let questions = [], keys = {}, people = [], attempts = [], subs = [];
+let subOnlyPending = false;
 let tab = 'dash', dashKind = 'pre', openPending = false, openFail = false;
 let editingQ = null;   // null | 'new' | question id
 let channel = null, pollTimer = null, rtStatus = '', reloadTimer = null;
@@ -210,11 +212,13 @@ async function openSession(id, startTab){
 }
 async function loadAll(){
   const id = cur.id;
-  const [qs, pp, at] = await Promise.all([
+  const [qs, pp, at, su] = await Promise.all([
     sb.from('exam_questions').select('*').eq('session_id', id).order('position'),
     sb.from('exam_participants').select('*').eq('session_id', id).order('full_name'),
     sb.from('exam_attempts').select('*').eq('session_id', id).range(0, 9999),
+    sb.from('exam_submissions').select('*').eq('session_id', id).order('created_at').range(0, 9999),
   ]);
+  subs = su.data || [];   // ถ้ายังไม่ได้รัน exam_migration_submit.sql จะว่างไว้ ไม่ทำให้หน้าอื่นพัง
   questions = qs.data || [];
   people = (pp.data || []).slice().sort((a, b) => String(a.emp_id).localeCompare(String(b.emp_id), 'th', { numeric: true }));   // เรียงตามรหัสพนักงาน
   attempts = at.data || [];
@@ -230,12 +234,13 @@ function subscribe(){
   channel = sb.channel('exam-' + cur.id)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'exam_attempts', filter: 'session_id=eq.' + cur.id }, scheduleReload)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'exam_participants', filter: 'session_id=eq.' + cur.id }, scheduleReload)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'exam_submissions', filter: 'session_id=eq.' + cur.id }, scheduleReload)
     .subscribe(st => { rtStatus = st === 'SUBSCRIBED' ? '🟢 Real time เชื่อมต่อแล้ว' : '🟡 กำลังเชื่อมต่อ Real time...'; const el = $('rt'); if(el) el.textContent = rtStatus; });
-  pollTimer = setInterval(() => { if(tab === 'dash' && !document.hidden) scheduleReload(); }, 20000);   // สำรองเผื่อ Realtime หลุด
+  pollTimer = setInterval(() => { if((tab === 'dash' || tab === 'sub') && !document.hidden) scheduleReload(); }, 20000);   // สำรองเผื่อ Realtime หลุด
 }
 function scheduleReload(){
   clearTimeout(reloadTimer);
-  reloadTimer = setTimeout(async () => { if(!cur) return; await loadAll(); if(tab === 'dash' || tab === 'people') renderTab(); }, 300);
+  reloadTimer = setTimeout(async () => { if(!cur) return; await loadAll(); if(tab === 'dash' || tab === 'people' || tab === 'sub') renderTab(); }, 300);
 }
 function leaveSession(){
   if(channel){ sb.removeChannel(channel); channel = null; }
@@ -249,7 +254,7 @@ function renderDetail(){
       <h2 style="display:inline;margin-left:10px">${esc(cur.title)}</h2>
       <span class="muted"> ${cur.batch ? 'รุ่น ' + esc(cur.batch) : ''} ${cur.course_no ? '· เลขที่ ' + esc(cur.course_no) : ''}</span></div>
       <span class="muted" id="rt">${esc(rtStatus)}</span></div>
-    <div class="tabs">${[['dash','📊 แดชบอร์ด'],['q','❓ ข้อสอบ'],['people','👥 รายชื่อ'],['set','⚙️ ตั้งค่า/ลิงก์']].map(([k, l]) =>
+    <div class="tabs">${[['dash','📊 แดชบอร์ด'],['q','❓ ข้อสอบ'],['people','👥 รายชื่อ'],['sub','📎 ส่งงาน'],['set','⚙️ ตั้งค่า/ลิงก์']].map(([k, l]) =>
       `<div class="tab ${tab === k ? 'on' : ''}" onclick="setTab('${k}')">${l}</div>`).join('')}</div>
     <div id="tabBody"></div>`;
   renderTab();
@@ -260,6 +265,7 @@ function renderTab(){
   if(tab === 'dash') el.innerHTML = dashHtml();
   else if(tab === 'q') el.innerHTML = questionsHtml();
   else if(tab === 'people') el.innerHTML = peopleHtml();
+  else if(tab === 'sub') el.innerHTML = subHtml();
   else el.innerHTML = settingsHtml();
 }
 
@@ -549,10 +555,115 @@ async function addPerson(){
 }
 async function delPerson(id){
   const p = people.find(x => x.id === id);
-  if(!confirm(`ลบ ${p ? p.full_name : ''} ? (ผลสอบของคนนี้จะถูกลบด้วย)`)) return;
+  if(!confirm(`ลบ ${p ? p.full_name : ''} ? (ผลสอบและไฟล์ส่งงานของคนนี้จะถูกลบด้วย)`)) return;
+  const mine = subsOf(id).map(s => s.storage_path);
+  if(mine.length){
+    const e1 = await removeFiles(mine);
+    if(e1){ toast('ลบไฟล์ส่งงานไม่สำเร็จ ยังไม่ได้ลบรายชื่อ: ' + e1.message); return; }
+  }
   const { error } = await sb.from('exam_participants').delete().eq('id', id);
   if(error){ toast('ผิดพลาด: ' + error.message); return; }
   await loadAll(); renderTab();
+}
+
+/* ===== ส่งงาน (ไฟล์แนบ) ===== */
+const SUB_BUCKET = 'exam-submissions';
+const fmtSize = b => b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round((b || 0) / 1024)) + ' KB';
+const safeName = s => String(s ?? '').replace(/[\\/:*?"<>|\r\n]+/g, '_').trim() || '_';
+const subsOf = pid => subs.filter(s => s.participant_id === pid);
+function subHtml(){
+  if(!people.length) return '<div class="card"><p class="muted">ยังไม่มีรายชื่อผู้เข้าอบรม ไปที่แท็บ "รายชื่อ" เพื่อนำเข้า</p></div>';
+  const max = cur.submit_max_files || 5;
+  const sent = people.filter(p => subsOf(p.id).length), pending = people.filter(p => !subsOf(p.id).length);
+  const totalBytes = subs.reduce((a, s) => a + (Number(s.size_bytes) || 0), 0);
+  const list = subOnlyPending ? pending : people;
+  return `<div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">ส่งงาน</h2>
+      <div class="row"><button class="btn green" ${subs.length ? '' : 'disabled'} onclick="downloadAllSubs()">⬇ ดาวน์โหลดทั้งหมด (ZIP)</button></div></div>
+    <p class="muted">${cur.submit_open ? '🟢 กำลังเปิดรับส่งงาน' : '⚪ ปิดรับส่งงาน'} · รับ ${esc(cur.submit_exts || 'md')} · สูงสุด ${max} ไฟล์/คน · เปิด/ปิดได้ที่แท็บ "ตั้งค่า/ลิงก์"</p>
+    <div class="stats">
+      <div class="stat"><div class="n">${sent.length}/${people.length}</div><div class="l">ส่งแล้ว (คน)</div></div>
+      <div class="stat"><div class="n">${subs.length}</div><div class="l">ไฟล์ทั้งหมด</div></div>
+      <div class="stat"><div class="n">${fmtSize(totalBytes)}</div><div class="l">ขนาดรวม</div></div>
+      <div class="stat click" onclick="subOnlyPending=!subOnlyPending;renderTab()"><div class="n">${pending.length}</div><div class="l">ยังไม่ส่ง (กด${subOnlyPending ? 'ดูทั้งหมด' : 'ดูเฉพาะที่ยังไม่ส่ง'})</div></div></div></div>
+    <div class="card"><div style="overflow:auto"><table><thead><tr><th>รหัส</th><th>ชื่อ-นามสกุล</th><th>สังกัด</th><th>จำนวน</th><th>ไฟล์</th></tr></thead><tbody>` +
+    list.map(p => {
+      const fs = subsOf(p.id);
+      return `<tr><td>${esc(p.emp_id)}</td><td>${esc(p.full_name)}</td><td>${esc(p.unit)}</td>
+        <td>${fs.length ? `<span class="tag ok">${fs.length}/${max}</span>` : '<span class="tag gray">ยังไม่ส่ง</span>'}</td>
+        <td>${fs.map(f => `<div class="row" style="margin:2px 0;flex-wrap:nowrap"><span style="word-break:break-all">📄 ${esc(f.file_name)} <span class="muted">${fmtSize(f.size_bytes)} · ${fmtT(f.created_at)}</span></span>
+          <button class="btn ghost sm" onclick="downloadSub('${f.id}')">⬇</button><button class="btn red sm" onclick="deleteSub('${f.id}')">ลบ</button></div>`).join('')}</td></tr>`;
+    }).join('') + `</tbody></table>${list.length ? '' : '<p class="muted">ส่งครบทุกคนแล้ว 🎉</p>'}</div></div>`;
+}
+function saveBlob(blob, name){
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+}
+async function downloadSub(id){
+  const f = subs.find(x => x.id === id); if(!f) return;
+  const p = people.find(x => x.id === f.participant_id);
+  const { data, error } = await sb.storage.from(SUB_BUCKET).download(f.storage_path);
+  if(error){ toast('ดาวน์โหลดไม่สำเร็จ: ' + error.message); return; }
+  saveBlob(data, safeName((p ? p.emp_id + '_' : '') + f.file_name));
+}
+async function downloadAllSubs(){
+  if(!subs.length) return;
+  if(typeof JSZip === 'undefined'){ toast('โหลดตัวสร้าง ZIP ไม่สำเร็จ (ต้องมีอินเทอร์เน็ต)'); return; }
+  const zip = new JSZip(), used = new Set();
+  let done = 0, fail = [];
+  toast('กำลังเตรียมไฟล์ ' + subs.length + ' ไฟล์...');
+  const jobs = subs.map(f => async () => {
+    const p = people.find(x => x.id === f.participant_id);
+    const { data, error } = await sb.storage.from(SUB_BUCKET).download(f.storage_path);
+    done++;
+    if(error){ fail.push(f.file_name); return; }
+    const dir = safeName(p ? p.emp_id + '_' + p.full_name : 'unknown');
+    let name = safeName(f.file_name), n = 1;
+    while(used.has(dir + '/' + name)){ n++; name = n + '_' + safeName(f.file_name); }
+    used.add(dir + '/' + name);
+    zip.file(dir + '/' + name, data);
+  });
+  for(let i = 0; i < jobs.length; i += 6) await Promise.all(jobs.slice(i, i + 6).map(j => j()));
+  if(fail.length) alert('ดาวน์โหลดไม่สำเร็จ ' + fail.length + ' ไฟล์ (ไม่ถูกรวมใน ZIP):\n' + fail.slice(0, 10).join('\n'));
+  const blob = await zip.generateAsync({ type: 'blob' });
+  saveBlob(blob, safeName(`ส่งงาน_${cur.title}_${cur.batch || ''}.zip`));
+  toast('ดาวน์โหลด ZIP แล้ว');
+}
+// ลบไฟล์จริงใน storage เป็นชุดละ 100 (ต้องลบไฟล์ก่อนลบแถวเสมอ ไม่งั้นไฟล์ค้างกินพื้นที่)
+async function removeFiles(paths){
+  for(let i = 0; i < paths.length; i += 100){
+    const { error } = await sb.storage.from(SUB_BUCKET).remove(paths.slice(i, i + 100));
+    if(error) return error;
+  }
+  return null;
+}
+async function deleteSub(id){
+  const f = subs.find(x => x.id === id); if(!f) return;
+  const p = people.find(x => x.id === f.participant_id);
+  if(!confirm(`ลบไฟล์ "${f.file_name}" ของ ${p ? p.full_name : ''} ?\n(คนนั้นจะส่งไฟล์ใหม่แทนได้ ถ้ายังเปิดรับส่งงานอยู่)`)) return;
+  const e1 = await removeFiles([f.storage_path]);
+  if(e1){ toast('ลบไฟล์ไม่สำเร็จ: ' + e1.message); return; }
+  const { error } = await sb.from('exam_submissions').delete().eq('id', id);
+  if(error){ toast('ผิดพลาด: ' + error.message); return; }
+  toast('ลบแล้ว'); await loadAll(); renderTab();
+}
+async function purgeSubs(){
+  if(!subs.length){ toast('ไม่มีไฟล์ส่งงาน'); return; }
+  if(!confirm(`ลบไฟล์ส่งงานทั้งหมดของรอบนี้ (${subs.length} ไฟล์)? ย้อนกลับไม่ได้\nแนะนำให้กด "ดาวน์โหลดทั้งหมด (ZIP)" เก็บไว้ก่อน`)) return;
+  if(!confirm('ยืนยันอีกครั้ง: ไฟล์ส่งงานทั้งหมดจะหายถาวร')) return;
+  const e1 = await removeFiles(subs.map(s => s.storage_path));
+  if(e1){ toast('ลบไฟล์ไม่สำเร็จ: ' + e1.message); return; }
+  const { error } = await sb.from('exam_submissions').delete().eq('session_id', cur.id);
+  if(error){ toast('ผิดพลาด: ' + error.message); return; }
+  toast('ลบไฟล์ส่งงานแล้ว'); await loadAll(); renderTab();
+}
+async function saveSubmitCfg(){
+  const exts = [...new Set($('sb_exts').value.toLowerCase().replace(/\./g, '').split(/[,\s]+/).filter(Boolean))];
+  if(!exts.length || exts.some(e => !/^[a-z0-9]{1,8}$/.test(e))){ toast('นามสกุลไฟล์ไม่ถูกต้อง (ตัวอักษร a-z/ตัวเลข คั่นด้วย ,)'); return; }
+  const mx = parseInt($('sb_max').value);
+  if(!(mx >= 1 && mx <= 20)){ toast('จำนวนไฟล์สูงสุดต้องอยู่ระหว่าง 1–20'); return; }
+  const { error } = await sb.from('exam_sessions').update({ submit_exts: exts.join(','), submit_max_files: mx }).eq('id', cur.id);
+  if(error){ toast('ผิดพลาด: ' + error.message); return; }
+  toast('บันทึกแล้ว'); await loadAll(); renderTab();
 }
 
 /* ===== ตั้งค่า / ลิงก์ ===== */
@@ -618,6 +729,12 @@ function settingsHtml(){
     <div class="card"><h2>เปิด/ปิดการทำแบบทดสอบ</h2>
       <label class="row"><input type="checkbox" ${cur.pre_open ? 'checked' : ''} onchange="setOpen('pre_open',this.checked)"> เปิด Pre-test</label>
       <label class="row" style="margin-top:6px"><input type="checkbox" ${cur.post_open ? 'checked' : ''} onchange="setOpen('post_open',this.checked)"> เปิด Post-test (เปิดตอนจบการอบรม)</label></div>
+    <div class="card"><h2>ส่งงาน (แนบไฟล์)</h2>
+      <label class="row"><input type="checkbox" ${cur.submit_open ? 'checked' : ''} onchange="setOpen('submit_open',this.checked)"> เปิดรับส่งงาน (ผู้เข้าอบรมจะเห็นปุ่ม "ส่งงาน" ในลิงก์เดิม)</label>
+      <div class="grid2"><div><label class="f">นามสกุลไฟล์ที่รับ (คั่นด้วย ,)</label><input type="text" id="sb_exts" value="${esc(cur.submit_exts || 'md')}" placeholder="md,txt"></div>
+        <div><label class="f">จำนวนไฟล์สูงสุดต่อคน</label><input type="number" id="sb_max" min="1" max="20" value="${esc(cur.submit_max_files || 5)}"></div></div>
+      <button class="btn green" style="margin-top:10px" onclick="saveSubmitCfg()">บันทึก</button>
+      <p class="muted">ไฟล์ละไม่เกิน 5 MB · ผู้เข้าอบรมลบหรือแทนที่ไฟล์เองไม่ได้ (แอดมินลบรายไฟล์ได้ที่แท็บ "ส่งงาน") · ดู/ดาวน์โหลดไฟล์ได้ที่แท็บ "ส่งงาน"</p></div>
     <div class="card"><h2>การทำซ้ำ Post-test</h2>
       <label class="row"><input type="radio" name="rep" ${!cur.post_repeat ? 'checked' : ''} onchange="setOpen('post_repeat',false)"> ล็อก — ทำได้ครั้งเดียว (ผู้ไม่ผ่านต้องให้แอดมินปลดล็อก)</label>
       <label class="row" style="margin-top:6px"><input type="radio" name="rep" ${cur.post_repeat ? 'checked' : ''} onchange="setOpen('post_repeat',true)"> ทำซ้ำได้ไม่จำกัด (แม้ผ่านแล้ว) — คะแนนที่นับคือครั้งล่าสุด เก็บประวัติทุกครั้ง</label>
@@ -629,7 +746,7 @@ function settingsHtml(){
       <div class="row" style="margin-top:10px"><label><input type="checkbox" id="s_sq" ${cur.shuffle_questions ? 'checked' : ''}> สลับลำดับข้อ</label><label><input type="checkbox" id="s_so" ${cur.shuffle_options ? 'checked' : ''}> สลับตัวเลือก</label></div>
       <button class="btn green" style="margin-top:12px" onclick="saveSettings()">บันทึก</button></div>
     <div class="card"><h2>โซนอันตราย</h2>
-      <div class="row"><button class="btn red" onclick="resetResults()">ล้างผลสอบทั้งหมด (ใช้ตอนทดลองระบบ)</button><button class="btn red" onclick="deleteSession()">ลบแบบทดสอบนี้ทั้งหมด</button></div></div>`;
+      <div class="row"><button class="btn red" onclick="resetResults()">ล้างผลสอบทั้งหมด (ใช้ตอนทดลองระบบ)</button><button class="btn red" onclick="purgeSubs()">ลบไฟล์ส่งงานทั้งหมดของรอบนี้</button><button class="btn red" onclick="deleteSession()">ลบแบบทดสอบนี้ทั้งหมด</button></div></div>`;
 }
 async function setOpen(field, val){
   const { error } = await sb.from('exam_sessions').update({ [field]: val }).eq('id', cur.id);
@@ -652,8 +769,12 @@ async function resetResults(){
   toast('ล้างผลสอบแล้ว'); await loadAll(); renderTab();
 }
 async function deleteSession(){
-  if(!confirm('ลบแบบทดสอบนี้ พร้อมข้อสอบ รายชื่อ และผลสอบทั้งหมด? ย้อนกลับไม่ได้')) return;
+  if(!confirm('ลบแบบทดสอบนี้ พร้อมข้อสอบ รายชื่อ ผลสอบ และไฟล์ส่งงานทั้งหมด? ย้อนกลับไม่ได้')) return;
   const id = cur.id;
+  if(subs.length){   // ลบไฟล์จริงก่อน ไม่งั้นแถวทะเบียนหายแต่ไฟล์ค้างกินพื้นที่
+    const e1 = await removeFiles(subs.map(s => s.storage_path));
+    if(e1){ toast('ลบไฟล์ส่งงานไม่สำเร็จ ยังไม่ได้ลบแบบทดสอบ: ' + e1.message); return; }
+  }
   const { error } = await sb.from('exam_sessions').delete().eq('id', id);
   if(error){ toast('ผิดพลาด: ' + error.message); return; }
   toast('ลบแล้ว'); viewSessions();
