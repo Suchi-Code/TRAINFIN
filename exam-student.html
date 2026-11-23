@@ -56,6 +56,11 @@ input[type=text]:focus{outline:none;border-color:var(--blue)}
 .res .mark{font-weight:700;flex:0 0 26px}
 .res.c .mark{color:var(--green)} .res.w .mark{color:var(--red)}
 .err{background:#fdeeea;color:var(--red);border:1px solid #f3c7cf;border-radius:10px;padding:12px;margin-bottom:12px}
+.frow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:6px;background:#fff;word-break:break-all}
+.frow small{color:var(--muted);white-space:nowrap}
+.frow.ok{border-color:#b9e3cf;background:#f1fbf6}
+.frow.bad{border-color:#f3c7cf;background:#fdf3f1}
+.okbox{background:#e3f7ee;color:var(--green);border:1px solid #b9e3cf;border-radius:10px;padding:12px;margin-bottom:12px;font-weight:600}
 </style>
 </head>
 <body>
@@ -80,8 +85,13 @@ let answers = {};        // qid -> ดัชนีตัวเลือกเด
 let submitting = false;
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const KIND_TH = { pre: 'ก่อนอบรม (Pre-test)', post: 'หลังอบรม (Post-test)' };
+const KIND_TH = { pre: 'ก่อนอบรม (Pre-test)', post: 'หลังอบรม (Post-test)', submit: 'ส่งงาน' };
+const SUBMIT_BUCKET = 'exam-submissions';
+const MAX_FILE_BYTES = 5 * 1024 * 1024;   // ตรงกับ file_size_limit ของ bucket
 const ERR_TH = {
+  LIMIT: 'ส่งไฟล์ครบจำนวนสูงสุดแล้ว',
+  NO_OBJECT: 'ระบบยังไม่พบไฟล์ที่อัปโหลด กรุณาลองใหม่',
+  BAD_PATH: 'ข้อมูลไฟล์ไม่ถูกต้อง กรุณาลองใหม่',
   LOCKED: 'คุณทำแบบทดสอบนี้ไปแล้ว ไม่สามารถทำซ้ำได้ (หากต้องการทำใหม่ โปรดแจ้งผู้ดูแล)',
   CLOSED: 'แบบทดสอบนี้ยังไม่เปิดให้ทำ หรือปิดแล้ว โปรดสอบถามผู้ดูแล',
   NOT_FOUND: 'ไม่พบรายชื่อนี้ในระบบ',
@@ -109,8 +119,9 @@ function viewPickKind(){
   show(`<div class="card">
     <h2>เลือกแบบทดสอบ</h2>
     <p class="muted">จำนวน ${esc(S.question_count)} ข้อ</p>
-    <button class="btn" ${S.pre_open?'':'disabled'} onclick="pickKind('pre')">📝 ${KIND_TH.pre}${S.pre_open?'':' (ยังไม่เปิด)'}</button>
+    <button class="btn" ${S.pre_open?'':'disabled'} onclick="pickKind('pre')">📝 ${KIND_TH.pre}${S.pre_open?'':''}</button>
     ${S.post_open ? `<button class="btn ghost" onclick="pickKind('post')">✅ ${KIND_TH.post}</button>` : ''}
+    ${S.submit_open ? `<button class="btn ghost" onclick="pickKind('submit')">📎 ส่งงาน (แนบไฟล์ ${esc(extList().map(e => '.' + e).join(' '))} สูงสุด ${esc(S.submit_max_files)} ไฟล์)</button>` : ''}
   </div>`);
 }
 async function pickKind(k){
@@ -140,7 +151,7 @@ function renderPeople(){
   if(!people.length){ box.innerHTML = '<p class="muted">ยังไม่มีรายชื่อผู้เข้าอบรมในรุ่นนี้ โปรดแจ้งผู้ดูแล</p>'; return; }
   if(!list.length){ box.innerHTML = '<p class="muted">ไม่พบรายชื่อที่ค้นหา</p>'; return; }
   box.innerHTML = list.slice(0, 80).map(p => {
-    const done = kind === 'pre' ? p.pre_done : p.post_done;
+    const done = kind === 'pre' ? p.pre_done : kind === 'post' ? p.post_done : false;
     let tagHtml = '';
     if(kind === 'post' && S.post_repeat){
       if(p.post_done) tagHtml = p.post_passed ? '<span class="tag">ผ่านแล้ว</span>' : '<span class="tag warn">ยังไม่ผ่าน</span>';
@@ -158,6 +169,21 @@ function renderPeople(){
 function pickPerson(id){
   me = people.find(p => p.id === id);
   if(!me) return;
+  if(kind === 'submit'){
+    show(`<div class="card">
+      <h2>ยืนยันว่าเป็นคุณ</h2>
+      <div class="kv">
+        <b>ชื่อ</b><div>${esc(me.full_name)}</div>
+        <b>รหัส</b><div>${esc(me.emp_id)}</div>
+        <b>ตำแหน่ง</b><div>${esc(me.job_title || '-')}</div>
+        <b>สังกัด</b><div>${esc(me.unit || '-')}</div>
+        <b>ส่งงาน</b><div>แนบไฟล์</div>
+      </div>
+      <button class="btn green" onclick="viewSubmit()">ใช่ ข้อมูลถูกต้อง ไปหน้าส่งงาน</button>
+      <button class="btn ghost" onclick="viewPickName()">ไม่ใช่ เลือกใหม่</button>
+    </div>`);
+    return;
+  }
   const repeatMode = kind === 'post' && S.post_repeat;
   const done = (kind === 'pre' ? me.pre_done : me.post_done) && !repeatMode;   // โหมดทำซ้ำได้ ไม่ล็อก
   const prevNote = repeatMode && me.post_done
@@ -280,6 +306,100 @@ function viewResult(r){
     </div>
     <div class="card"><h2>ผลรายข้อ</h2>${rows}</div>
     ${(!r.passed && S.post_repeat) ? '<button class="btn" onclick="startExam()">🔄 ทำแบบทดสอบอีกครั้ง</button>' : ''}`);
+}
+
+/* ===== 7) ส่งงาน (แนบไฟล์) ===== */
+let mySubs = [];        // ไฟล์ที่ส่งแล้ว
+let picked = [];        // ไฟล์ที่เลือกไว้ รอส่ง
+let uploading = false;
+const extList = () => String((S && S.submit_exts) || '').toLowerCase().replace(/[\s.]/g, '').split(',').filter(Boolean);
+const fileExt = n => { const m = /\.([^.]+)$/.exec(n || ''); return m ? m[1].toLowerCase() : ''; };
+const fmtSize = b => b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+
+async function viewSubmit(){
+  picked = [];
+  show('<div class="card muted">กำลังโหลด...</div>');
+  // อ่านสถานะล่าสุดอีกครั้ง เผื่อแอดมินปิดรับส่งงานไปแล้ว
+  const [si, ms] = await Promise.all([sb.rpc('exam_get_session', { p_session: SESSION_ID }), sb.rpc('exam_my_submissions', { p_participant: me.id })]);
+  if(si.data) S = si.data;
+  if(ms.error){ show(`<div class="err">${esc(errText(ms.error))}</div><button class="btn ghost" onclick="viewPickKind()">กลับหน้าแรก</button>`); return; }
+  mySubs = ms.data || [];
+  renderSubmit();
+}
+function renderSubmit(msgHtml){
+  const max = S.submit_max_files, left = Math.max(0, max - mySubs.length), exts = extList();
+  if(!S.submit_open){
+    show(`<div class="card"><h2>ส่งงาน</h2><div class="err">${esc(ERR_TH.CLOSED)}</div>${msgHtml || ''}
+      ${mySubs.length ? '<p class="muted">ไฟล์ที่คุณส่งไว้แล้ว</p>' + mySubs.map(f => `<div class="frow ok"><span>📄 ${esc(f.file_name)}</span><small>${fmtSize(f.size_bytes)}</small></div>`).join('') : ''}
+      <button class="btn ghost" onclick="viewPickKind()">← กลับหน้าแรก</button></div>`);
+    return;
+  }
+  show(`<div class="card">
+    <h2>ส่งงาน — ${esc(me.full_name)}</h2>
+    <p class="muted">ไฟล์ที่รับ: ${esc(exts.map(e => '.' + e).join(' '))} · ไม่เกิน ${fmtSize(MAX_FILE_BYTES)} ต่อไฟล์ · ส่งได้สูงสุด ${esc(max)} ไฟล์ (ส่งแล้ว ${mySubs.length} · เหลือ ${left})</p>
+    <p class="muted">ส่งแล้วลบหรือแทนที่เองไม่ได้ หากส่งผิดไฟล์ โปรดแจ้งผู้ดูแล</p>
+    ${msgHtml || ''}
+    ${mySubs.length ? '<h3 style="margin:12px 0 6px;font-size:15px">ส่งแล้ว</h3>' + mySubs.map(f => `<div class="frow ok"><span>✅ ${esc(f.file_name)}</span><small>${fmtSize(f.size_bytes)}</small></div>`).join('') : ''}
+    ${left > 0 ? `
+      <input type="file" id="fileIn" multiple accept="${esc(exts.map(e => '.' + e).join(','))}" style="display:none" onchange="onPick(this)">
+      <button class="btn ghost" onclick="document.getElementById('fileIn').click()">📎 เลือกไฟล์</button>
+      <div id="pickedBox" style="margin-top:10px"></div>
+      <button class="btn green" id="btnUp" onclick="uploadPicked()" disabled>ส่งไฟล์</button>` : '<div class="okbox" style="margin-top:12px">ส่งไฟล์ครบจำนวนสูงสุดแล้ว ✅</div>'}
+    <button class="btn ghost" onclick="viewPickKind()">← กลับหน้าแรก</button>
+  </div>`);
+  if(left > 0) renderPicked();
+}
+function onPick(inp){
+  const left = Math.max(0, S.submit_max_files - mySubs.length), exts = extList();
+  picked = [];
+  Array.from(inp.files).forEach(f => {
+    let err = '';
+    if(!exts.includes(fileExt(f.name))) err = 'ชนิดไฟล์ไม่รับ (รับ ' + exts.map(e => '.' + e).join(' ') + ')';
+    else if(f.size > MAX_FILE_BYTES) err = 'ไฟล์ใหญ่เกิน ' + fmtSize(MAX_FILE_BYTES);
+    else if(f.size === 0) err = 'ไฟล์ว่างเปล่า';
+    picked.push({ file: f, err, status: err ? 'bad' : 'wait' });
+  });
+  let c = 0;   // เกินจำนวนที่เหลือ: รับเท่าที่ส่งได้ ที่เหลือแจ้งเตือน
+  picked.forEach(x => { if(!x.err && ++c > left){ x.err = 'เกินจำนวนไฟล์ที่ส่งได้ (เหลือ ' + left + ')'; x.status = 'bad'; } });
+  inp.value = '';
+  renderPicked();
+}
+function renderPicked(){
+  const box = document.getElementById('pickedBox'), btn = document.getElementById('btnUp');
+  if(!box) return;
+  box.innerHTML = picked.map(x => `<div class="frow ${x.status === 'bad' ? 'bad' : x.status === 'done' ? 'ok' : ''}">
+      <span>${x.status === 'done' ? '✅' : x.status === 'bad' ? '⚠️' : x.status === 'up' ? '⏳' : '📄'} ${esc(x.file.name)}${x.err ? `<br><small style="color:var(--red);white-space:normal">${esc(x.err)}</small>` : ''}</span>
+      <small>${fmtSize(x.file.size)}</small></div>`).join('');
+  if(btn){ const n = picked.filter(x => x.status === 'wait').length; btn.disabled = uploading || !n; btn.textContent = uploading ? 'กำลังส่ง...' : (n ? `ส่ง ${n} ไฟล์` : 'ส่งไฟล์'); }
+}
+async function uploadPicked(){
+  if(uploading) return;
+  const todo = picked.filter(x => x.status === 'wait');
+  if(!todo.length) return;
+  uploading = true; renderPicked();
+  let okN = 0, failN = 0;
+  for(const x of todo){
+    x.status = 'up'; renderPicked();
+    const path = `${S.id}/${me.id}/${crypto.randomUUID()}.${fileExt(x.file.name)}`;
+    const up = await sb.storage.from(SUBMIT_BUCKET).upload(path, x.file, { contentType: x.file.type || 'application/octet-stream', upsert: false });
+    if(up.error){
+      x.status = 'bad'; failN++;
+      x.err = /row-level security|policy|unauthorized|403/i.test(up.error.message || '') ? 'ระบบปิดรับส่งงาน หรือส่งครบจำนวนแล้ว' : 'อัปโหลดไม่สำเร็จ: ' + (up.error.message || '');
+      continue;
+    }
+    const reg = await sb.rpc('exam_register_submission', { p_participant: me.id, p_path: path, p_name: x.file.name });
+    if(reg.error){ x.status = 'bad'; failN++; x.err = errText(reg.error); continue; }
+    x.status = 'done'; okN++;
+  }
+  uploading = false;
+  const { data } = await sb.rpc('exam_my_submissions', { p_participant: me.id });
+  if(data) mySubs = data;
+  const { data: si } = await sb.rpc('exam_get_session', { p_session: SESSION_ID });
+  if(si) S = si;
+  const keep = picked.filter(x => x.status === 'bad');   // เก็บเฉพาะที่มีปัญหาไว้ให้เห็นสาเหตุ
+  const msg = (okN ? `<div class="okbox">ส่งสำเร็จ ${okN} ไฟล์ ✅</div>` : '') + (failN ? `<div class="err">ส่งไม่สำเร็จ ${failN} ไฟล์ (ดูสาเหตุด้านล่าง)</div>` : '');
+  renderSubmit(msg);
+  if(keep.length && document.getElementById('pickedBox')){ picked = keep; renderPicked(); }
 }
 
 init();
