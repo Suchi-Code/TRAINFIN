@@ -56,6 +56,9 @@ input[type=text]:focus{outline:none;border-color:var(--blue)}
 .res .mark{font-weight:700;flex:0 0 26px}
 .res.c .mark{color:var(--green)} .res.w .mark{color:var(--red)}
 .err{background:#fdeeea;color:var(--red);border:1px solid #f3c7cf;border-radius:10px;padding:12px;margin-bottom:12px}
+.btn.amber{background:#d98200;color:#fff}
+.btn.amberghost{background:#fff8ea;color:#9a5b00;border:2px dashed #d98200}
+.btn.plain{background:transparent;color:var(--muted);font-weight:600;text-decoration:underline;padding:10px;font-size:15px}
 .frow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:6px;background:#fff;word-break:break-all}
 .frow small{color:var(--muted);white-space:nowrap}
 .frow.ok{border-color:#b9e3cf;background:#f1fbf6}
@@ -119,9 +122,9 @@ function viewPickKind(){
   show(`<div class="card">
     <h2>เลือกแบบทดสอบ</h2>
     <p class="muted">จำนวน ${esc(S.question_count)} ข้อ</p>
-    <button class="btn" ${S.pre_open?'':'disabled'} onclick="pickKind('pre')">📝 ${KIND_TH.pre}${S.pre_open?'':''}</button>
+    <button class="btn" ${S.pre_open?'':'disabled'} onclick="pickKind('pre')">📝 ${KIND_TH.pre}${S.pre_open?'':' (ยังไม่เปิด)'}</button>
     ${S.post_open ? `<button class="btn ghost" onclick="pickKind('post')">✅ ${KIND_TH.post}</button>` : ''}
-    ${S.submit_open ? `<button class="btn ghost" onclick="pickKind('submit')">📎 ส่งงาน (แนบไฟล์ ${esc(extList().map(e => '.' + e).join(' '))} สูงสุด ${esc(S.submit_max_files)} ไฟล์)</button>` : ''}
+    ${S.submit_open ? `<div style="border-top:1px dashed var(--line);margin-top:16px"></div><button class="btn amber" onclick="pickKind('submit')">📎 ส่งงาน</button>` : ''}
   </div>`);
 }
 async function pickKind(k){
@@ -166,10 +169,13 @@ function renderPeople(){
 }
 
 /* ===== 3) ยืนยันตัวตน ===== */
-function pickPerson(id){
+async function pickPerson(id){
   me = people.find(p => p.id === id);
   if(!me) return;
   if(kind === 'submit'){
+    show('<div class="card muted">กำลังโหลด...</div>');
+    const ms = await sb.rpc('exam_my_submissions', { p_participant: me.id });   // บอกว่าคนนี้ส่งไปแล้วกี่ไฟล์ (ใช้ฟังก์ชันเดิม ไม่ต้องรัน SQL เพิ่ม)
+    const n = (ms.data || []).length;
     show(`<div class="card">
       <h2>ยืนยันว่าเป็นคุณ</h2>
       <div class="kv">
@@ -177,10 +183,10 @@ function pickPerson(id){
         <b>รหัส</b><div>${esc(me.emp_id)}</div>
         <b>ตำแหน่ง</b><div>${esc(me.job_title || '-')}</div>
         <b>สังกัด</b><div>${esc(me.unit || '-')}</div>
-        <b>ส่งงาน</b><div>แนบไฟล์</div>
+        <b>ส่งงาน</b><div>${n ? `<span class="tag warn">ส่งแล้ว ${n} ไฟล์</span>` : 'ยังไม่ได้ส่ง'}</div>
       </div>
-      <button class="btn green" onclick="viewSubmit()">ใช่ ข้อมูลถูกต้อง ไปหน้าส่งงาน</button>
-      <button class="btn ghost" onclick="viewPickName()">ไม่ใช่ เลือกใหม่</button>
+      <button class="btn amber" onclick="viewSubmit()">ใช่ ข้อมูลถูกต้อง ไปหน้าส่งงาน</button>
+      <button class="btn plain" onclick="viewPickName()">ไม่ใช่ เลือกใหม่</button>
     </div>`);
     return;
   }
@@ -331,7 +337,7 @@ function renderSubmit(msgHtml){
   if(!S.submit_open){
     show(`<div class="card"><h2>ส่งงาน</h2><div class="err">${esc(ERR_TH.CLOSED)}</div>${msgHtml || ''}
       ${mySubs.length ? '<p class="muted">ไฟล์ที่คุณส่งไว้แล้ว</p>' + mySubs.map(f => `<div class="frow ok"><span>📄 ${esc(f.file_name)}</span><small>${fmtSize(f.size_bytes)}</small></div>`).join('') : ''}
-      <button class="btn ghost" onclick="viewPickKind()">← กลับหน้าแรก</button></div>`);
+      <button class="btn plain" onclick="viewPickKind()">← กลับหน้าแรก</button></div>`);
     return;
   }
   show(`<div class="card">
@@ -342,10 +348,10 @@ function renderSubmit(msgHtml){
     ${mySubs.length ? '<h3 style="margin:12px 0 6px;font-size:15px">ส่งแล้ว</h3>' + mySubs.map(f => `<div class="frow ok"><span>✅ ${esc(f.file_name)}</span><small>${fmtSize(f.size_bytes)}</small></div>`).join('') : ''}
     ${left > 0 ? `
       <input type="file" id="fileIn" multiple accept="${esc(exts.map(e => '.' + e).join(','))}" style="display:none" onchange="onPick(this)">
-      <button class="btn ghost" onclick="document.getElementById('fileIn').click()">📎 เลือกไฟล์</button>
+      <button class="btn amberghost" onclick="document.getElementById('fileIn').click()">📎 เลือกไฟล์</button>
       <div id="pickedBox" style="margin-top:10px"></div>
-      <button class="btn green" id="btnUp" onclick="uploadPicked()" disabled>ส่งไฟล์</button>` : '<div class="okbox" style="margin-top:12px">ส่งไฟล์ครบจำนวนสูงสุดแล้ว ✅</div>'}
-    <button class="btn ghost" onclick="viewPickKind()">← กลับหน้าแรก</button>
+      <button class="btn amber" id="btnUp" onclick="uploadPicked()" disabled>ส่งไฟล์</button>` : '<div class="okbox" style="margin-top:12px">ส่งไฟล์ครบจำนวนสูงสุดแล้ว ✅</div>'}
+    <button class="btn plain" onclick="viewPickKind()">← กลับหน้าแรก</button>
   </div>`);
   if(left > 0) renderPicked();
 }
