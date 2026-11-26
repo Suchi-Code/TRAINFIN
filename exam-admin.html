@@ -254,7 +254,7 @@ function renderDetail(){
       <h2 style="display:inline;margin-left:10px">${esc(cur.title)}</h2>
       <span class="muted"> ${cur.batch ? 'รุ่น ' + esc(cur.batch) : ''} ${cur.course_no ? '· เลขที่ ' + esc(cur.course_no) : ''}</span></div>
       <span class="muted" id="rt">${esc(rtStatus)}</span></div>
-    <div class="tabs">${[['dash','📊 แดชบอร์ด'],['q','❓ ข้อสอบ'],['people','👥 รายชื่อ'],['sub','📎 ส่งงาน'],['set','⚙️ ตั้งค่า/ลิงก์']].map(([k, l]) =>
+    <div class="tabs">${[['dash','📊 แดชบอร์ด'],['q','❓ ข้อสอบ'],['sub','📎 ส่งงาน'],['people','👥 รายชื่อ'],['set','⚙️ ตั้งค่า/ลิงก์']].map(([k, l]) =>
       `<div class="tab ${tab === k ? 'on' : ''}" onclick="setTab('${k}')">${l}</div>`).join('')}</div>
     <div id="tabBody"></div>`;
   renderTab();
@@ -578,7 +578,7 @@ function subHtml(){
   const totalBytes = subs.reduce((a, s) => a + (Number(s.size_bytes) || 0), 0);
   const list = subOnlyPending ? pending : people;
   return `<div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">ส่งงาน</h2>
-      <div class="row"><button class="btn green" ${subs.length ? '' : 'disabled'} onclick="downloadAllSubs()">⬇ ดาวน์โหลดทั้งหมด (ZIP)</button></div></div>
+      <div class="row"><button class="btn green" ${subs.length ? '' : 'disabled'} onclick="exportSubsZip()">📤 ส่งออก ZIP (ให้วิทยากร)</button></div></div>
     <p class="muted">${cur.submit_open ? '🟢 กำลังเปิดรับส่งงาน' : '⚪ ปิดรับส่งงาน'} · รับ ${esc(cur.submit_exts || 'md')} · สูงสุด ${max} ไฟล์/คน · เปิด/ปิดได้ที่แท็บ "ตั้งค่า/ลิงก์"</p>
     <div class="stats">
       <div class="stat"><div class="n">${sent.length}/${people.length}</div><div class="l">ส่งแล้ว (คน)</div></div>
@@ -605,28 +605,38 @@ async function downloadSub(id){
   if(error){ toast('ดาวน์โหลดไม่สำเร็จ: ' + error.message); return; }
   saveBlob(data, safeName((p ? p.emp_id + '_' : '') + f.file_name));
 }
-async function downloadAllSubs(){
+// ส่งออกให้วิทยากร: ZIP = 00_สรุปผู้ส่งงาน.xlsx + โฟลเดอร์ "รหัส_ชื่อ" ต่อคน (เห็นชื่อ ไม่มีคะแนน ไม่รวมไฟล์)
+async function exportSubsZip(){
   if(!subs.length) return;
   if(typeof JSZip === 'undefined'){ toast('โหลดตัวสร้าง ZIP ไม่สำเร็จ (ต้องมีอินเทอร์เน็ต)'); return; }
-  const zip = new JSZip(), used = new Set();
-  let done = 0, fail = [];
+  const zip = new JSZip(), used = new Set(), okIds = new Set(), fail = [];
   toast('กำลังเตรียมไฟล์ ' + subs.length + ' ไฟล์...');
   const jobs = subs.map(f => async () => {
     const p = people.find(x => x.id === f.participant_id);
     const { data, error } = await sb.storage.from(SUB_BUCKET).download(f.storage_path);
-    done++;
     if(error){ fail.push(f.file_name); return; }
     const dir = safeName(p ? p.emp_id + '_' + p.full_name : 'unknown');
     let name = safeName(f.file_name), n = 1;
     while(used.has(dir + '/' + name)){ n++; name = n + '_' + safeName(f.file_name); }
     used.add(dir + '/' + name);
+    f._zipName = name; okIds.add(f.id);
     zip.file(dir + '/' + name, data);
   });
   for(let i = 0; i < jobs.length; i += 6) await Promise.all(jobs.slice(i, i + 6).map(j => j()));
-  if(fail.length) alert('ดาวน์โหลดไม่สำเร็จ ' + fail.length + ' ไฟล์ (ไม่ถูกรวมใน ZIP):\n' + fail.slice(0, 10).join('\n'));
+  // ไฟล์สรุป: ทุกคนในรายชื่อ (รวมคนที่ยังไม่ส่ง) — นับเฉพาะไฟล์ที่ใส่ลง ZIP ได้จริง
+  const rows = [['รหัสพนักงาน', 'ชื่อ-นามสกุล', 'ตำแหน่ง', 'สังกัด', 'สถานะ', 'จำนวนไฟล์', 'ชื่อไฟล์', 'เวลาส่งล่าสุด']];
+  people.forEach(p => {
+    const fs = subsOf(p.id).filter(f => okIds.has(f.id));
+    const last = fs.map(f => f.created_at).sort().pop();
+    rows.push([p.emp_id, p.full_name, p.job_title || '', p.unit || '', fs.length ? 'ส่งแล้ว' : 'ยังไม่ส่ง', fs.length, fs.map(f => f._zipName).join(', '), last ? fmtT(last) : '']);
+  });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'สรุปผู้ส่งงาน');
+  zip.file('00_สรุปผู้ส่งงาน.xlsx', XLSX.write(wb, { bookType: 'xlsx', type: 'array' }));
+  if(fail.length) alert('ดาวน์โหลดไม่สำเร็จ ' + fail.length + ' ไฟล์ (ไม่ถูกรวมใน ZIP และไม่นับในไฟล์สรุป):\n' + fail.slice(0, 10).join('\n'));
   const blob = await zip.generateAsync({ type: 'blob' });
   saveBlob(blob, safeName(`ส่งงาน_${cur.title}_${cur.batch || ''}.zip`));
-  toast('ดาวน์โหลด ZIP แล้ว');
+  toast('ส่งออก ZIP แล้ว');
 }
 // ลบไฟล์จริงใน storage เป็นชุดละ 100 (ต้องลบไฟล์ก่อนลบแถวเสมอ ไม่งั้นไฟล์ค้างกินพื้นที่)
 async function removeFiles(paths){
@@ -710,22 +720,49 @@ function copyLine(id){
   const t = $(id).value;
   navigator.clipboard.writeText(t).then(() => toast('คัดลอกข้อความแล้ว — วางใน LINE ได้เลย'), () => { $(id).select(); toast('คัดลอกอัตโนมัติไม่ได้ กด Ctrl+C เอง'); });
 }
+function lineSubmitText(link){
+  const exts = String(cur.submit_exts || 'md').split(',').map(e => '.' + e.trim()).join(' ');
+  return `📎 ส่งงาน 📎
+
+เรียนท่านผู้เข้าอบรมทุกท่าน 🙏
+ขอเชิญส่งงานตามลิงก์ด้านล่างนี้ครับ 👇
+
+🔗 ${link}
+
+📌 วิธีส่ง
+1. กดลิงก์ แล้วเลือกชื่อของตัวเอง
+2. กดปุ่ม "ส่งงาน"
+3. เลือกไฟล์ ${exts} (ส่งได้สูงสุด ${cur.submit_max_files || 5} ไฟล์) แล้วกดส่งไฟล์ ✅
+
+ขอบคุณครับ 😊🙏`;
+}
+/* ===== ข้อความ LINE: อยู่ในแท็บตั้งค่า กดปุ่มแล้วกางออกเป็น 3 block (ไม่ re-render เพื่อไม่ให้ข้อความที่แก้ไว้หาย) ===== */
+function toggleLineBox(){
+  const box = $('lineBox'), btn = $('lineBtn'); if(!box) return;
+  const open = box.style.display === 'none';
+  box.style.display = open ? '' : 'none';
+  btn.classList.toggle('ghost', !open);
+}
+function lineBlock(id, label, text, rows){
+  return `<div style="margin-top:12px"><label class="f">${label}</label>
+    <textarea id="${id}" rows="${rows}" style="width:100%;font-family:inherit">${esc(text)}</textarea>
+    <div class="row" style="margin-top:6px"><button class="btn" onclick="copyLine('${id}')">📋 คัดลอกข้อความ</button></div></div>`;
+}
 function lineCardHtml(link){
-  return `<div class="card"><h2>ข้อความส่ง LINE</h2>
-      <p class="muted">เติมลิงก์ให้อัตโนมัติ · แก้ข้อความในกล่องได้ก่อนคัดลอก (ไม่ถูกบันทึก)</p>
-      <label class="f">📝 Pre-test (ส่งก่อนอบรม)</label>
-      <textarea id="line_pre" rows="14" style="width:100%;font-family:inherit">${esc(linePreText(link))}</textarea>
-      <div class="row" style="margin:8px 0 14px"><button class="btn" onclick="copyLine('line_pre')">📋 คัดลอกข้อความ Pre-test</button></div>
-      <label class="f">✨ Post-test (ส่งตอนจบอบรม)</label>
-      <textarea id="line_post" rows="16" style="width:100%;font-family:inherit">${esc(linePostText(link))}</textarea>
-      <div class="row" style="margin-top:8px"><button class="btn" onclick="copyLine('line_post')">📋 คัดลอกข้อความ Post-test</button></div></div>`;
+  return `<div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">ข้อความส่ง LINE</h2>
+      <button class="btn ghost" id="lineBtn" onclick="toggleLineBox()">💬 ข้อความส่ง LINE</button></div>
+    <div id="lineBox" style="display:none"><p class="muted" style="margin-top:8px">เติมลิงก์ให้อัตโนมัติ · แก้ข้อความในกล่องได้ก่อนคัดลอก (ไม่ถูกบันทึก)</p>
+      ${lineBlock('line_pre', '📝 Pre-test (ส่งก่อนอบรม)', linePreText(link), 14)}
+      ${lineBlock('line_post', '✨ Post-test (ส่งตอนจบอบรม)', linePostText(link), 16)}
+      ${lineBlock('line_submit', '📎 ส่งงาน', lineSubmitText(link), 13)}</div></div>`;
 }
 function settingsHtml(){
   const link = studentLink();
-  return lineCardHtml(link) + `<div class="card"><h2>ลิงก์ให้ผู้เข้าอบรม</h2>
+  return `<div class="card"><h2>ลิงก์ให้ผู้เข้าอบรม</h2>
       <div class="linkbox" id="lnk">${esc(link)}</div>
       <div class="row" style="margin-top:8px"><button class="btn" onclick="navigator.clipboard.writeText('${esc(link)}').then(()=>toast('คัดลอกลิงก์แล้ว'))">📋 คัดลอกลิงก์</button></div>
       <p style="margin-top:10px"><img alt="QR" width="180" height="180" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(link)}"><br><span class="muted">QR (สร้างผ่าน qrserver.com — ต้องมีอินเทอร์เน็ต) · ไฟล์ exam-student.html ต้องอยู่โฟลเดอร์เดียวกับไฟล์นี้บนเว็บ</span></p></div>
+    ${lineCardHtml(link)}
     <div class="card"><h2>เปิด/ปิดการทำแบบทดสอบ</h2>
       <label class="row"><input type="checkbox" ${cur.pre_open ? 'checked' : ''} onchange="setOpen('pre_open',this.checked)"> เปิด Pre-test</label>
       <label class="row" style="margin-top:6px"><input type="checkbox" ${cur.post_open ? 'checked' : ''} onchange="setOpen('post_open',this.checked)"> เปิด Post-test (เปิดตอนจบการอบรม)</label></div>
