@@ -111,6 +111,12 @@ table.ov tr.sum td{background:#fff3b0;font-weight:700}
 #denied{display:none;max-width:480px;margin:90px auto;text-align:center;background:#fff;border:1px solid var(--border);border-radius:12px;padding:30px}
 
 .slide{display:block}
+.stbar{background:#dfe6ef;border-top:1px solid #b5c3d6;font-size:12.5px;line-height:22px;padding-left:6px;box-sizing:border-box}
+.stbar .dn{font-family:Consolas,'Courier New',monospace;font-weight:700;padding:0 4px;margin-right:8px}
+.stbar .cb2{display:inline-block;width:14px;height:14px;line-height:13px;text-align:center;background:#2e9e4f;color:#fff;font-size:11px;border-radius:2px;margin-right:4px}
+.keyin{width:100%;border:3px solid #1a56db !important;background:#fffbe0;border-radius:6px;padding:8px 10px !important;font-size:18px;font-weight:700;letter-spacing:2px;font-family:Consolas,'Courier New',monospace !important;box-shadow:0 0 0 4px rgba(26,86,219,.18)}
+.keyin:focus{outline:none;box-shadow:0 0 0 5px rgba(26,86,219,.35)}
+.keylab{grid-column:1/-1;font-weight:700;color:#1a56db;font-size:13.5px;margin-top:4px}
 .slide .todo{margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:7px 12px}
 .slide .todo>h4,.slide .todo>.note,.slide .todo>.notice{grid-column:1/-1}
 .sapwrap{overflow:hidden;border:1px solid #98a8bb;border-radius:3px;background:#e6ecf3}
@@ -649,7 +655,7 @@ function scr5(x, c, saveRed){
   // SAP เรียง: 001 ค่าใช้จ่าย, 002 เจ้าหนี้, 003 ภาษีซื้อ (ตามภาพ)
   const ordered = c.hasVat ? [rows[0], ['002', '31', CONST.branchNo, a, VEND_DESC[a] ? 'จน.อื่น ๆจ่ายครั้งเดียว' : '', money(x.gross) + '-', tc], ['003', '40', CONST.branchNo, '000' + CONST.vatAcct, 'ภาษีซื้อ', money(am.vat), tc]] : rows;
   let s = chrome(968, 745, MENU_FULL.concat(['วิธีใช้(H)']), 'ป้อน PWAใบกำกับสินค้า-จน.: แสดง ภาพรวม',
-    [[27, '🔍'], [50, '⊞ แสดงสกุลเงิน'], [155, 'ℹ ภาษี'], [214, '↺ ริเข็ต']], { saveRed });
+    [[27, '🔍'], [50, '⊞ แสดงสกุลเงิน'], [158, 'พักเอกสาร'], [226, 'โมเดลบัญชี'], [296, '☑ การบันทึกรายการข้อมูลแบบเร็ว'], [486, 'ℹ ภาษี']], { saveRed });
   s += lb(20, 158, 'วันที่เอกสาร') + fd(131, 148, 84, 20, dotDate(c.docDate), 'g') + lb(230, 158, 'ประเภท') + fd(313, 148, 26, 20, 'KR', 'g') + lb(362, 158, 'รหัสบริษัท') + fd(474, 148, 34, 20, '1000', 'g');
   s += lb(20, 181, 'วันผ่านรายการ') + fd(131, 171, 84, 20, dotDate(c.posting), 'g') + lb(237, 181, 'งวด') + fd(313, 171, 24, 20, fy.per, 'g') + lb(362, 181, 'สกุลเงิน') + fd(474, 171, 34, 20, 'THB', 'g');
   s += lb(20, 204, 'เลขที่เอกสาร') + fd(131, 194, 76, 20, 'INTERNAL', 'g') + lb(230, 204, 'ปีบัญชี') + fd(313, 194, 52, 20, fy.fy, 'g') + lb(362, 204, 'วันที่การแปลงค่า') + fd(474, 194, 84, 20, dotDate(c.posting), 'g');
@@ -667,6 +673,12 @@ function scr5(x, c, saveRed){
   s += AB(26, 574, 0, 16, 'mono bl', 'D ' + money(D)) + AB(180, 574, 0, 16, 'mono bl', 'C ' + money(C)) + AB(420, 574, 0, 16, 'mono bl', money(r2(D - C)).replace(/^-/, '')) + AB(466, 574, 0, 16, 'mono bl', '*') + AB(490, 574, 0, 16, 'mono bl', ordered.length + ' บรรทัด รก.');
   s += pn(14, 612, 592, 56, 'บรรทัดรายการอื่น');
   s += lb(28, 648, 'PstKy') + fd(80, 637, 22, 22, '', 'y') + lb(112, 648, 'บัญชี') + fd(158, 637, 124, 20, '', '') + lb(288, 648, 'SGL Ind') + fd(340, 638, 13, 20, '', '') + lb(358, 648, 'TType') + fd(432, 637, 26, 20, '', '') + lb(468, 648, 'รหัสบริษัทใ') + fd(550, 637, 34, 20, '', '');
+  if (saveRed) {
+    s += AB(14, 700, 440, 24, 'stbar', 'เอกสาร <span class="dn">XXXXXXXXXX</span> ถูกผ่านรายการในรหัสบริษัท 1000');
+    s += ov(61, 698, 90, 28);
+  } else {
+    s += AB(14, 700, 360, 24, 'stbar', '<span class="cb2">✓</span> สามารถผ่านรายการได้เมื่อยอดคงเหลือเป็นศูนย์เท่านั้น แก้ไขเอกสาร');
+  }
   return canvas(968, 745, s);
 }
 
@@ -684,7 +696,7 @@ function slideHtml(x){
         ${T('วันที่เอกสาร', c.docDate)}
         ${c.posting ? T('วันผ่านรายการ', c.posting) : `<div class="notice warn" style="margin:0">ยังไม่ได้ระบุ "วันผ่านรายการ" ด้านบนของหน้า</div>`}
         <div class="t"><div class="tl">การอ้างอิง<br><span style="font-size:10.5px">(เลขที่ใบเสร็จ/ใบกำกับ)</span></div>
-          <div class="tv"><input id="refIn" type="text" value="${esc(rc.ref)}" placeholder="พิมพ์เลขที่ใบเสร็จ" oninput="onRef(this.value)" style="width:100%;border:1px solid var(--border);border-radius:5px;padding:4px 8px;font-family:inherit"></div>
+          <div class="tv"><input id="refIn" class="keyin" type="text" value="${esc(rc.ref)}" placeholder="พิมพ์เลขที่ใบเสร็จ" oninput="onRef(this.value)" style="font-size:15px"></div>
           <button class="cp" onclick="refLast5()" title="ตัดเหลือ 5 ตัวท้าย">5 ตัวท้าย</button>
           <button class="cp" id="refCp" data-c="${encodeURIComponent(rc.ref)}" onclick="doCopy(this)">คัดลอก</button></div>
         ${T('เลขที่สาขา', CONST.branchNo)}${T('PstKy', CONST.pstKyExp)}${T('บัญชี', r.acct || CONST.expAcct)}
@@ -737,8 +749,8 @@ function slideHtml(x){
         mock: scr5(x, c, true),
         todo: `<h4>บันทึก & จดเลขเอกสาร</h4>
           <div class="note">ผลต่าง = 0.00 แล้ว → กดไอคอนแผ่นดิสก์ (กรอบแดงบนซ้าย) → SAP แจ้งเลขเอกสาร · เลขนี้ต้องใช้ต่อใน F-30 (เงินยืม − บิล − เงินคืน = 0)</div>
-          <div class="t"><div class="tl">เลขเอกสาร SAP</div>
-            <div class="tv"><input id="docIn" type="text" value="${esc(rc.doc)}" placeholder="พิมพ์เลขเอกสารที่ SAP แจ้ง" oninput="onDoc(this.value)" style="width:100%;border:1px solid var(--border);border-radius:5px;padding:4px 8px;font-family:inherit"></div></div>
+          <div class="keylab">✍️ พิมพ์เลขเอกสาร SAP 10 หลัก (ตัวเลขในกรอบแดงซ้ายล่างของจอ) ลงในช่องสีเหลืองนี้</div>
+          <div style="grid-column:1/-1"><input id="docIn" class="keyin" type="text" inputmode="numeric" maxlength="10" value="${esc(rc.doc)}" placeholder="เช่น 1900012345" oninput="onDoc(this.value)"></div>
           ${dup.length ? `<div class="notice err" style="margin:0">❌ เลขเอกสารนี้ซ้ำกับใบเสร็จอีก ${dup.length} ใบ — ตรวจว่าจดถูกหรือไม่</div>` : ''}
           <div class="note">อย่าลืมกด <b>💾 บันทึก</b> ด้านบนของหน้า เพื่อเก็บเลขเอกสารไว้ในระบบ — ระบบถือว่า "คีย์แล้ว" เมื่อมีเลขเอกสารเท่านั้น</div>` };
     }
