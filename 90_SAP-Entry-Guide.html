@@ -307,7 +307,14 @@ function loginUser(){
 /* ── state ── */
 const ST = { no:'', course:'', rows:[], sap:{ posting:'', borrower:{empId:'', first:''}, receipts:{} },
              cur:0, slide:0, dirty:new Set(), loadedOk:false, orphans:[] };
-const SLIDES = ['พิมพ์คำสั่ง F-43','หน้าหัวเอกสาร','บรรทัดค่าใช้จ่าย (G/L)','ที่อยู่ผู้ขาย (one-time)','บรรทัดเจ้าหนี้','ตรวจสอบ (จำลอง)','บันทึก & จดเลขเอกสาร'];
+const SLIDE_BASE = [[0,'พิมพ์คำสั่ง F-43'],[1,'หน้าหัวเอกสาร'],[2,'บรรทัดค่าใช้จ่าย (G/L)'],[3,'ที่อยู่ผู้ขาย (one-time)'],[4,'บรรทัดเจ้าหนี้'],[5,'ตรวจสอบ (จำลอง)']];
+const SLIDE_FIX  = [['f1','แก้ภาษี ① เปิดบรรทัดภาษีซื้อ'],['f2','แก้ภาษี ② พิมพ์ยอดภาษีตามใบเสร็จ'],['f3','แก้ภาษี ③ เปิดบรรทัดค่าใช้จ่าย'],['f4','แก้ภาษี ④ ลดยอดค่าใช้จ่าย'],['f5','แก้ภาษี ⑤ ตรวจผลต่าง = 0']];
+const SLIDE_SAVE = [[6,'บันทึก & จดเลขเอกสาร']];
+function curSlides(){
+  const x = ST.rows && ST.rows[ST.cur];
+  const mis = x && (function(){ try { return calc(x).vatMismatch; } catch (e) { return false; } })();
+  return SLIDE_BASE.concat(mis ? SLIDE_FIX : [], SLIDE_SAVE);
+}
 
 function buildReceipts(rawRows){
   const seen = {}, out = [];
@@ -448,8 +455,8 @@ function renderList(){
   }).join('');
 }
 function goReceipt(i){ ST.cur = Math.max(0, Math.min(ST.rows.length - 1, i)); ST.slide = 0; renderAll(); window.scrollTo(0, 0); }
-function goSlide(s){ ST.slide = Math.max(0, Math.min(SLIDES.length - 1, s)); renderStage(); }
-function nextStep(){ if (ST.slide < SLIDES.length - 1) goSlide(ST.slide + 1); else if (ST.cur < ST.rows.length - 1) goReceipt(ST.cur + 1); }
+function goSlide(s){ ST.slide = Math.max(0, Math.min(curSlides().length - 1, s)); renderStage(); }
+function nextStep(){ if (ST.slide < curSlides().length - 1) goSlide(ST.slide + 1); else if (ST.cur < ST.rows.length - 1) goReceipt(ST.cur + 1); }
 function prevStep(){ if (ST.slide > 0) goSlide(ST.slide - 1); }
 
 /* ── UI building blocks ── */
@@ -646,9 +653,10 @@ function sapAmounts(x, c){
   const exp = c.hasVat ? r2(x.gross - c.sapVat) : x.gross;
   return { exp, vat: c.hasVat ? c.sapVat : 0 };
 }
-function scr5(x, c, saveRed){
+function scr5(x, c, saveRed, opt){
+  opt = Object.assign({ area: true, row: -1, amt: 'sap' }, opt || {});
   const rc = rec(x.key), a = c.acct || '—', fy = fiscal(ST.sap.posting), tc = c.hasVat ? 'V7' : 'VX';
-  const am = sapAmounts(x, c);
+  const am = opt.amt === 'unbal' ? { exp: x.gross, vat: x.vat } : opt.amt === 'fixed' ? { exp: r2(x.gross - x.vat), vat: x.vat } : sapAmounts(x, c);
   const rows = [['001', '40', CONST.branchNo, '000' + CONST.expAcct, 'ค่าฝึกอบรม', money(am.exp), tc]];
   if (c.hasVat) rows.push(['002', '40', CONST.branchNo, '000' + CONST.vatAcct, 'ภาษีซื้อ', money(am.vat), tc]);
   rows.push([c.hasVat ? '003' : '002', '31', CONST.branchNo, a, VEND_DESC[a] ? 'จน.อื่น ๆจ่ายครั้งเดียว' : '', money(x.gross) + '-', tc]);
@@ -662,7 +670,7 @@ function scr5(x, c, saveRed){
   s += lb(20, 226, 'การอ้างอิง') + fd(131, 215, 116, 20, rc.ref, '') + lb(362, 226, 'เลขที่ระหว่างบ.') + fd(474, 215, 116, 20, '', '');
   s += lb(20, 248, 'Doc.Header Text') + fd(131, 238, 178, 20, '', '') + lb(362, 248, 'Trading part.BA') + fd(474, 237, 34, 20, '', '');
   s += lb(20, 270, 'เลขที่สาขา') + fd(131, 260, 34, 20, CONST.branchNo, '');
-  s += pn(14, 282, 596, 322, 'รายการในสกุลเงินของเอกสาร') + ov(12, 278, 600, 330);
+  s += pn(14, 282, 596, 322, 'รายการในสกุลเงินของเอกสาร') + (opt.area ? ov(12, 278, 600, 330) : '') + (opt.row >= 0 ? ov(20, 322 + opt.row * 24, 384, 26) : '');
   s += AB(28, 304, 0, 16, 'mono b', 'PK เขตธุรกิจ บัญชี') + AB(204, 304, 0, 16, 'mono b', 'THB') + AB(290, 304, 0, 16, 'mono b', 'จำนวนเงิน');
   ordered.forEach((rw, i) => {
     const y = 328 + i * 24;
@@ -676,17 +684,90 @@ function scr5(x, c, saveRed){
   if (saveRed) {
     s += AB(14, 700, 440, 24, 'stbar', 'เอกสาร <span class="dn">XXXXXXXXXX</span> ถูกผ่านรายการในรหัสบริษัท 1000');
     s += ov(61, 698, 90, 28);
-  } else {
+  } else if (opt.amt === 'unbal') {
     s += AB(14, 700, 360, 24, 'stbar', '<span class="cb2">✓</span> สามารถผ่านรายการได้เมื่อยอดคงเหลือเป็นศูนย์เท่านั้น แก้ไขเอกสาร');
   }
   return canvas(968, 745, s);
 }
 
+/* ── แก้ภาษีไม่ตรงใบเสร็จ (fix 1–4) ── */
+const APPS_GL = [[37, '👤'], [64, '▤'], [86, '▥'], [107, '▦'], [128, '➜ ข้อมูลเพิ่มเติม']];
+function glChrome(title, o){
+  return chrome(970, 740, MENU_FULL.concat(['วิธีใช้(H)']), title,
+    APPS_GL.concat(o.reset ? [[237, '↺ ริเซ็ต']] : [[242, 'โมเดลบัญชี'], [314, '☑ การบันทึกรายการข้อมูลแบบเร็ว'], [504, 'ℹ ภาษี']]), o);
+}
+/* fix 1: ดับเบิลคลิกแล้วได้หน้าบรรทัดภาษี (แก้ไม่ได้) → พิมพ์ PstKy 40 + บัญชี 1191001 */
+function scrF1(x, c){
+  const sd = sapAmounts(x, c);
+  let s = glChrome('ป้อน PWAใบกำกับสินค้า-จน.: แก้ไข รายการบัญชีแยกประเภททั่วไป', { reset: true });
+  s += lb(22, 157, 'บัญชี') + fd(118, 148, 76, 20, CONST.vatAcct, 'g') + lb(202, 157, 'ภาษีซื้อ', 'color:#1b4fa0');
+  s += lb(22, 181, 'รหัสบริษัท') + fd(118, 171, 36, 20, '1000', 'g') + lb(160, 181, 'การประปาส่วนภูมิภาค');
+  s += pn(20, 214, 588, 194, 'รายการ 3 / รายการเดบิต / 40');
+  s += lb(30, 246, 'จำนวนเงิน') + fd(118, 236, 118, 20, money(sd.vat), 'g') + lb(248, 246, 'THB');
+  s += lb(30, 268, 'ฐานคำนวณภาษี') + fd(118, 258, 118, 20, money(sd.exp), 'g');
+  s += lb(30, 290, 'รหัสภาษี') + fd(118, 281, 22, 20, 'V7', 'g') + cbx(288, 285, false) + lb(304, 291, 'กำหนดฐานภาษี', 'color:#8a8a8a');
+  s += lb(30, 312, 'Bus. Place') + fd(118, 303, 34, 20, CONST.branchNo, '');
+  s += lb(30, 334, 'เขตธุรกิจ') + fd(118, 324, 34, 20, CONST.branchNo, '');
+  s += lb(30, 356, 'การกำหนด') + fd(118, 346, 132, 20, '', '');
+  s += lb(30, 378, 'ข้อความ') + fd(118, 368, 356, 20, '', '');
+  s += pn(20, 412, 588, 78, 'บรรทัดรายการถัดไป');
+  s += lb(28, 443, 'PstKy') + fd(82, 433, 24, 22, CONST.pstKyExp, 'r') + lb(112, 443, 'บัญชี') + fd(158, 430, 130, 28, CONST.vatAcct, 'r y');
+  s += lb(300, 443, 'L Ind') + fd(342, 434, 13, 20, '', '') + lb(360, 443, 'TType') + fd(434, 434, 26, 20, '', '') + lb(468, 443, 'รหัสบริษัทใ') + fd(552, 434, 34, 20, '', '');
+  return canvas(970, 740, s);
+}
+/* fix 2: เพิ่มรายการภาษีซื้อเอง ตามใบเสร็จ */
+function scrF2(x, c){
+  const first = ST.sap.borrower.first || '';
+  let s = glChrome('ป้อน PWAใบกำกับสินค้า-จน.: เพิ่ม รายการบัญชีแยกประเภททั่วไป', { redMenu: true });
+  s += ov(18, 5, 70, 26);
+  s += lb(22, 160, 'บัญชี') + fd(118, 151, 76, 20, CONST.vatAcct, 'g') + lb(202, 160, 'ภาษีซื้อ', 'color:#1b4fa0');
+  s += lb(22, 182, 'รหัสบริษัท') + fd(118, 172, 36, 20, '1000', 'g') + lb(160, 182, 'การประปาส่วนภูมิภาค');
+  s += pn(20, 216, 588, 322, 'รายการ 3 / รายการเดบิต / 40');
+  s += lb(30, 247, 'จำนวนเงิน') + fd(118, 237, 118, 20, money(x.vat), 'r') + lb(248, 247, 'THB');
+  s += lb(30, 270, 'ฐานคำนวณภาษี') + fd(118, 260, 118, 20, money(r2(x.gross - x.vat)), 'r');
+  s += lb(30, 293, 'รหัสภาษี') + fd(118, 284, 22, 20, 'V7', 'g') + cbx(288, 287, false) + lb(304, 293, 'กำหนดฐานภาษี');
+  s += lb(30, 315, 'Bus. Place') + fd(118, 305, 34, 20, '', '');
+  s += lb(30, 337, 'เขตธุรกิจ') + fd(118, 327, 34, 20, CONST.branchNo, '');
+  s += lb(30, 358, 'เชกเมนต์') + fd(118, 348, 76, 20, '', '') + lb(288, 358, 'เชกเมนต์คู่ค้า') + fd(398, 348, 76, 20, '', '');
+  s += lb(30, 402, 'การกำหนด') + fd(118, 392, 132, 22, first, 'r');
+  s += lb(30, 425, 'ข้อความ') + fd(118, 415, 356, 22, c.text, 'rb') + ov(113, 411, 190, 28) + btn(504, 414, 96, 24, '✎ ข้อความยาว');
+  s += pn(20, 458, 588, 80, 'บรรทัดรายการถัดไป');
+  s += lb(28, 489, 'PstKy') + fd(84, 479, 20, 20, '', '') + lb(110, 489, 'บัญชี') + fd(162, 479, 122, 20, '', '') + lb(288, 489, 'SGL Ind') + fd(344, 480, 13, 20, '', '') + lb(358, 489, 'TType') + fd(436, 479, 26, 20, '', '') + lb(470, 489, 'รหัสบริษัทใ') + fd(554, 479, 34, 20, '', '');
+  return canvas(970, 740, s);
+}
+/* fix 4: แก้บรรทัดค่าใช้จ่าย (ลดเป็นยอดก่อน VAT, ไม่ติ๊กคำนวณภาษี) */
+function scrF4(x, c){
+  const first = ST.sap.borrower.first || '';
+  let s = glChrome('ป้อน PWAใบกำกับสินค้า-จน.: แก้ไข รายการบัญชีแยกประเภททั่วไป', { reset: false });
+  s += ov(25, 114, 28, 26);
+  s += lb(22, 152, 'บัญชี G/L') + fd(118, 143, 76, 20, r0(x), 'g') + lb(202, 152, 'ค่าฝึกอบรม');
+  s += lb(22, 176, 'รหัสบริษัท') + fd(118, 166, 36, 20, '1000', 'g') + lb(160, 176, 'การประปาส่วนภูมิภาค');
+  s += pn(20, 207, 590, 308, 'รายการ 1 / รายการเดบิต / 40');
+  s += lb(30, 240, 'จำนวนเงิน') + fd(138, 228, 120, 24, money(r2(x.gross - x.vat)), 'r') + lb(266, 240, 'THB');
+  s += lb(30, 262, 'รหัสภาษี') + fd(138, 253, 24, 20, 'V7', 'g') + cbx(318, 256, false, true) + lb(334, 262, 'คำนวณภาษี');
+  s += lb(30, 284, 'ที่ประกอบธุรกิจ') + fd(138, 274, 34, 20, '', '');
+  s += lb(30, 306, 'เขตธุรกิจ') + fd(138, 296, 38, 20, CONST.branchNo, '') + lb(306, 306, 'Trdg part.BA') + fd(430, 296, 34, 20, '', '');
+  s += lb(30, 328, 'ศูนย์ต้นทุน') + fd(138, 318, 74, 20, CONST.costCenter, '');
+  s += lb(306, 351, 'สินทรัพย์') + fd(430, 341, 90, 20, '', '') + fd(522, 341, 32, 20, '', '');
+  s += lb(30, 372, 'องค์ประกอบ WBS') + fd(138, 361, 172, 22, c.wbs, '') + lb(306, 372, 'โครงข่าย') + fd(430, 362, 90, 20, '', '') + fd(522, 362, 32, 20, '', '');
+  s += btn(522, 383, 76, 22, '➜ มากกว่า');
+  s += lb(30, 416, 'เอกสารการจัดซื้อ') + fd(144, 406, 74, 20, '', '') + fd(222, 406, 40, 20, '', '');
+  s += lb(306, 437, 'ปริมาณ') + fd(430, 428, 122, 20, '', '') + fd(556, 428, 26, 20, '', '');
+  s += lb(30, 459, 'การกำหนด') + fd(144, 449, 130, 22, first, '') + lb(306, 459, 'ตัดจำหน่าย ท/ส') + cbx(430, 453, false);
+  s += lb(30, 482, 'ข้อความ') + fd(144, 472, 352, 22, c.text, '') + btn(504, 470, 96, 24, '✎ ข้อความยาว');
+  s += pn(20, 520, 590, 52, 'บรรทัดรายการถัดไป');
+  s += lb(28, 551, 'PstKy') + fd(84, 541, 20, 20, '', '') + lb(110, 551, 'บัญชี') + fd(162, 541, 122, 20, '', '') + lb(288, 551, 'SGL Ind') + fd(344, 542, 13, 20, '', '') + lb(358, 551, 'TType') + fd(436, 541, 26, 20, '', '') + lb(470, 551, 'รหัสบริษัทใ') + fd(554, 541, 34, 20, '', '');
+  return canvas(970, 740, s);
+}
+const r0 = x => x.r.acct || CONST.expAcct;
+
 /* ── slides ── */
 function slideHtml(x){
   const c = calc(x), r = x.r, b = ST.sap.borrower, rc = rec(x.key);
   const first = b.first || '';
-  switch (ST.slide) {
+  const key = curSlides()[ST.slide][0];
+  const mis = c.vatMismatch;
+  switch (key) {
     case 0: return {
       mock: scr0(),
       todo: `<h4>ขั้นที่ 0 — เปิดหน้าจอ</h4>${T('คำสั่ง', 'F-43')}<div class="note">พิมพ์ในช่องคำสั่งมุมซ้ายบน แล้วกด Enter — เข้าหน้าหัวเอกสารทันที</div>` };
@@ -731,11 +812,13 @@ function slideHtml(x){
         <div class="note">พิมพ์ตัวเลขไม่ต้องมีคอมมา (มีจุดทศนิยมได้) · เสร็จแล้วไปที่เมนู <b>เอกสาร ▸ จำลอง</b> (กรอบแดงที่เมนูบนซ้าย)</div>` };
     case 5: {
       const am = sapAmounts(x, c), warn = [];
-      if (c.vatMismatch) warn.push(`⚠️ ภาษีที่ SAP คำนวณจากยอดเต็ม ≈ ${money(c.sapVat)} ไม่ตรงใบเสร็จ (VAT ${money(x.vat)}) — ภาพจำลองนี้แสดงตามที่ SAP จะคำนวณ ถ้าต้องการให้ตรงใบเสร็จต้องใช้ขั้นตอน "ภาษีไม่ตรง" (ยังไม่เปิดใช้)`);
+      if (c.vatMismatch) warn.push(`⚠️ ภาษีที่ SAP คำนวณจากยอดเต็ม ≈ ${money(c.sapVat)} ไม่ตรงใบเสร็จ (VAT ${money(x.vat)}) — ภาพจำลองนี้แสดงตามที่ SAP จะคำนวณ `);
       if (x.wht > 0) warn.push(`⚠️ ใบเสร็จนี้มีภาษีหัก ณ ที่จ่าย ${money(x.wht)} — ขั้นตอนหน้าจอหักภาษียังไม่เปิดใช้งาน`);
       return {
-        mock: scr5(x, c, false),
-        todo: `<h4>ตรวจในกรอบแดง ก่อนบันทึก</h4>
+        mock: scr5(x, c, false, mis ? { area: false, row: 2 } : {}),
+        todo: mis ? `<h4>ภาษีที่ SAP คำนวณไม่ตรงใบเสร็จ</h4>
+          <div class="notice warn" style="margin:0;grid-column:1/-1">SAP คำนวณภาษีซื้อ <b>${money(c.sapVat)}</b> แต่ใบเสร็จระบุ VAT <b>${money(x.vat)}</b> → ต้องแก้ให้ตรงใบเสร็จ</div>
+          <div class="note">ดับเบิลคลิกที่บรรทัด <b>ภาษีซื้อ</b> (กรอบแดง) แล้วกด ถัดไป ▶ เพื่อทำตามขั้นตอนแก้ภาษี (5 ขั้น)</div>` : `<h4>ตรวจในกรอบแดง ก่อนบันทึก</h4>
           <div class="note">${c.hasVat ? 'มี VAT → 3 บรรทัด: ค่าใช้จ่าย (40) · เจ้าหนี้ (31) · ภาษีซื้อ ' + CONST.vatAcct + ' (40)' : 'ไม่มี VAT → 2 บรรทัด: ค่าใช้จ่าย (40) · เจ้าหนี้ (31)'}</div>
           ${T('ค่าใช้จ่ายที่ควรเห็น', money(am.exp))}
           ${c.hasVat ? T('ภาษีซื้อที่ควรเห็น', money(am.vat)) : ''}
@@ -743,10 +826,26 @@ function slideHtml(x){
           <div class="note" style="background:var(--green-bg);color:#0f5a34"><b>เช็กบรรทัดล่างสุดต้องเป็น 0.00</b> (D = C) จึงจะกดบันทึกได้</div>
           ${warn.map(w => `<div class="notice warn" style="margin:0">${esc(w)}</div>`).join('')}` };
     }
+    case 'f1': return { mock: scrF1(x, c), todo: `<h4>ได้หน้าบรรทัดภาษีซื้อ (ช่องยอดแก้ไม่ได้)</h4>
+        <div class="note">ช่องสีเทาแก้ไม่ได้ → ให้พิมพ์ที่ "บรรทัดรายการถัดไป" แทน แล้วกด Enter</div>
+        ${T('PstKy', CONST.pstKyExp)}${T('บัญชี', CONST.vatAcct)}` };
+    case 'f2': return { mock: scrF2(x, c), todo: `<h4>พิมพ์ยอดภาษีตามใบเสร็จ</h4>
+        ${T('จำนวนเงิน (VAT ตามใบเสร็จ)', money(x.vat))}${T('ฐานคำนวณภาษี', money(r2(x.gross - x.vat)))}
+        ${T('การกำหนด', ST.sap.borrower.first || '')}${T('ข้อความ', c.text, {limit:TEXT_LIMIT})}
+        <div class="note">เสร็จแล้วไปที่เมนู <b>เอกสาร ▸ จำลอง</b> (กรอบแดงที่เมนูบนซ้าย)</div>` };
+    case 'f3': return { mock: scr5(x, c, false, { amt: 'unbal', area: false, row: 0 }), todo: `<h4>ยอดยังไม่สมดุล (ผลต่าง ${money(x.vat)}) — ปกติ</h4>
+        <div class="note">เพราะบรรทัดค่าใช้จ่ายยังเป็นยอดเต็ม ${money(x.gross)} → <b>ดับเบิลคลิกที่บรรทัดแรก (ค่าฝึกอบรม)</b> ตามกรอบแดง เพื่อแก้ยอด</div>` };
+    case 'f4': return { mock: scrF4(x, c), todo: `<h4>ลดยอดค่าใช้จ่ายเป็นยอดก่อน VAT</h4>
+        ${T('จำนวนเงิน', money(r2(x.gross - x.vat)))}
+        <div class="note" style="background:var(--amber-bg);color:#7a4a00">ช่อง <b>"คำนวณภาษี" ต้องไม่ติ๊ก</b> (กรอบแดง) — ถ้ามีเครื่องหมายติ๊กอยู่ให้เอาออก เพราะถ้าติ๊ก SAP จะคำนวณภาษีอัตโนมัติซ้ำอีกรอบ (เราคีย์บรรทัดภาษีเองแล้ว)</div>
+        <div class="note">เสร็จแล้วคลิก <b>ปุ่มรูปภูเขา</b> ซ้ายสุดของแถบปุ่ม (กรอบแดง) เพื่อกลับหน้าภาพรวม</div>` };
+    case 'f5': return { mock: scr5(x, c, true, { amt: 'fixed', area: true }), todo: `<h4>ตรวจผลต่างต้องเป็น 0.00</h4>
+        ${T('ค่าใช้จ่าย', money(r2(x.gross - x.vat)))}${T('ภาษีซื้อ', money(x.vat))}${T('เจ้าหนี้', money(x.gross))}
+        <div class="note" style="background:var(--green-bg);color:#0f5a34"><b>D = C และผลต่าง 0.00</b> → กดบันทึก (ไอคอนแผ่นดิสก์) ได้ ต่อที่ขั้นถัดไปเพื่อจดเลขเอกสาร</div>` };
     default: {
       const dup = Object.keys(ST.sap.receipts).filter(k => k !== x.key && rec(k).doc && rc.doc && rec(k).doc === rc.doc);
       return {
-        mock: scr5(x, c, true),
+        mock: scr5(x, c, true, mis ? { amt: 'fixed' } : {}),
         todo: `<h4>บันทึก & จดเลขเอกสาร</h4>
           <div class="note">ผลต่าง = 0.00 แล้ว → กดไอคอนแผ่นดิสก์ (กรอบแดงบนซ้าย) → SAP แจ้งเลขเอกสาร · เลขนี้ต้องใช้ต่อใน F-30 (เงินยืม − บิล − เงินคืน = 0)</div>
           <div class="keylab">✍️ พิมพ์เลขเอกสาร SAP 10 หลัก (ตัวเลขในกรอบแดงซ้ายล่างของจอ) ลงในช่องสีเหลืองนี้</div>
@@ -788,14 +887,15 @@ function renderStage(){
     return;
   }
   const s = slideHtml(x);
-  const dots = SLIDES.map((n, i) => `<div class="dot ${i === ST.slide ? 'on' : (i < ST.slide ? 'past' : '')}" title="${esc(n)}" onclick="goSlide(${i})"></div>`).join('');
-  const last = ST.slide === SLIDES.length - 1;
+  const SL = curSlides();
+  const dots = SL.map(([k, n], i) => `<div class="dot ${i === ST.slide ? 'on' : (i < ST.slide ? 'past' : '')}" title="${esc(n)}" onclick="goSlide(${i})"></div>`).join('');
+  const last = ST.slide === SL.length - 1;
   const warnBar = [];
   if (!ST.sap.posting) warnBar.push('ยังไม่ได้ระบุ "วันผ่านรายการ"');
   if (!ST.sap.borrower.first || !ST.sap.borrower.empId) warnBar.push('ยังไม่ได้ระบุรหัส/ชื่อต้นผู้ยืม');
   if (!x.date) warnBar.push('ใบเสร็จนี้ไม่มี "ลงวันที่" ในไฟล์ 06');
   st.innerHTML = head + `<div class="dots">${dots}</div>
-    <div class="sub" style="margin:-8px 0 10px;font-weight:600;color:var(--navy)">ขั้นที่ ${ST.slide} / ${SLIDES.length - 1} — ${esc(SLIDES[ST.slide])}</div>
+    <div class="sub" style="margin:-8px 0 10px;font-weight:600;color:var(--navy)">ขั้นที่ ${ST.slide} / ${SL.length - 1} — ${esc(SL[ST.slide][1])}</div>
     ${warnBar.length ? `<div class="notice warn">${warnBar.map(esc).join(' · ')}</div>` : ''}
     <div class="slide"><div>${s.mock}</div><div class="todo">${s.todo}</div></div>
     <div class="nav"><button class="btn sec" onclick="prevStep()" ${ST.slide === 0 ? 'disabled' : ''}>◀ ก่อนหน้า</button>
