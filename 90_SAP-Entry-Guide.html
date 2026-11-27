@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>คู่มือคีย์ใบเสร็จลง SAP (F-43) — กฝภ.1</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0f2744; --navy-mid:#1a3a5c; --blue:#1d5fa8; --blue-light:#3178c6;
+  --accent:#e8a020; --accent-light:#f5c842;
+  --gray-50:#f7f8fa; --gray-100:#eef0f4; --gray-200:#dde1e9; --gray-400:#8f97a8;
+  --text:#1e2533; --text-soft:#4f5a6e; --border:#dde1e9;
+  --green:#1a7a4a; --green-bg:#eaf5ef; --amber:#b87000; --amber-bg:#fef7ea;
+  --info:#1d5fa8; --info-bg:#eaf1fb; --red:#c0392b; --red-bg:#fdf0f0;
+  --sap-bg:#e9edf2; --sap-bar:#2b5d8f;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',sans-serif;background:var(--gray-50);color:var(--text);font-size:14px;line-height:1.6}
+.site-header{background:var(--navy);color:#fff;position:sticky;top:0;z-index:200;box-shadow:0 2px 12px rgba(0,0,0,.25)}
+.header-inner{max-width:1180px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.header-title{display:flex;align-items:center;gap:12px}
+.header-icon{width:38px;height:38px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.header-text h1{font-size:15px;font-weight:600}
+.header-text p{font-size:11px;color:rgba(255,255,255,.55)}
+.btn-back{padding:6px 14px;border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.85);background:transparent;border-radius:6px;font-family:inherit;font-size:12px;cursor:pointer}
+.btn-back:hover{background:rgba(255,255,255,.1)}
+.page{max-width:1180px;margin:0 auto;padding:20px 24px 60px}
+.box{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:14px}
+.box h3{font-size:12px;font-weight:700;color:var(--text-soft);margin-bottom:10px;letter-spacing:.03em}
+.grid{display:grid;gap:10px}
+.g4{grid-template-columns:repeat(4,1fr)}
+.f{display:flex;flex-direction:column;gap:3px}
+.f label{font-size:11px;font-weight:600;color:var(--text-soft)}
+.f input,.f select{padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;color:var(--text);background:#fff}
+.f input:focus,.f select:focus{outline:none;border-color:var(--blue)}
+.btn{padding:7px 16px;border:none;border-radius:6px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;background:var(--blue);color:#fff}
+.btn:hover{background:var(--blue-light)}
+.btn.sec{background:#fff;color:var(--blue);border:1px solid var(--blue)}
+.btn.sec:hover{background:var(--info-bg)}
+.btn.ok{background:var(--green)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.notice{border-radius:8px;padding:9px 14px;font-size:12.5px;margin-bottom:10px;border:1px solid}
+.notice.warn{background:var(--amber-bg);border-color:var(--accent);color:#7a4a00}
+.notice.err{background:var(--red-bg);border-color:var(--red);color:#8c1f14}
+.notice.info{background:var(--info-bg);border-color:var(--blue);color:var(--navy)}
+.notice.ok{background:var(--green-bg);border-color:var(--green);color:#0f5a34}
+.layout{display:grid;grid-template-columns:270px 1fr;gap:16px;align-items:start}
+.rlist{background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;position:sticky;top:76px;max-height:calc(100vh - 96px);overflow-y:auto}
+.rlist-h{background:var(--navy);color:#fff;font-size:12px;font-weight:600;padding:9px 14px}
+.ritem{padding:9px 14px;border-bottom:1px solid var(--border);cursor:pointer;font-size:12.5px}
+.ritem:hover{background:var(--gray-50)}
+.ritem.cur{background:var(--info-bg);border-left:4px solid var(--blue);padding-left:10px}
+.ritem .n{font-weight:600;color:var(--navy)}
+.ritem .s{color:var(--text-soft);font-size:11.5px}
+.chip{display:inline-block;font-size:10.5px;font-weight:700;border-radius:10px;padding:0 8px;margin-left:4px}
+.chip.done{background:var(--green-bg);color:var(--green)}
+.chip.todo{background:var(--gray-100);color:var(--gray-400)}
+.chip.park{background:var(--amber-bg);color:var(--amber)}
+.stage{background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px 20px}
+.stage-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.stage-h h2{font-size:16px;color:var(--navy)}
+.stage-h .sub{font-size:12px;color:var(--text-soft)}
+.dots{display:flex;gap:6px;margin:6px 0 14px}
+.dot{width:26px;height:6px;border-radius:3px;background:var(--gray-200);cursor:pointer}
+.dot.on{background:var(--blue)} .dot.past{background:#9db9dd}
+.slide{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px}
+/* ── SAP mock ── */
+.sap{background:var(--sap-bg);border:1px solid #b9c2cf;border-radius:4px;font-family:Tahoma,'Sarabun',sans-serif;font-size:12.5px;overflow:hidden}
+.sap-bar{background:var(--sap-bar);color:#fff;padding:4px 10px;font-size:12px;display:flex;justify-content:space-between}
+.sap-menu{background:#d5dbe4;padding:3px 10px;font-size:11.5px;color:#333;border-bottom:1px solid #b9c2cf}
+.sap-menu b{background:#fff3b0;border:1px solid #d9b900;padding:0 4px}
+.sap-body{padding:10px 12px}
+.sap-sec{font-weight:700;color:#244;margin:8px 0 4px;border-bottom:1px solid #b9c2cf;font-size:12px}
+.sap-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.sap-row .l{width:150px;color:#333;flex-shrink:0;font-size:12px}
+.sap-row .v{flex:1;min-width:0;background:#fff;border:1px solid #8c97a6;padding:2px 6px;min-height:22px;word-break:break-all}
+.sap-row .v.red{border:2px solid var(--red);background:#fffdfb;font-weight:600}
+.sap-row .v.fixed{background:#f1f3f6;color:#666;border-style:dashed}
+.sap-row .v.empty{color:#bbb;font-style:italic}
+.sap-row .tag{font-size:10.5px;color:#777;flex-shrink:0;width:52px}
+.cmd{background:#fff;border:2px solid var(--red);width:180px;padding:3px 8px;font-weight:700}
+.chk{display:inline-block;width:14px;height:14px;border:1px solid #555;background:#fff;text-align:center;line-height:12px;font-size:12px;vertical-align:middle}
+.chk.on{background:#fff;border:2px solid var(--red)}
+table.ov{width:100%;border-collapse:collapse;background:#fff;font-size:12px}
+table.ov th{background:#d5dbe4;border:1px solid #9aa5b4;padding:3px 6px;font-weight:600}
+table.ov td{border:1px solid #c6cdd8;padding:3px 6px}
+table.ov td.r{text-align:right;font-variant-numeric:tabular-nums}
+table.ov tr.sum td{background:#fff3b0;font-weight:700}
+.legend{font-size:11.5px;color:var(--text-soft);margin-top:6px;display:flex;gap:14px;flex-wrap:wrap}
+.legend i{display:inline-block;width:12px;height:12px;vertical-align:middle;margin-right:4px}
+.legend .r{border:2px solid var(--red)} .legend .d{border:1px dashed #888;background:#f1f3f6}
+/* ── instruction list ── */
+.todo{display:flex;flex-direction:column;gap:7px}
+.todo h4{font-size:13px;color:var(--navy);margin-bottom:2px}
+.t{display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:8px;padding:7px 10px;background:#fff}
+.t .tl{font-size:11.5px;color:var(--text-soft);width:112px;flex-shrink:0}
+.t .tv{flex:1;min-width:0;font-weight:600;word-break:break-all;color:var(--navy)}
+.t .cp{padding:2px 10px;font-size:11.5px;border:1px solid var(--blue);background:var(--info-bg);color:var(--blue);border-radius:5px;cursor:pointer;font-family:inherit;flex-shrink:0}
+.t .cp:hover{background:var(--blue);color:#fff}
+.t .cp.copied{background:var(--green);border-color:var(--green);color:#fff}
+.t.skip{background:var(--gray-50)}
+.t.skip .tv{color:var(--gray-400);font-weight:400}
+.t .cnt{font-size:11px;color:var(--gray-400);flex-shrink:0}
+.t .cnt.over{color:var(--red);font-weight:700}
+.note{font-size:12px;color:var(--text-soft);background:var(--gray-50);border-radius:6px;padding:6px 10px}
+.nav{display:flex;justify-content:space-between;align-items:center;margin-top:16px;gap:10px;flex-wrap:wrap}
+.nav .mid{font-size:12px;color:var(--text-soft)}
+.park-box{text-align:center;padding:40px 16px;color:var(--text-soft)}
+.park-box .ic{font-size:40px;margin-bottom:8px}
+#denied{display:none;max-width:480px;margin:90px auto;text-align:center;background:#fff;border:1px solid var(--border);border-radius:12px;padding:30px}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.rlist{position:static;max-height:240px}.slide{grid-template-columns:1fr}.g4{grid-template-columns:1fr 1fr}.header-inner,.page{padding-left:16px;padding-right:16px}}
+</style>
+
+<!-- shared modules: ลำดับตายตัว -->
+<script src="js/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/auth.js"></script>
+<script src="js/date-th.js"></script>
+<script src="js/gas-api.js"></script>
+<script src="js/schema.js"></script>
+<script src="js/permissions.js"></script>
+<script>checkAuth();</script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-title">
+      <div class="header-icon">🧾</div>
+      <div class="header-text">
+        <h1>คู่มือคีย์ใบเสร็จลง SAP (F-43)</h1>
+        <p>เครื่องมือผู้ดูแลระบบ · กฝภ.1 กปภ.</p>
+      </div>
+    </div>
+    <button class="btn-back" onclick="location.href='01_Main-Reports.html'">← ย้อนกลับ</button>
+  </div>
+</header>
+
+<div id="denied">
+  <div style="font-size:40px">🔒</div>
+  <h2 style="margin:8px 0">หน้านี้สำหรับผู้ดูแลระบบ (Admin) เท่านั้น</h2>
+  <p style="color:var(--text-soft)">กำลังพากลับหน้าหลัก...</p>
+</div>
+
+<div class="page" id="app" style="display:none">
+
+  <div class="box">
+    <h3>📌 หลักสูตร</h3>
+    <div class="grid" style="grid-template-columns:200px 1fr auto;align-items:end">
+      <div class="f"><label>เลขที่รุ่นหลักสูตร</label><input type="text" id="inNo" placeholder="เช่น 01320828"></div>
+      <div class="f"><label>ชื่อหลักสูตร</label><input type="text" id="inCourse" readonly style="background:var(--gray-100)"></div>
+      <button class="btn" onclick="loadCourse()">โหลดข้อมูล</button>
+    </div>
+  </div>
+
+  <div id="notices"></div>
+
+  <div class="box" id="courseSettings" style="display:none">
+    <h3>⚙️ ค่าที่ใช้ร่วมกันทั้งหลักสูตร</h3>
+    <div class="grid g4" style="align-items:end">
+      <div class="f"><label>วันผ่านรายการ (วันที่ ผอ. ลงนามอนุมัติ)</label><input type="date" id="inPosting" onchange="onSettings('posting')"></div>
+      <div class="f"><label>รหัสพนักงานผู้ยืม (ค่าเริ่มต้น = ผู้ login · แก้ได้)</label><input type="text" id="inEmp" placeholder="เช่น 510123" onchange="onSettings('borrower')"></div>
+      <div class="f"><label>ชื่อต้นผู้ยืม (ค่าเริ่มต้น = ผู้ login · แก้ได้)</label><input type="text" id="inFirst" placeholder="เช่น คมกฤช" onchange="onSettings('borrower')"></div>
+      <div style="display:flex;gap:8px;align-items:center;justify-content:flex-end">
+        <span id="progress" style="font-size:12px;color:var(--text-soft)"></span>
+        <button class="btn ok" id="btnSave" onclick="saveSap()">💾 บันทึก</button>
+      </div>
+    </div>
+    <div id="dirtyNote" class="note" style="margin-top:8px;display:none">มีข้อมูลที่ยังไม่ได้บันทึก</div>
+  </div>
+
+  <div class="layout" id="main" style="display:none">
+    <div class="rlist"><div class="rlist-h">ใบเสร็จเงินยืม <span id="rcount"></span></div><div id="rlist"></div></div>
+    <div class="stage" id="stage"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   90_SAP-Entry-Guide — คู่มือคีย์ใบเสร็จลง SAP F-43 (เฉพาะ admin, ซ่อนจากเมนูทั่วไป)
+   - ข้อมูลใบเสร็จอ่านจาก actual06.rowsJson (ไฟล์ 06) — ไม่เขียนทับ
+   - ข้อมูลที่ผู้ใช้กรอกที่นี่ (วันผ่านรายการ/เลขอ้างอิง/เลขเอกสาร SAP) เก็บใน actual06.sapJson
+   - UI-level guard เท่านั้น (ไม่ใช่ security backend) ตามหลัก Permission-System-Guide
+   ============================================================ */
+const CONST = { branchNo:'1801', pstKyExp:'40', pstKyVend:'31', expAcct:'6212001', costCenter:'100024',
+                wbsPrefix:'1F', vatAcct:'1191001', company:'1000' };
+const ACCT_PERSON = 'OTH03-00', ACCT_JURISTIC = 'OTH53-00';
+const SAP_LIMIT = 35, TEXT_LIMIT = 50;
+
+/* ── ชื่อสั้นสำหรับ "ข้อความ" (ตกลงกับผู้ใช้แล้ว) ── */
+const SEC_SHORT = {}, SUB_SHORT = {};
+(function(){
+  const S = SchemaTH.SEC, U = SchemaTH.SUB;
+  const sec = (k, v) => { if (k) SEC_SHORT[k] = v; };
+  const sub = (k, v) => { if (k) SUB_SHORT[k] = v; };
+  sec(S.FUEL, 'ค่าน้ำมันเชื้อเพลิง'); sec(S.OFFICE, 'ค่าเครื่องเขียนแบบพิมพ์'); sec(S.MISC, 'ค่าวัสดุเบ็ดเตล็ด');
+  sec(S.LUMP, 'ค่าจ้างเหมา'); sec(S.VENUE, 'ค่าเช่าห้องประชุม'); sec(S.FOOD, 'ค่าอาหารและเครื่องดื่ม');
+  sec(S.STAFF_TRAVEL, 'ค่าพาหนะเจ้าหน้าที่'); sec(S.EXT, 'ค่าสมนาคุณวิทยากร');
+  sub(U.OFFICE_STATIONERY, 'ค่าเครื่องเขียนแบบพิมพ์'); sub(U.OFFICE_COPY, 'ค่าถ่ายเอกสารและเข้าเล่ม');
+  sub(U.VENUE_MEETING, 'ค่าเช่าห้องประชุม'); sub(U.VENUE_VIP_LODGING, 'ค่าเช่าห้องพักประธาน');
+  sub(U.VENUE_STAFF_LODGING, 'ค่าเช่าห้องพักผู้เข้าอบรม');
+  sub(U.FOOD_LUNCH_SNACK, 'ค่าอาหารและเครื่องดื่ม'); sub(U.FOOD_LUNCH, 'ค่าอาหารกลางวัน');
+  sub(U.FOOD_SNACK, 'ค่าอาหารว่างและเครื่องดื่ม'); sub(U.FOOD_DINNER, 'ค่าอาหารเย็น');
+  sub(U.FOOD_SPEAKER_DINNER, 'ค่าอาหารเย็นวิทยากร');
+  sub(U.STAFF_ALLOWANCE, 'ค่าเบี้ยเลี้ยงเจ้าหน้าที่'); sub(U.STAFF_LODGING, 'ค่าที่พักเจ้าหน้าที่');
+  sub(U.STAFF_TRANSPORT, 'ค่าพาหนะเจ้าหน้าที่');
+  sub(U.EXT_HONORARIUM, 'ค่าสมนาคุณวิทยากร'); sub(U.EXT_LODGING, 'ค่าที่พักวิทยากร'); sub(U.EXT_TRAVEL, 'ค่าเดินทางวิทยากร');
+})();
+function shortName(r){ return (r.sub && SUB_SHORT[r.sub]) || SEC_SHORT[r.sec] || '(ไม่ระบุหมวด)'; }
+
+/* ── legacy-row shim (เหมือนไฟล์ 06/07) ── */
+const LEGACY_SEC = { '1':SchemaTH.SEC.OFFICE, '2':SchemaTH.SEC.MISC, '3':SchemaTH.SEC.FOOD, '4':SchemaTH.SEC.STAFF_TRAVEL };
+const LEGACY_SUB = {
+  '1_1':SchemaTH.SUB.OFFICE_STATIONERY, '1_2':SchemaTH.SUB.OFFICE_COPY,
+  'venue_meet':SchemaTH.SUB.VENUE_MEETING, 'venue_vip':SchemaTH.SUB.VENUE_VIP_LODGING, 'venue_staff':SchemaTH.SUB.VENUE_STAFF_LODGING,
+  '3_12':SchemaTH.SUB.FOOD_LUNCH_SNACK, '3_dinner':SchemaTH.SUB.FOOD_DINNER, '3_3':SchemaTH.SUB.FOOD_SPEAKER_DINNER,
+  '4_1':SchemaTH.SUB.STAFF_ALLOWANCE, '4_2':SchemaTH.SUB.STAFF_LODGING, '4_3':SchemaTH.SUB.STAFF_TRANSPORT,
+  'ext_honor':SchemaTH.SUB.EXT_HONORARIUM, 'ext_lodging':SchemaTH.SUB.EXT_LODGING, 'ext_travel':SchemaTH.SUB.EXT_TRAVEL,
+  'int_honor':SchemaTH.SUB.INT_HONORARIUM, 'int_lodging':'', 'int_travel':''
+};
+function migrateRow(r){
+  if (r && r.sec && LEGACY_SEC[r.sec] !== undefined) r.sec = LEGACY_SEC[r.sec];
+  if (r && r.sub && LEGACY_SUB[r.sub] !== undefined) r.sub = LEGACY_SUB[r.sub];
+  return r;
+}
+
+/* ── helpers ── */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num = x => parseFloat(x) || 0;
+const r2 = x => Math.round((x + Number.EPSILON) * 100) / 100;
+const money = x => r2(x).toFixed(2);              // SAP: ไม่มีคอมมา มีจุดทศนิยม
+const moneyShow = x => r2(x).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+function ddmmyyyy(iso){                             // วันที่ → ddmmyyyy (ค.ศ.)
+  const d = DateTH.normalize(iso || '');
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d || '');
+  return m ? m[3] + m[2] + m[1] : '';
+}
+function normIso(s){ const d = DateTH.normalize(s || ''); const m = /^(\d{4}-\d{2}-\d{2})/.exec(d || ''); return m ? m[1] : ''; }
+
+/* ── กฎของ SAP ── */
+function classifyVendor(taxid){
+  const t = String(taxid || '').replace(/\D/g, '');
+  if (t.length !== 13) return { ok:false, why: t ? 'เลขผู้เสียภาษีไม่ครบ 13 หลัก' : 'ไม่มีเลขผู้เสียภาษี' };
+  if (t[0] === '0') return { ok:true, acct:ACCT_JURISTIC, type:'juristic', taxLabel:'เลขที่ภาษี 3' };
+  if ('12345678'.includes(t[0])) return { ok:true, acct:ACCT_PERSON, type:'person', taxLabel:'เลขที่ภาษี 1' };
+  return { ok:false, why:'เลขผู้เสียภาษีขึ้นต้นด้วย 9 (ไม่เข้ากฎ)' };
+}
+function cityText(r){
+  const isBkk = /กทม|กรุงเทพ/.test(r.province || '');
+  const t = r.tambon ? (isBkk ? 'แขวง' : 'ต.') + r.tambon : '';
+  const a = r.amphoe ? (isBkk ? 'เขต' : 'อ.') + r.amphoe : '';
+  const p = r.province ? (isBkk ? r.province : 'จ.' + r.province) : '';
+  return [t, a, p].filter(Boolean).join(' ');
+}
+function isStaffVoucher(r){ return r.sec === SchemaTH.SEC.STAFF_TRAVEL && r.sub !== SchemaTH.SUB.STAFF_TRANSPORT; }
+
+/* ── ผู้ใช้ที่ login (sessionStorage.currentUser = {empId, name, role}) → ชื่อต้น ── */
+function firstNameOf(full){
+  let t = String(full || '').trim().replace(/\s+/g, ' ');
+  const titles = ['นางสาว','น.ส.','นาง','นาย','ว่าที่ร้อยตรี','ว่าที่ ร.ต.','ดร.','ผศ.','รศ.','ศ.'];
+  let again = true;
+  while (again) { again = false; for (const ti of titles) { if (t.startsWith(ti)) { t = t.slice(ti.length).trim(); again = true; break; } } }
+  return t.split(' ')[0] || '';
+}
+function loginUser(){
+  try { const u = JSON.parse(sessionStorage.getItem('currentUser') || 'null') || {};
+        return { empId: String(u.empId || '').trim(), first: firstNameOf(u.name) }; }
+  catch(e){ return { empId:'', first:'' }; }
+}
+
+/* ── state ── */
+const ST = { no:'', course:'', rows:[], sap:{ posting:'', borrower:{empId:'', first:''}, receipts:{} },
+             cur:0, slide:0, dirty:new Set(), loadedOk:false, orphans:[] };
+const SLIDES = ['พิมพ์คำสั่ง F-43','หน้าหัวเอกสาร','บรรทัดค่าใช้จ่าย (G/L)','ที่อยู่ผู้ขาย (one-time)','บรรทัดเจ้าหนี้','ตรวจสอบ (จำลอง)','บันทึก & จดเลขเอกสาร'];
+
+function buildReceipts(rawRows){
+  const seen = {}, out = [];
+  rawRows.forEach(r0 => {
+    const r = migrateRow({...r0});
+    if (!SchemaTH.LOAN_SECTIONS.has(r.sec)) return;           // เฉพาะหมวดเงินยืม
+    const staffRow = isStaffVoucher(r);
+    const vendorName = staffRow ? (r.staff || '') : (r.name || '');
+    const val = num(r.val), vat = num(r.vat), wht = num(r.wht);
+    const gross = r2(val + vat);
+    const date = normIso(r.date);
+    let key = [vendorName, date, gross.toFixed(2)].join('|');
+    seen[key] = (seen[key] || 0) + 1; if (seen[key] > 1) key += '#' + seen[key];
+    out.push({ key, r, staffRow, vendorName, val, vat, wht, gross, date });
+  });
+  return out;
+}
+const rec = k => (ST.sap.receipts[k] = ST.sap.receipts[k] || { ref:'', doc:'', ovr:'' });
+const isDone = k => !!(ST.sap.receipts[k] && ST.sap.receipts[k].doc);
+const curRc = () => ST.rows[ST.cur];
+
+/* ── โหลด ── */
+function notice(kind, html){ document.getElementById('notices').insertAdjacentHTML('beforeend', `<div class="notice ${kind}">${html}</div>`); }
+function parseSap(s){
+  try { const o = typeof s === 'string' ? JSON.parse(s) : s; if (o && typeof o === 'object') return o; } catch(e){}
+  return null;
+}
+async function loadCourse(){
+  const no = document.getElementById('inNo').value.trim();
+  if (!no) { alert('กรุณาระบุเลขที่รุ่นหลักสูตร'); return; }
+  document.getElementById('notices').innerHTML = '';
+  showGsLoader('📥 กำลังโหลดข้อมูล');
+  const result = await gsApi('getByNo', null, no);
+  hideGsLoader();
+  if (result === null) { notice('err', '❌ โหลดไม่สำเร็จ — ตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่'); return; }
+  const a06 = result && result.actual06 ? result.actual06 : null;
+  document.getElementById('inCourse').value = (result.course && result.course.course) || '';
+  ST.no = no; ST.course = (result.course && result.course.course) || '';
+  document.getElementById('courseSettings').style.display = 'none';
+  document.getElementById('main').style.display = 'none';
+  if (!a06 || !a06.rowsJson) {
+    notice('warn', '⚠️ ยังไม่มีรายการใบเสร็จของเลขที่ ' + esc(no) + ' ในไฟล์ 06 — ให้บันทึกที่ไฟล์ 06 ก่อน แล้วค่อยกลับมาหน้านี้');
+    return;
+  }
+  let raw = [];
+  try { raw = typeof a06.rowsJson === 'string' ? JSON.parse(a06.rowsJson) : a06.rowsJson; } catch(e){ raw = []; }
+  ST.rows = buildReceipts(raw || []);
+  const saved = parseSap(a06.sapJson);
+  ST.sap = { posting:'', borrower:{empId:'', first:''}, receipts:{} };
+  if (saved) {
+    ST.sap.posting = saved.posting || '';
+    ST.sap.borrower = Object.assign({empId:'', first:''}, saved.borrower || {});
+    ST.sap.receipts = saved.receipts || {};
+  }
+  ST.dirty = new Set(); ST.cur = 0; ST.slide = 0; ST.loadedOk = true;
+  // ผู้ยืม: ถ้ายังไม่เคยบันทึก ให้ดึงรหัส/ชื่อต้นจากผู้ที่ login อยู่เป็นค่าเริ่มต้น (แก้เป็นคนอื่นได้ที่ช่องด้านบน)
+  if (!ST.sap.borrower.empId && !ST.sap.borrower.first) {
+    const u = loginUser();
+    if (u.empId || u.first) { ST.sap.borrower = { empId: u.empId, first: u.first }; ST.dirty.add('borrower'); document.getElementById('dirtyNote').style.display = ''; }
+  }
+  // ใบเสร็จที่เคยบันทึกไว้แต่ตอนนี้ไม่พบ (ไฟล์ 06 อาจถูกแก้) — ไม่ลบทิ้ง แต่เตือน
+  const keys = new Set(ST.rows.map(x => x.key));
+  ST.orphans = Object.keys(ST.sap.receipts).filter(k => !keys.has(k) && (ST.sap.receipts[k].doc || ST.sap.receipts[k].ref));
+  if (ST.orphans.length) {
+    notice('warn', '⚠️ มีข้อมูล SAP ที่เคยบันทึกไว้ ' + ST.orphans.length + ' รายการ ที่ไม่พบใบเสร็จตรงกันในไฟล์ 06 แล้ว (ชื่อ/วันที่/ยอดอาจถูกแก้ไข) — ตรวจเลขเอกสารให้ตรงกับใบเสร็จจริง:<br>' +
+      ST.orphans.map(k => '• ' + esc(k.replace(/#\d+$/, '')) + (ST.sap.receipts[k].doc ? ' — เลขเอกสาร ' + esc(ST.sap.receipts[k].doc) : '')).join('<br>'));
+  }
+  if (!ST.rows.length) { notice('info', 'ไม่พบใบเสร็จหมวดเงินยืมในไฟล์ 06 ของหลักสูตรนี้'); return; }
+  document.getElementById('inPosting').value = ST.sap.posting || '';
+  document.getElementById('inEmp').value = ST.sap.borrower.empId || '';
+  document.getElementById('inFirst').value = ST.sap.borrower.first || '';
+  document.getElementById('courseSettings').style.display = '';
+  document.getElementById('main').style.display = '';
+  renderAll();
+}
+
+function onSettings(which){
+  ST.sap.posting = document.getElementById('inPosting').value;
+  ST.sap.borrower.empId = document.getElementById('inEmp').value.trim();
+  ST.sap.borrower.first = document.getElementById('inFirst').value.trim();
+  markDirty(which === 'posting' ? 'posting' : 'borrower');
+  renderStage();
+}
+function markDirty(k){ ST.dirty.add(k); document.getElementById('dirtyNote').style.display = ''; }
+
+/* ── บันทึก: อ่านซ้ำ → merge → เขียน → อ่านกลับตรวจ ── */
+async function saveSap(){
+  if (!ST.loadedOk) return;
+  if (!ST.dirty.size) { showGsStatus('ไม่มีการเปลี่ยนแปลงที่ต้องบันทึก', 'ok'); return; }
+  const btn = document.getElementById('btnSave'); btn.disabled = true;
+  showGsLoader('💾 กำลังบันทึก');
+  try {
+    const latest = await gsApi('getByNo', null, ST.no);
+    if (latest === null || !latest.actual06) { hideGsLoader(); showGsStatus('❌ บันทึกไม่สำเร็จ — อ่านข้อมูลล่าสุดไม่ได้', 'error'); return; }
+    const remote = parseSap(latest.actual06.sapJson) || {};
+    const merged = { posting: remote.posting || '', borrower: Object.assign({empId:'', first:''}, remote.borrower || {}), receipts: Object.assign({}, remote.receipts || {}) };
+    if (ST.dirty.has('posting')) merged.posting = ST.sap.posting;
+    if (ST.dirty.has('borrower')) merged.borrower = ST.sap.borrower;
+    ST.dirty.forEach(k => { if (k !== 'posting' && k !== 'borrower' && ST.sap.receipts[k]) {
+      const rc = ST.sap.receipts[k];
+      merged.receipts[k] = { ref: rc.ref || '', doc: rc.doc || '', ovr: rc.ovr || '', at: new Date().toISOString() };
+    }});
+    merged.v = 1;
+    const payload = JSON.stringify(merged);
+    const res = await gsApi('saveActual06', { no: ST.no, sapJson: payload });
+    if (!res) { hideGsLoader(); showGsStatus('❌ บันทึกไม่สำเร็จ กรุณาลองใหม่', 'error'); return; }
+    // อ่านกลับตรวจว่าคอลัมน์ sapJson มีอยู่จริงใน Sheet (upsertRow จะข้ามคอลัมน์ที่ไม่มี header เงียบๆ)
+    const back = await gsApi('getByNo', null, ST.no);
+    const got = back && back.actual06 ? parseSap(back.actual06.sapJson) : null;
+    hideGsLoader();
+    if (!got) {
+      showGsStatus('⚠️ บันทึกแล้วแต่อ่านกลับไม่พบ — ตรวจว่าแท็บ actual06 ใน Google Sheet มีหัวคอลัมน์ "sapJson" และ Code.gs เพิ่ม \'sapJson\' ใน COL_ACTUAL06 แล้ว', 'warn');
+      notice('err', '❌ ยังไม่ได้บันทึกจริง: ไม่พบคอลัมน์ <b>sapJson</b> — เพิ่มหัวคอลัมน์ในแท็บ actual06 (ต่อจาก rowsJson) และอัปเดต Code.gs ก่อน แล้วกดบันทึกใหม่');
+      return;
+    }
+    ST.sap.receipts = Object.assign({}, merged.receipts, ST.sap.receipts);
+    Object.keys(merged.receipts).forEach(k => { if (!ST.dirty.has(k)) ST.sap.receipts[k] = merged.receipts[k]; });
+    ST.dirty = new Set(); document.getElementById('dirtyNote').style.display = 'none';
+    showGsStatus('✅ บันทึกเรียบร้อย', 'ok');
+    renderAll();
+  } catch(e) {
+    hideGsLoader(); showGsStatus('❌ บันทึกไม่สำเร็จ: ' + e.message, 'error');
+  } finally { btn.disabled = false; }
+}
+
+/* ── render ── */
+function renderAll(){ renderList(); renderStage(); }
+function renderList(){
+  const done = ST.rows.filter(x => !x.staffRow && isDone(x.key)).length;
+  const total = ST.rows.filter(x => !x.staffRow).length;
+  document.getElementById('rcount').textContent = `(${done}/${total})`;
+  document.getElementById('progress').textContent = `คีย์แล้ว ${done}/${total} ใบ`;
+  document.getElementById('rlist').innerHTML = ST.rows.map((x, i) => {
+    const chip = x.staffRow ? '<span class="chip park">รอกำหนด</span>' : (isDone(x.key) ? '<span class="chip done">✓ ' + esc(rec(x.key).doc) + '</span>' : '<span class="chip todo">ยังไม่คีย์</span>');
+    return `<div class="ritem ${i === ST.cur ? 'cur' : ''}" onclick="goReceipt(${i})">
+      <div class="n">${i + 1}. ${esc(x.vendorName || '(ไม่ระบุชื่อ)')}</div>
+      <div class="s">${esc(shortName(x.r))} · ${moneyShow(x.gross)} ${chip}</div></div>`;
+  }).join('');
+}
+function goReceipt(i){ ST.cur = Math.max(0, Math.min(ST.rows.length - 1, i)); ST.slide = 0; renderAll(); window.scrollTo(0, 0); }
+function goSlide(s){ ST.slide = Math.max(0, Math.min(SLIDES.length - 1, s)); renderStage(); }
+function nextStep(){ if (ST.slide < SLIDES.length - 1) goSlide(ST.slide + 1); else if (ST.cur < ST.rows.length - 1) goReceipt(ST.cur + 1); }
+function prevStep(){ if (ST.slide > 0) goSlide(ST.slide - 1); }
+
+/* ── UI building blocks ── */
+function T(label, value, opt){            // รายการ "ต้องกรอก" + ปุ่มคัดลอก
+  opt = opt || {};
+  const v = String(value ?? '');
+  const cnt = opt.limit ? `<span class="cnt ${v.length > opt.limit ? 'over' : ''}">${v.length}/${opt.limit}</span>` : '';
+  const cp = v ? `<button class="cp" data-c="${encodeURIComponent(v)}" onclick="doCopy(this)">คัดลอก</button>` : '';
+  return `<div class="t"><div class="tl">${esc(label)}</div><div class="tv">${v ? esc(v) : '<span style="color:var(--red);font-weight:400">— ยังไม่มีข้อมูล —</span>'}</div>${cnt}${cp}</div>`;
+}
+function SKIP(label, value){ return `<div class="t skip"><div class="tl">${esc(label)}</div><div class="tv">${esc(value)}</div><span class="cnt">ไม่ต้องแตะ</span></div>`; }
+function M(label, value, kind, extra){     // แถวในจอ SAP จำลอง
+  const v = String(value ?? '');
+  return `<div class="sap-row"><div class="l">${esc(label)}</div><div class="v ${kind || ''} ${v ? '' : 'empty'}">${v ? esc(v) : '(ว่าง)'}</div><div class="tag">${extra || ''}</div></div>`;
+}
+function SAPWIN(title, menu, body){
+  return `<div class="sap"><div class="sap-bar"><span>${esc(title)}</span><span>▭ ✕</span></div>${menu ? `<div class="sap-menu">${menu}</div>` : ''}<div class="sap-body">${body}</div></div>
+  <div class="legend"><span><i class="r"></i>ช่องที่ต้องพิมพ์เอง</span><span><i class="d"></i>ช่องที่ไม่ต้องแตะ / ค่าคงที่</span></div>`;
+}
+async function doCopy(btn){
+  const v = decodeURIComponent(btn.getAttribute('data-c') || '');
+  try { await navigator.clipboard.writeText(v); }
+  catch(e){ const ta = document.createElement('textarea'); ta.value = v; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); }catch(_){} ta.remove(); }
+  const old = btn.textContent; btn.textContent = '✓ แล้ว'; btn.classList.add('copied');
+  setTimeout(() => { btn.textContent = old; btn.classList.remove('copied'); }, 1200);
+}
+
+/* ── ค่าที่คำนวณต่อใบเสร็จ ── */
+function calc(x){
+  const r = x.r, rc = rec(x.key), b = ST.sap.borrower;
+  const cls = classifyVendor(r.taxid);
+  const acct = cls.ok ? cls.acct : (rc.ovr || '');
+  const juristic = acct === ACCT_JURISTIC;
+  const taxLabel = cls.ok ? cls.taxLabel : (acct ? (juristic ? 'เลขที่ภาษี 3' : 'เลขที่ภาษี 1') : '');
+  const hasVat = x.vat > 0;
+  const text = `${shortName(r)} พ.${b.empId || '?????'} ${b.first || ''}`.trim();
+  const sapNet = r2(x.gross / 1.07), sapVat = r2(x.gross - sapNet);
+  return { cls, acct, taxLabel, hasVat, text, sapNet, sapVat,
+           vatMismatch: hasVat && Math.abs(sapVat - x.vat) > 0.005,
+           wbs: `${CONST.wbsPrefix}.${r.acct || CONST.expAcct}.${CONST.costCenter}`,
+           posting: ddmmyyyy(ST.sap.posting), docDate: ddmmyyyy(x.date) };
+}
+
+/* ── slides ── */
+function slideHtml(x){
+  const c = calc(x), r = x.r, b = ST.sap.borrower, rc = rec(x.key);
+  const first = b.first || '';
+  switch (ST.slide) {
+    case 0: return {
+      mock: SAPWIN('SAP Easy Access', '', `
+        <div class="sap-row"><div class="l">ช่องคำสั่ง (มุมซ้ายบน)</div><div class="cmd">F-43</div></div>
+        <div class="note" style="margin-top:8px">พิมพ์ในช่องคำสั่งมุมซ้ายบนของหน้าจอ แล้วกด Enter — จะเข้าหน้าหัวเอกสารทันที</div>`),
+      todo: `<h4>ขั้นที่ 0 — เปิดหน้าจอ</h4>${T('คำสั่ง', 'F-43')}<div class="note">กด Enter หลังพิมพ์ แล้วกด "ถัดไป ▶" ที่นี่</div>` };
+    case 1: return {
+      mock: SAPWIN('ป้อนใบแจ้งหนี้ผู้ขาย: หัวเอกสาร', '', `
+        ${M('วันที่เอกสาร', c.docDate, 'red')}${M('วันผ่านรายการ', c.posting, 'red')}${M('การอ้างอิง', rc.ref, 'red')}
+        ${M('ประเภทเอกสาร', 'KR', 'fixed')}${M('บริษัท', CONST.company, 'fixed')}${M('สกุลเงิน', 'THB', 'fixed')}${M('งวด', '(ค่าเดิม)', 'fixed')}
+        <div class="sap-sec">รายการแรก</div>
+        ${M('เลขที่สาขา', CONST.branchNo, 'red')}${M('PstKy', CONST.pstKyExp, 'red')}${M('บัญชี', r.acct || CONST.expAcct, 'red')}`),
+      todo: `<h4>หน้าหัวเอกสาร</h4>
+        ${T('วันที่เอกสาร', c.docDate)}
+        ${c.posting ? T('วันผ่านรายการ', c.posting) : `<div class="notice warn" style="margin:0">ยังไม่ได้ระบุ "วันผ่านรายการ" ด้านบนของหน้า</div>`}
+        <div class="t"><div class="tl">การอ้างอิง<br><span style="font-size:10.5px">(เลขที่ใบเสร็จ/ใบกำกับ)</span></div>
+          <div class="tv"><input id="refIn" type="text" value="${esc(rc.ref)}" placeholder="พิมพ์เลขที่ใบเสร็จ" oninput="onRef(this.value)" style="width:100%;border:1px solid var(--border);border-radius:5px;padding:4px 8px;font-family:inherit"></div>
+          <button class="cp" onclick="refLast5()" title="ตัดเหลือ 5 ตัวท้าย">5 ตัวท้าย</button>
+          <button class="cp" id="refCp" data-c="${encodeURIComponent(rc.ref)}" onclick="doCopy(this)">คัดลอก</button></div>
+        <div class="note">ถ้าเลขยาวให้ใช้ 5 ตัวท้าย (กดปุ่ม "5 ตัวท้าย" เพื่อตัดให้) — ระบบจะจำค่านี้ไว้เมื่อกด 💾 บันทึก</div>
+        ${T('เลขที่สาขา', CONST.branchNo)}${T('PstKy', CONST.pstKyExp)}${T('บัญชี', r.acct || CONST.expAcct)}
+        ${SKIP('ประเภทเอกสาร','KR')}${SKIP('บริษัท','1000')}${SKIP('สกุลเงิน','THB')}${SKIP('งวด','(ค่าเดิม)')}
+        <div class="note">กรอกเสร็จกด Enter → เข้าหน้าบรรทัดค่าใช้จ่าย</div>` };
+    case 2: return {
+      mock: SAPWIN('ป้อนใบแจ้งหนี้ผู้ขาย: เพิ่มรายการบัญชี G/L', '', `
+        ${M('จำนวนเงิน', money(x.gross), 'red')}
+        ${M('รหัสภาษี', c.hasVat ? 'V7' : 'VX', 'red')}
+        <div class="sap-row"><div class="l">คำนวณภาษี</div><div><span class="chk ${c.hasVat ? 'on' : ''}">${c.hasVat ? '✓' : ''}</span> ${c.hasVat ? '<b style="color:var(--red)">ต้องติ๊ก</b>' : '<span style="color:#888">ไม่ติ๊ก</span>'}</div></div>
+        ${M('เขตธุรกิจ', CONST.branchNo, 'red')}${M('ศูนย์ต้นทุน', CONST.costCenter, 'red')}${M('WBS', c.wbs, 'red')}
+        ${M('การกำหนด', first, 'red')}${M('ข้อความ', c.text, 'red')}
+        <div class="sap-sec">บรรทัดถัดไป (เจ้าหนี้)</div>
+        ${M('PstKy', CONST.pstKyVend, 'red')}${M('บัญชี', c.acct, 'red')}`),
+      todo: `<h4>บรรทัดค่าใช้จ่าย (PstKy 40)</h4>
+        ${T('จำนวนเงิน (รวม VAT)', money(x.gross))}
+        ${T('รหัสภาษี', c.hasVat ? 'V7' : 'VX')}
+        ${c.hasVat ? `<div class="note" style="background:var(--amber-bg);color:#7a4a00">มี VAT → ต้อง <b>ติ๊ก "คำนวณภาษี"</b> ด้วย</div>` : ''}
+        ${T('เขตธุรกิจ', CONST.branchNo)}${T('ศูนย์ต้นทุน', CONST.costCenter)}${T('WBS', c.wbs)}
+        ${T('การกำหนด', first)}${T('ข้อความ', c.text, {limit:TEXT_LIMIT})}
+        <h4 style="margin-top:6px">บรรทัดถัดไป (เจ้าหนี้)</h4>
+        ${T('PstKy', CONST.pstKyVend)}
+        ${c.acct ? T('บัญชีผู้ขาย', c.acct) : vendorPick(x, c)}
+        <div class="note">กด Enter → ระบบเปิดหน้าที่อยู่ผู้ขาย (one-time) อัตโนมัติ</div>` };
+    case 3: {
+      const n1 = x.vendorName, n2 = r.branch || '', st = r.addr1 || '', city = cityText(r), zip = r.zip || '', tax = String(r.taxid || '').replace(/\D/g, '');
+      return {
+        mock: SAPWIN('ป้อนใบแจ้งหนี้ผู้ขาย: ข้อมูลผู้ขายชั่วคราว', '', `
+          ${M('ชื่อ (บรรทัด 1)', n1, 'red')}${M('ชื่อ (บรรทัด 2)', n2, 'red')}
+          ${M('ถนน', st, 'red')}${M('เมือง', city, 'red')}${M('รหัสไปรษณีย์', zip, 'red')}
+          ${M(c.taxLabel || 'เลขที่ภาษี', tax, 'red')}
+          ${M('ช่องอื่น ๆ', '(ค่าเดิม)', 'fixed')}`),
+        todo: `<h4>ที่อยู่ผู้ขาย (หน้าจออัตโนมัติ)</h4>
+          ${T('ชื่อ บรรทัด 1', n1, {limit:SAP_LIMIT})}${T('ชื่อ บรรทัด 2 (สาขา)', n2, {limit:SAP_LIMIT})}
+          ${T('ถนน', st, {limit:SAP_LIMIT})}${T('เมือง', city, {limit:SAP_LIMIT})}${T('รหัสไปรษณีย์', zip)}
+          ${c.taxLabel ? T(c.taxLabel, tax) : `<div class="notice warn" style="margin:0">ยังไม่รู้ประเภทผู้ขาย — เลือกที่ขั้น "บรรทัดค่าใช้จ่าย"</div>`}
+          <div class="note">SAP จำกัดช่องละ ${SAP_LIMIT} ตัวอักษร — ตัวเลขสีแดง = ยาวเกิน ให้ตัดเองใน SAP · กด Enter เมื่อกรอกเสร็จ</div>
+          ${SKIP('ช่องอื่น','ปล่อยตามค่าเดิม')}` };
+    }
+    case 4: return {
+      mock: SAPWIN('ป้อนใบแจ้งหนี้ผู้ขาย: แก้ไขรายการเจ้าหนี้', 'เอกสาร ▸ <b>จำลอง</b>', `
+        ${M('จำนวนเงิน', money(x.gross), 'red')}${M('เขตธุรกิจ', CONST.branchNo, 'red')}
+        ${M('วันที่ฐาน', c.posting, 'red')}${M('การกำหนด', first, 'red')}${M('ข้อความ', c.text, 'red')}`),
+      todo: `<h4>บรรทัดเจ้าหนี้ (PstKy 31)</h4>
+        ${T('จำนวนเงิน (ยอดเต็ม)', money(x.gross))}${T('เขตธุรกิจ', CONST.branchNo)}
+        ${T('วันที่ฐาน', c.posting)}${T('การกำหนด', first)}${T('ข้อความ', c.text, {limit:TEXT_LIMIT})}
+        <div class="note">พิมพ์ตัวเลขไม่ต้องมีคอมมา (มีจุดทศนิยมได้) · เสร็จแล้วที่เมนู <b>เอกสาร ▸ จำลอง</b></div>` };
+    case 5: {
+      const exp = c.hasVat ? x.val : x.gross;
+      const lines = [['40', CONST.expAcct, exp, 0]];
+      if (c.hasVat) lines.push(['40', CONST.vatAcct, x.vat, 0]);
+      lines.push(['31', c.acct || '—', 0, x.gross]);
+      const D = lines.reduce((a, l) => a + l[2], 0), C = lines.reduce((a, l) => a + l[3], 0);
+      const warn = [];
+      if (c.vatMismatch) warn.push(`⚠️ ภาษีที่ SAP คำนวณจากยอดเต็ม ≈ ${money(c.sapVat)} (มูลค่าสินค้า ${money(c.sapNet)}) ไม่ตรงใบเสร็จ (VAT ${money(x.vat)}) — ถ้าหน้าจำลองไม่เป็น 0.00 ให้ใช้ขั้นตอน "ภาษีไม่ตรง" (ยังไม่เปิดใช้)`);
+      if (x.wht > 0) warn.push(`⚠️ ใบเสร็จนี้มีภาษีหัก ณ ที่จ่าย ${money(x.wht)} — ขั้นตอนหน้าจอหักภาษียังไม่เปิดใช้งาน`);
+      return {
+        mock: SAPWIN('ป้อนใบแจ้งหนี้ผู้ขาย: จำลองเอกสาร', '', `
+          <table class="ov"><thead><tr><th>PK</th><th>บัญชี</th><th>เดบิต</th><th>เครดิต</th></tr></thead><tbody>
+          ${lines.map(l => `<tr><td>${l[0]}</td><td>${esc(l[1])}</td><td class="r">${l[2] ? moneyShow(l[2]) : ''}</td><td class="r">${l[3] ? moneyShow(l[3]) : ''}</td></tr>`).join('')}
+          <tr class="sum"><td colspan="2">รวม / ผลต่าง</td><td class="r">${moneyShow(D)}</td><td class="r">${moneyShow(C)}</td></tr>
+          </tbody></table>
+          <div class="sap-row" style="margin-top:8px"><div class="l">ผลต่าง (บรรทัดล่างสุด)</div><div class="v red">${moneyShow(D - C)}</div></div>`),
+        todo: `<h4>ตรวจก่อนบันทึก</h4>
+          <div class="note">${c.hasVat ? 'มี VAT → ควรเห็น 3 บรรทัด: ค่าใช้จ่าย (40) · ภาษีซื้อ ' + CONST.vatAcct + ' (40) · เจ้าหนี้ (31)' : 'ไม่มี VAT → ควรเห็น 2 บรรทัด: ค่าใช้จ่าย (40) · เจ้าหนี้ (31)'}</div>
+          ${T('ค่าใช้จ่ายที่ควรเห็น', money(exp))}
+          ${c.hasVat ? T('ภาษีซื้อที่ควรเห็น', money(x.vat)) : ''}
+          ${T('เจ้าหนี้ที่ควรเห็น', money(x.gross))}
+          <div class="note" style="background:var(--green-bg);color:#0f5a34"><b>เช็กบรรทัดล่างสุดต้องเป็น 0.00</b> (เดบิต = เครดิต) จึงจะกดบันทึกได้</div>
+          ${warn.map(w => `<div class="notice warn" style="margin:0">${esc(w)}</div>`).join('')}` };
+    }
+    default: return {
+      mock: SAPWIN('ป้อนใบแจ้งหนี้ผู้ขาย', '', `
+        <div class="note">ผลต่าง = 0.00 แล้ว → กดไอคอนแผ่นดิสก์ (บันทึก) → SAP แสดงเลขเอกสาร</div>
+        <div class="sap-row" style="margin-top:10px"><div class="l">เลขเอกสาร</div><div class="v red">${esc(rc.doc) || '(จดจากข้อความที่ SAP แจ้ง)'}</div></div>`),
+      todo: `<h4>บันทึก & จดเลขเอกสาร</h4>
+        <div class="note">เลขเอกสารนี้ต้องใช้ต่อใน F-30 (ชนยอด เงินยืม − บิล − เงินคืน = 0)</div>
+        <div class="t"><div class="tl">เลขเอกสาร SAP</div>
+          <div class="tv"><input id="docIn" type="text" value="${esc(rc.doc)}" placeholder="พิมพ์เลขเอกสารที่ SAP แจ้ง" oninput="onDoc(this.value)" style="width:100%;border:1px solid var(--border);border-radius:5px;padding:4px 8px;font-family:inherit"></div></div>
+        <div class="note">อย่าลืมกด <b>💾 บันทึก</b> ด้านบนของหน้า เพื่อเก็บเลขเอกสารไว้ในระบบ</div>` };
+  }
+}
+function vendorPick(x, c){
+  const why = esc((c.cls && c.cls.why) || '');
+  return `<div class="notice warn" style="margin:0">⚠️ ${why} — ระบบไม่เดา กรุณาเลือกประเภทผู้ขาย:
+    <select onchange="onOvr(this.value)" style="margin-left:6px;padding:3px 6px;font-family:inherit">
+      <option value="">— เลือก —</option><option value="${ACCT_PERSON}" ${rec(x.key).ovr === ACCT_PERSON ? 'selected' : ''}>บุคคลธรรมดา (${ACCT_PERSON})</option>
+      <option value="${ACCT_JURISTIC}" ${rec(x.key).ovr === ACCT_JURISTIC ? 'selected' : ''}>นิติบุคคล (${ACCT_JURISTIC})</option></select></div>`;
+}
+function onOvr(v){ const x = curRc(); rec(x.key).ovr = v; markDirty(x.key); renderStage(); }
+function onRef(v){
+  const x = curRc(); rec(x.key).ref = v.trim(); markDirty(x.key);
+  const b = document.getElementById('refCp'); if (b) b.setAttribute('data-c', encodeURIComponent(v.trim()));
+}
+function refLast5(){
+  const inp = document.getElementById('refIn'); if (!inp) return;
+  inp.value = inp.value.trim().slice(-5); onRef(inp.value);
+}
+function onDoc(v){ const x = curRc(); rec(x.key).doc = v.trim(); markDirty(x.key); renderList(); }
+
+function renderStage(){
+  const x = curRc(); if (!x) return;
+  const st = document.getElementById('stage');
+  const head = `<div class="stage-h"><div><h2>ใบเสร็จที่ ${ST.cur + 1}/${ST.rows.length} — ${esc(x.vendorName || '(ไม่ระบุชื่อ)')}</h2>
+    <div class="sub">${esc(shortName(x.r))} · ลงวันที่ ${esc(DateTH.format(x.date) || '-')} · ยอดเต็ม ${moneyShow(x.gross)} บาท${x.wht > 0 ? ' · หัก ณ ที่จ่าย ' + moneyShow(x.wht) : ''}</div></div></div>`;
+  if (x.staffRow) {
+    st.innerHTML = head + `<div class="park-box"><div class="ic">🚧</div><h3>ใบสำคัญรับเงินเจ้าหน้าที่ กฝภ.1 (เบี้ยเลี้ยง/ที่พัก)</h3>
+      <p>ขั้นตอนนี้ยังไม่เปิดใช้ — รอตัดสินใจวิธีคีย์ (ไม่มีเลขผู้เสียภาษี/สาขา และบัญชีผู้ขายใน SAP ยังไม่กำหนด)</p></div>
+      <div class="nav"><button class="btn sec" onclick="goReceipt(ST.cur-1)" ${ST.cur === 0 ? 'disabled' : ''}>◀ ใบก่อนหน้า</button>
+      <button class="btn" onclick="goReceipt(ST.cur+1)" ${ST.cur >= ST.rows.length - 1 ? 'disabled' : ''}>ใบถัดไป ▶</button></div>`;
+    return;
+  }
+  const s = slideHtml(x);
+  const dots = SLIDES.map((n, i) => `<div class="dot ${i === ST.slide ? 'on' : (i < ST.slide ? 'past' : '')}" title="${esc(n)}" onclick="goSlide(${i})"></div>`).join('');
+  const last = ST.slide === SLIDES.length - 1;
+  const warnBar = [];
+  if (!ST.sap.posting) warnBar.push('ยังไม่ได้ระบุ "วันผ่านรายการ"');
+  if (!ST.sap.borrower.first || !ST.sap.borrower.empId) warnBar.push('ยังไม่ได้ระบุรหัส/ชื่อต้นผู้ยืม');
+  if (!x.date) warnBar.push('ใบเสร็จนี้ไม่มี "ลงวันที่" ในไฟล์ 06');
+  st.innerHTML = head + `<div class="dots">${dots}</div>
+    <div class="sub" style="margin:-8px 0 10px;font-weight:600;color:var(--navy)">ขั้นที่ ${ST.slide} / ${SLIDES.length - 1} — ${esc(SLIDES[ST.slide])}</div>
+    ${warnBar.length ? `<div class="notice warn">${warnBar.map(esc).join(' · ')}</div>` : ''}
+    <div class="slide"><div>${s.mock}</div><div class="todo">${s.todo}</div></div>
+    <div class="nav"><button class="btn sec" onclick="prevStep()" ${ST.slide === 0 ? 'disabled' : ''}>◀ ก่อนหน้า</button>
+      <span class="mid">ใช้แป้นลูกศร ← → ได้</span>
+      <button class="btn" onclick="nextStep()" ${(last && ST.cur >= ST.rows.length - 1) ? 'disabled' : ''}>${last ? 'ใบเสร็จถัดไป ▶▶' : 'ถัดไป ▶'}</button></div>`;
+}
+
+document.addEventListener('keydown', e => {
+  if (!ST.loadedOk || /INPUT|SELECT|TEXTAREA/.test((e.target.tagName || ''))) return;
+  if (e.key === 'ArrowRight') nextStep(); else if (e.key === 'ArrowLeft') prevStep();
+});
+window.addEventListener('beforeunload', e => { if (ST.dirty.size) { e.preventDefault(); e.returnValue = ''; } });
+
+/* ── init + admin guard ── */
+document.addEventListener('DOMContentLoaded', () => {
+  if (getCurrentRole() !== 'admin') {
+    document.getElementById('denied').style.display = 'block';
+    setTimeout(() => { location.href = '01_Main-Reports.html'; }, 1800);
+    return;
+  }
+  document.getElementById('app').style.display = '';
+  let no = '';
+  try { const cd = JSON.parse(sessionStorage.getItem('courseData') || 'null'); no = cd && cd.no ? String(cd.no).trim() : ''; } catch(e){}
+  if (no) { document.getElementById('inNo').value = no; loadCourse(); }
+});
+</script>
+</body>
+</html>
