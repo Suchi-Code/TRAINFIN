@@ -117,20 +117,20 @@ table.ov tr.sum td{background:#fff3b0;font-weight:700}
 .sapcv{position:relative;background:#e6ecf3;font-family:Tahoma,'Sarabun',sans-serif;font-size:12.5px;color:#111;transform-origin:0 0}
 .ab{position:absolute;white-space:nowrap}
 .menubar{background:#f3f5f8;border-bottom:1px solid #c5cedb}
-.menus{display:flex;gap:26px;font-size:13px}.menus .rm{outline:3px solid #e60000;outline-offset:2px}
+.menus{display:flex;gap:26px;font-size:13px}.menus .rm{}
 .winbtn{background:#2e6fb7;border:1px solid #1d4f88;border-radius:3px;display:flex;gap:6px;justify-content:center;align-items:center}.winbtn i{width:12px;height:11px;background:#dfe9f5;border-radius:1px}
 .tbar{background:#eef1f5;border-bottom:1px solid #c5cedb}
 .okc{color:#19a244;font-weight:700;font-size:15px;line-height:16px}.bk{color:#555}
-.ics{display:flex;gap:9px}.ics i{display:block;width:14px;height:14px;background:#a9b4c3;border-radius:2px}.ics i.dsk{background:#2d5fa8}
+.ics{display:flex;gap:9px}.ics i{display:block;width:14px;height:14px;background:#a9b4c3;border-radius:2px}.ics .dskv{display:block}
 .ttlfr{background:linear-gradient(#cfdbea,#e1e9f2 52%,#dfe7f0);border:1px solid #a9bdd6;border-radius:3px}
 .ttl{font-weight:700;font-style:italic;font-size:17px;color:#1d2f45;line-height:24px}
 .apt{font-size:11.5px;color:#1d2f45;line-height:20px}
 .lbl{font-size:12.5px;color:#111;line-height:16px}
 .fd{background:#fff;border:1px solid #7f9db9;padding:0 3px;font-family:Consolas,'Courier New',monospace;font-size:12px;overflow:hidden;box-sizing:border-box;white-space:nowrap;text-overflow:clip}
-.fd.g{background:#e3e3e3;border-color:#a8a8a8}.fd.y{background:#fff1a6}.fd.r{box-shadow:0 0 0 3px #e60000}.fd.rb{}
+.fd.g{background:#e3e3e3;border-color:#a8a8a8}.fd.y{background:#fff1a6}.fd.r{}.fd.rb{}
 .fd.cmd{padding-right:14px}.fd .dd{position:absolute;right:3px;font-size:11px;color:#555}
-.ovr{border:3px solid #e60000;box-sizing:border-box;pointer-events:none}
-.cbx{width:13px;height:13px;background:#fff;border:1px solid #6d7f94;text-align:center;font-size:11px;line-height:11px;box-sizing:border-box}.cbx.r{box-shadow:0 0 0 3px #e60000}
+.ovr{border:3px solid #e60000;box-sizing:border-box;pointer-events:none;z-index:6}
+.cbx{width:13px;height:13px;background:#fff;border:1px solid #6d7f94;text-align:center;font-size:11px;line-height:11px;box-sizing:border-box}.cbx.r{}
 .pnl{border:1px solid #9fb0c4;box-sizing:border-box;background:#e9eef5}
 .pnh{background:#d3deec;font-weight:700;font-size:12px;color:#1d2f45;line-height:17px}
 .sbtn{background:linear-gradient(#fff,#dfe5ec);border:1px solid #8a9bb0;border-radius:3px;text-align:center;font-size:12px;box-sizing:border-box}
@@ -492,8 +492,8 @@ function calc(x){
    ============================================================ */
 const AB = (x, y, w, h, cls, inner, st) => `<div class="ab ${cls || ''}" style="left:${x}px;top:${y}px;${w ? 'width:' + w + 'px;' : ''}${h ? 'height:' + h + 'px;line-height:' + h + 'px;' : ''}${st || ''}">${inner ?? ''}</div>`;
 const lb  = (x, yc, t, st) => AB(x, yc - 8, 0, 16, 'lbl', esc(t), st);
-const fd  = (x, y, w, h, val, cls) => AB(x, y, w, h, 'fd ' + (cls || ''), esc(val), '');
-const cbx = (x, y, on, red) => AB(x, y, 13, 13, 'cbx ' + (red ? 'r' : ''), on ? '✓' : '');
+const fd  = (x, y, w, h, val, cls) => AB(x, y, w, h, 'fd ' + (cls || ''), esc(val), '') + ((cls || '').split(' ').includes('r') ? AB(x - 3, y - 3, w + 6, h + 6, 'ovr', '') : '');
+const cbx = (x, y, on, red) => AB(x, y, 13, 13, 'cbx', on ? '✓' : '') + (red ? AB(x - 3, y - 3, 19, 19, 'ovr', '') : '');
 const ov  = (x, y, w, h) => AB(x, y, w, h, 'ovr', '');
 const btn = (x, y, w, h, t) => AB(x, y, w, h, 'sbtn', esc(t));
 const pn  = (x, y, w, h, t) => AB(x, y, w, h, 'pnl', '') + AB(x + 1, y + 1, w - 2, 17, 'pnh', esc(t), 'padding-left:9px;box-sizing:border-box;');
@@ -507,8 +507,8 @@ function chrome(W, H, menus, title, apps, o){
   s += AB(26, 45, 16, 16, 'okc', '✔');
   s += AB(62, 44, 142, 22, 'fd cmd ' + (o.cmdRed ? 'r' : ''), esc(o.cmd || '') + '<b class="dd">▾</b>');
   s += AB(214, 46, 12, 18, 'bk', '◁');
-  s += AB(233, 47, 0, 0, 'ics', '<i class="dsk"></i>' + '<i></i>'.repeat(19));
-  if (o.saveRed) s += ov(228, 42, 24, 26);
+  s += AB(233, 47, 0, 0, 'ics', '<svg class="dskv" width="16" height="16" viewBox="0 0 16 16"><path d="M1 1h11l3 3v11H1z" fill="#2d5fa8" stroke="#173a70"/><rect x="4" y="1.5" width="7" height="4" fill="#dfe9f5"/><rect x="3.5" y="9" width="9" height="6" fill="#eef3fa" stroke="#173a70" stroke-width=".6"/></svg>' + '<i></i>'.repeat(18));
+  if (o.saveRed) s += ov(229, 42, 24, 26);
   if (title) {
     s += AB(18, 78, W - 36, 66, 'ttlfr', '');
     s += AB(30, 84, 0, 24, 'ttl', esc(title));
@@ -616,8 +616,8 @@ function scr4(x, c){
   const a = c.acct, first = ST.sap.borrower.first || '';
   let s = chrome(969, 736, ['เอกสาร(D)', 'แก้ไข(E)', 'ไปที่(G)', 'พิเศษ(A)', 'การกำหนดค่า(S)', 'สภาพแวดล้อม(V)', 'ระบบ(Y)', 'วิธีใช้(H)'], 'ป้อน PWAใบกำกับสินค้า-จน.: เพิ่ม รายการคนขาย',
     [[123, '➜ ข้อมูลเพิ่มเติม'], [242, 'โมเดลบัญชี'], [314, '☑ การบันทึกรายการข้อมูลแบบเร็ว'], [502, 'ℹ ภาษี'], [562, 'ℹ ภาษีหัก ณ ที่จ่าย']], { redMenu: true });
-  s += ov(35, 2, 76, 30);
-  s += AB(30, 34, 150, 44, 'ddm', '<div class="dd0">⋯</div><div class="dd1">จำลอง</div><div class="dd0">⋯</div>') + ov(30, 52, 150, 18);
+  s += ov(18, 5, 70, 26);
+  s += AB(30, 34, 150, 44, 'ddm', '<div class="dd0">⋯</div><div class="dd1">จำลอง</div><div class="dd0">⋯</div>') + ov(32, 46, 147, 25);
   s += lb(22, 155, 'ผู้ขาย') + fd(118, 145, 76, 20, a, 'g') + lb(204, 155, VEND_DESC[a] || '') + lb(452, 155, 'บัญชี G') + fd(510, 145, 76, 20, VEND_GL[a] || '', 'g');
   s += lb(22, 176, 'รหัสบริษัท') + fd(118, 166, 36, 20, '1000', 'g') + lb(22, 199, 'การประปาส่วนภูมิภาค');
   s += pn(18, 210, 590, 258, 'รายการ 2 / ใบกำกับสินค้า / 31');
