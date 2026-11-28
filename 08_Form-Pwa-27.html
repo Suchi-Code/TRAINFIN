@@ -175,7 +175,7 @@ td { font-size:15px; padding:2px 4px; }
     <div class="ip-field full">
       <label>4. รายการ</label>
       <input type="text" id="f_item" value="" oninput="sync()" />
-
+     
     </div>
   </div>
 
@@ -738,12 +738,61 @@ function closePreviewOutside(e) {
 
 /* sync() จะถูกเรียกหลัง loadFromGSheet เสร็จเท่านั้น */
 
+/* ── AUTOFILL รหัสพนักงาน + ชื่อ จากผู้ใช้ที่ login อยู่ (แก้ไขต่อได้ — เติมเฉพาะตอนช่องยังว่าง) ──
+   ลำดับ: 1) sessionStorage('currentUser') — เร็วสุด (เซ็ตตอน login)
+          2) Supabase profiles (emp_id, full_name) — fallback ถ้า cache ไม่มี/ชื่อเป็นแค่รหัส */
+let _userProfileClient08 = null;
+function getUserProfileClient08(){
+  if (_userProfileClient08) return _userProfileClient08;
+  const CFG = window.APP_CONFIG || {};
+  if (!window.supabase || !window.supabase.createClient) return null;
+  _userProfileClient08 = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY);
+  return _userProfileClient08;
+}
+
+async function autofillUserFrom08(){
+  const empEl  = document.getElementById('f_empid');
+  const nameEl = document.getElementById('f_name');
+  if (!empEl || !nameEl) return;
+
+  const fill = (empId, name) => {
+    let changed = false;
+    if (!empEl.value.trim()  && empId) { empEl.value  = empId; changed = true; }
+    if (!nameEl.value.trim() && name)  { nameEl.value = name;  changed = true; }
+    if (changed && typeof sync === 'function') sync();
+  };
+
+  let cachedEmp = '', cachedName = '';
+  try {
+    const cu = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+    if (cu) {
+      cachedEmp  = cu.empId || '';
+      cachedName = (cu.name && cu.name !== cu.empId) ? cu.name : '';
+    }
+  } catch(e) {}
+  fill(cachedEmp, cachedName);
+  if (cachedEmp && cachedName) return;
+
+  const client = getUserProfileClient08();
+  if (!client) return;
+  try {
+    const { data: { user } } = await client.auth.getUser();
+    if (!user) return;
+    const { data: profile, error } = await client
+      .from('profiles').select('emp_id, full_name').eq('id', user.id).single();
+    if (error || !profile) {
+      fill((user.email || '').split('@')[0], '');
+      return;
+    }
+    fill(profile.emp_id || '', profile.full_name || '');
+  } catch(e) {
+    console.warn('[08] autofillUserFrom08 error:', e);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-  // ดึง no จาก sessionStorage (ส่งมาจากไฟล์ 01) — ล้อไฟล์ 06 (loadFromMain)
-  // ลำดับความสำคัญ: 1. ?no= ใน URL  2. courseData (sessionStorage — หลักสูตรที่ user เลือกอยู่ตอนนี้)
-  // 3. budgetSlotData (sessionStorage — เสริม)
-  // ⚠️ ห้ามอ่าน localStorage.budgetSlotData เด็ดขาด — ค่านี้ค้างจากหลักสูตรที่เปิดครั้งก่อนๆ
-  // (บัคเดิม: เปิด 01 ที่เลข 01321279 แต่ 08 ไปดึงข้อมูลของ 01321294 ที่ค้างอยู่)
+  // ลำดับความสำคัญ: courseData (sessionStorage — หลักสูตรที่เลือกอยู่) > budgetSlotData (sessionStorage)
+  // ⚠️ ห้ามอ่าน localStorage.budgetSlotData — ค่านี้ค้างจากหลักสูตรที่เปิดครั้งก่อน (เคยดึงเลขผิดหลักสูตร)
   let d = {};
   try {
     const cd   = JSON.parse(sessionStorage.getItem('courseData')     || 'null');
@@ -758,20 +807,16 @@ document.addEventListener('DOMContentLoaded', function() {
   const no08    = String(d.no || d.courseNo || '').trim();
   const course  = d.course || '';
   const batch   = d.batch  || '';
-  // 🐛 bug fix (ledger #9): savePdf08() อ้างอิง window.__courseNo08 เพื่อบันทึกลิงก์ PDF กลับ Sheet
-  // แต่ไม่เคยมีจุดใด assign ค่านี้เลย ทำให้ courseNo ว่างเปล่าเสมอ — ตั้งค่าตรงนี้จาก no08 ที่ดึงมาจริง
   window.__courseNo08 = no08;
   console.log('[08] courseData/slot:', d);
   console.log('[08] no08:', no08, '| course:', course, '| batch:', batch);
 
-  // ข้อ 3: เลขที่หลักสูตร และชื่อหลักสูตร
   const f_course = document.getElementById('f_course');
   if (f_course && (no08 || course)) {
     const batchText = batch ? ' รุ่นที่ ' + batch : '';
     f_course.value = (no08 ? no08 + ' ' : '') + 'หลักสูตร "' + course + '"' + batchText;
   }
 
-  // ข้อ 4: รายการ
   const f_item = document.getElementById('f_item');
   if (f_item && course) {
     const batchText = batch ? ' รุ่นที่ ' + batch : '';
@@ -783,6 +828,7 @@ document.addEventListener('DOMContentLoaded', function() {
   } else {
     if (typeof sync === 'function') sync();
   }
+  autofillUserFrom08();
 });
 
 /* ฟังก์ชันช่วยแปลงฟอร์แมตวันที่ ISO (YYYY-MM-DD) เป็นวันที่ไทย
