@@ -144,6 +144,24 @@ table.ov tr.sum td{background:#fff3b0;font-weight:700}
 .mono{font-family:Consolas,'Courier New',monospace;font-size:12.5px;line-height:16px}.mono.b{font-weight:700;color:#144}.mono.bl{color:#1b4fa0}
 .ddm{background:#fff;border:1px solid #6d7f94;box-shadow:2px 2px 4px rgba(0,0,0,.25);z-index:5}.dd0{color:#999;height:12px;line-height:12px;text-align:center;font-size:10px}.dd1{height:18px;line-height:18px;padding-left:10px;font-size:12.5px;font-weight:600}
 @media(max-width:900px){.slide .todo{grid-template-columns:1fr}}
+
+.modetabs{display:flex;gap:8px;margin:0 0 12px}
+.mt{padding:9px 18px;border:2px solid var(--border);background:#fff;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:var(--navy);cursor:pointer}
+.mt.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.layout.solo{grid-template-columns:1fr}.layout.solo .rlist{display:none}
+.rad{width:13px;height:13px;border:1px solid #6d7f94;border-radius:50%;background:#fff;box-sizing:border-box}
+.rad.on{background:radial-gradient(circle,#1d3557 0 3px,#fff 3.5px)}
+.popw{background:#e9eef5;border:1px solid #556a86;box-shadow:3px 3px 8px rgba(0,0,0,.35);z-index:5}.popt{background:linear-gradient(#5b86b8,#3f6a9f);color:#fff;font-size:12.5px;line-height:24px;padding-left:8px;box-sizing:border-box;z-index:6}
+.ab.popw~.fd,.ab.popw~.cbx,.ab.popw~.lbl,.ab.popw~.sbtn{z-index:7}
+.sbtn.y{background:linear-gradient(#fff6c8,#f4dd7a)}
+.ovr2{border:3px solid #7a0f1e;box-sizing:border-box;pointer-events:none;z-index:6}
+.ck{grid-column:1/-1;border:1px solid var(--border);border-radius:8px;padding:10px 12px;background:#fff}
+.ckh{font-weight:700;color:var(--navy);font-size:14px}
+.ckt{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}.ckt th{background:var(--gray-100);text-align:left;padding:4px 6px;border-bottom:1px solid var(--border)}.ckt td{padding:3px 6px;border-bottom:1px solid #eef1f5}.ckt td.r{text-align:right;font-variant-numeric:tabular-nums}.mn{font-family:Consolas,monospace}
+.ckr{margin-top:8px;font-size:12.5px;line-height:1.6}
+.ckin{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}.ckin input{width:110px;padding:5px 8px;border:2px solid #1a56db;border-radius:6px;font-family:Consolas,monospace;font-size:14px;background:#fffbe0}.ckin label{font-weight:700}
+.okm{color:#0f7a3d;font-weight:700}.ngm{color:#c0262d;font-weight:700}
+.ckl{grid-column:1/-1;display:flex;flex-direction:column;gap:4px;font-size:13px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:8px 10px}.ckl label{cursor:pointer}
 @media(max-width:900px){.layout{grid-template-columns:1fr}.rlist{position:static;max-height:240px}.slide{grid-template-columns:1fr}.g4{grid-template-columns:1fr 1fr}.header-inner,.page{padding-left:16px;padding-right:16px}}
 </style>
 
@@ -204,6 +222,8 @@ table.ov tr.sum td{background:#fff3b0;font-weight:700}
     </div>
     <div id="dirtyNote" class="note" style="margin-top:8px;display:none">มีข้อมูลที่ยังไม่ได้บันทึก</div>
   </div>
+
+  <div class="modetabs" id="modetabs" style="display:none"><button id="tab43" class="mt on" onclick="setMode('f43')">① คีย์ใบเสร็จ (F-43)</button><button id="tab30" class="mt" onclick="setMode('f30')">② หักล้างเงินยืม (F-30)</button></div>
 
   <div class="layout" id="main" style="display:none">
     <div class="rlist"><div class="rlist-h">ใบเสร็จเงินยืม <span id="rcount"></span></div><div id="rlist"></div></div>
@@ -305,8 +325,9 @@ function loginUser(){
 }
 
 /* ── state ── */
-const ST = { no:'', course:'', rows:[], sap:{ posting:'', borrower:{empId:'', first:''}, receipts:{} },
-             cur:0, slide:0, dirty:new Set(), loadedOk:false, orphans:[] };
+const ST = { no:'', course:'', rows:[], sap:{ posting:'', borrower:{empId:'', first:''}, receipts:{}, clear:{docDate:'', ref:'', doc:''} },
+             cur:0, slide:0, dirty:new Set(), loadedOk:false, orphans:[], mode:'f43', gor:null, grand06:null,
+             f30:{ slide:0, ticks:{}, chk:{d:'', c:'', n:''} } };
 const SLIDE_BASE = [[0,'พิมพ์คำสั่ง F-43'],[1,'หน้าหัวเอกสาร'],[2,'บรรทัดค่าใช้จ่าย (G/L)'],[3,'ที่อยู่ผู้ขาย (one-time)'],[4,'บรรทัดเจ้าหนี้'],[5,'ตรวจสอบ (จำลอง)']];
 const SLIDE_FIX  = [['f1','แก้ภาษี ① เปิดบรรทัดภาษีซื้อ'],['f2','แก้ภาษี ② พิมพ์ยอดภาษีตามใบเสร็จ'],['f3','แก้ภาษี ③ เปิดบรรทัดค่าใช้จ่าย'],['f4','แก้ภาษี ④ ลดยอดค่าใช้จ่าย'],['f5','แก้ภาษี ⑤ ตรวจผลต่าง = 0']];
 const SLIDE_SAVE = [[6,'บันทึก & จดเลขเอกสาร']];
@@ -363,11 +384,17 @@ async function loadCourse(){
   try { raw = typeof a06.rowsJson === 'string' ? JSON.parse(a06.rowsJson) : a06.rowsJson; } catch(e){ raw = []; }
   ST.rows = buildReceipts(raw || []);
   const saved = parseSap(a06.sapJson);
-  ST.sap = { posting:'', borrower:{empId:'', first:''}, receipts:{} };
+  ST.sap = { posting:'', borrower:{empId:'', first:''}, receipts:{}, clear:{docDate:'', ref:'', doc:''} };
+  ST.gor = (result.budget && result.budget.gorTotal !== undefined && result.budget.gorTotal !== '') ? parseFloat(result.budget.gorTotal) : null;
+  if (ST.gor !== null && isNaN(ST.gor)) ST.gor = null;
+  ST.grand06 = a06.grandTotal !== undefined && a06.grandTotal !== '' ? parseFloat(a06.grandTotal) : null;
+  if (ST.grand06 !== null && isNaN(ST.grand06)) ST.grand06 = null;
+  ST.mode = 'f30' === ST.mode ? 'f30' : 'f43'; ST.f30 = { slide:0, ticks:{}, chk:{d:'', c:'', n:''} };
   if (saved) {
     ST.sap.posting = saved.posting || '';
     ST.sap.borrower = Object.assign({empId:'', first:''}, saved.borrower || {});
     ST.sap.receipts = saved.receipts || {};
+    ST.sap.clear = Object.assign({docDate:'', ref:'', doc:''}, saved.clear || {});
   }
   ST.dirty = new Set(); ST.cur = 0; ST.slide = 0; ST.loadedOk = true;
   // ผู้ยืม: ถ้ายังไม่เคยบันทึก ให้ดึงรหัส/ชื่อต้นจากผู้ที่ login อยู่เป็นค่าเริ่มต้น (แก้เป็นคนอื่นได้ที่ช่องด้านบน)
@@ -388,6 +415,9 @@ async function loadCourse(){
   document.getElementById('inFirst').value = ST.sap.borrower.first || '';
   document.getElementById('courseSettings').style.display = '';
   document.getElementById('main').style.display = '';
+  document.getElementById('modetabs').style.display = '';
+  document.getElementById('main').classList.toggle('solo', ST.mode === 'f30');
+  updateModeTabs();
   renderAll();
 }
 
@@ -410,10 +440,11 @@ async function saveSap(){
     const latest = await gsApi('getByNo', null, ST.no);
     if (latest === null || !latest.actual06) { hideGsLoader(); showGsStatus('❌ บันทึกไม่สำเร็จ — อ่านข้อมูลล่าสุดไม่ได้', 'error'); return; }
     const remote = parseSap(latest.actual06.sapJson) || {};
-    const merged = { posting: remote.posting || '', borrower: Object.assign({empId:'', first:''}, remote.borrower || {}), receipts: Object.assign({}, remote.receipts || {}) };
+    const merged = { posting: remote.posting || '', borrower: Object.assign({empId:'', first:''}, remote.borrower || {}), receipts: Object.assign({}, remote.receipts || {}), clear: Object.assign({docDate:'', ref:'', doc:''}, remote.clear || {}) };
+    if (ST.dirty.has('clear')) merged.clear = ST.sap.clear;
     if (ST.dirty.has('posting')) merged.posting = ST.sap.posting;
     if (ST.dirty.has('borrower')) merged.borrower = ST.sap.borrower;
-    ST.dirty.forEach(k => { if (k !== 'posting' && k !== 'borrower' && ST.sap.receipts[k]) {
+    ST.dirty.forEach(k => { if (k !== 'posting' && k !== 'borrower' && k !== 'clear' && ST.sap.receipts[k]) {
       const rc = ST.sap.receipts[k];
       merged.receipts[k] = { ref: rc.ref || '', doc: rc.doc || '', ovr: rc.ovr || '', at: new Date().toISOString() };
     }});
@@ -441,7 +472,7 @@ async function saveSap(){
 }
 
 /* ── render ── */
-function renderAll(){ renderList(); renderStage(); }
+function renderAll(){ renderList(); if (ST.mode === 'f30') renderF30(); else renderStage(); updateModeTabs(); }
 function renderList(){
   const done = ST.rows.filter(x => !x.staffRow && isDone(x.key)).length;
   const total = ST.rows.filter(x => !x.staffRow).length;
@@ -456,8 +487,8 @@ function renderList(){
 }
 function goReceipt(i){ ST.cur = Math.max(0, Math.min(ST.rows.length - 1, i)); ST.slide = 0; renderAll(); window.scrollTo(0, 0); }
 function goSlide(s){ ST.slide = Math.max(0, Math.min(curSlides().length - 1, s)); renderStage(); }
-function nextStep(){ if (ST.slide < curSlides().length - 1) goSlide(ST.slide + 1); else if (ST.cur < ST.rows.length - 1) goReceipt(ST.cur + 1); }
-function prevStep(){ if (ST.slide > 0) goSlide(ST.slide - 1); }
+function nextStep(){ if (ST.mode === 'f30') { goF30(ST.f30.slide + 1); return; } if (ST.slide < curSlides().length - 1) goSlide(ST.slide + 1); else if (ST.cur < ST.rows.length - 1) goReceipt(ST.cur + 1); }
+function prevStep(){ if (ST.mode === 'f30') { goF30(ST.f30.slide - 1); return; } if (ST.slide > 0) goSlide(ST.slide - 1); }
 
 /* ── UI building blocks ── */
 function T(label, value, opt){            // รายการ "ต้องกรอก" + ปุ่มคัดลอก
@@ -854,6 +885,284 @@ function slideHtml(x){
           <div class="note">อย่าลืมกด <b>💾 บันทึก</b> ด้านบนของหน้า เพื่อเก็บเลขเอกสารไว้ในระบบ — ระบบถือว่า "คีย์แล้ว" เมื่อมีเลขเอกสารเท่านั้น</div>` };
     }
   }
+}
+
+
+/* ============================================================
+   F-30 : ผ่านรายการโดยมีการหักล้าง (หักล้างเงินยืมกับบิลทั้งหลักสูตร)
+   ============================================================ */
+const rad = (x, y, on, red) => AB(x, y, 13, 13, 'rad' + (on ? ' on' : ''), '') + (red ? AB(x - 4, y - 4, 21, 21, 'ovr', '') : '');
+const chk = (x, y, on) => AB(x, y, 13, 13, 'cbx', on ? '✓' : '');
+const SLIDES30 = [['ออก SAP / เข้าใหม่ / พิมพ์ F-30'], ['หน้าหัวเอกสาร'], ['เลือกรายการเปิด (บัญชี EI0)'], ['บัญชีเพิ่มเติม (หน้าต่างเด้ง)'], ['เขตธุรกิจ 1801'], ['เลือกบิลของหลักสูตร (สีดำ)'], ['รีเช็คภาพรวม'], ['บันทึก & จดเลขเอกสาร']];
+const ACCT_RESID = '7111004', ACCT_RESID_DESC = 'พัก-ทรัพยากรบุคคล';
+
+function f30Data(){
+  const emp = ST.sap.borrower.empId || '', first = ST.sap.borrower.first || '';
+  const eiAcct = 'EI0' + (emp || '?????');
+  const keyed = [], missing = [];
+  ST.rows.forEach(x => {
+    if (x.staffRow) return;
+    const c = calc(x), rc = rec(x.key);
+    const o = { x, c, doc: rc.doc || '', acct: c.acct || '?', amt: x.gross };
+    (rc.doc ? keyed : missing).push(o);
+  });
+  keyed.sort((a, b) => (a.acct + a.doc).localeCompare(b.acct + b.doc));
+  const sum = r2(keyed.reduce((t, b) => t + b.amt, 0));
+  const loan = (ST.gor === null || ST.gor === undefined || isNaN(ST.gor)) ? null : ST.gor;
+  const resid = loan === null ? null : r2(loan - sum);
+  const lines = [];
+  lines.push({ pk: '17', acct: eiAcct, desc: first, amt: loan === null ? 0 : loan, cr: true });
+  keyed.forEach(b => lines.push({ pk: '27', acct: b.acct, desc: 'จน.อื่น ๆจ่ายครั้งเดียว', amt: b.amt, doc: b.doc }));
+  if (resid !== null && resid > 0.004) lines.push({ pk: '40', acct: '000' + ACCT_RESID, desc: ACCT_RESID_DESC, amt: resid });
+  const dup = {}; keyed.forEach(b => { dup[b.doc] = (dup[b.doc] || 0) + 1; });
+  return { emp, first, eiAcct, keyed, missing, sum, loan, resid, lines, dupDocs: Object.keys(dup).filter(k => dup[k] > 1) };
+}
+function f30Params(){
+  const cl = ST.sap.clear || {};
+  return { docDate: ddmmyyyy(cl.docDate), ref: cl.ref || '', posting: ddmmyyyy(ST.sap.posting),
+    text: ('หักล้างเงินยืมค่าฝึกอบรม พ.' + (ST.sap.borrower.empId || '?????') + ' ' + (ST.sap.borrower.first || '')).trim() };
+}
+
+/* หน้าที่ 1: หัวเอกสาร */
+function scrC1(){
+  const p = f30Params(), fy = fiscal(ST.sap.posting);
+  let s = chrome(972, 745, MENU_FULL.concat(['วิธีใช้(H)']), 'ผ่านรายการโดยมีการหักล้าง: ข้อมูลส่วนหัว', [[36, 'เลือกรายการเปิด'], [132, 'โมเดลบัญชี']]);
+  s += ov(26, 106, 100, 30);
+  s += lb(22, 158, 'วันที่เอกสาร') + fd(141, 148, 76, 22, p.docDate, 'r') + lb(233, 158, 'ประเภท') + fd(309, 150, 24, 20, 'DZ', 'g') + lb(352, 158, 'รหัสบริษัท') + fd(462, 150, 36, 20, '1000', 'g');
+  s += lb(22, 181, 'วันผ่านรายการ') + fd(141, 171, 76, 22, p.posting, 'r') + lb(233, 181, 'งวด') + fd(309, 173, 24, 20, fy.per, 'g') + lb(352, 181, 'สกุลเงิน/อัตรา') + fd(462, 172, 38, 20, 'THB', 'g') + fd(504, 172, 76, 20, '', '');
+  s += lb(22, 203, 'เลขที่เอกสาร') + fd(141, 194, 74, 20, '', '') + lb(352, 203, 'วันที่การแปลงค่า') + fd(462, 193, 76, 20, '', '');
+  s += lb(22, 226, 'การอ้างอิง') + fd(137, 214, 124, 24, p.ref, 'r') + lb(352, 226, 'เลขที่ระหว่างบ.') + fd(462, 214, 116, 20, '', '');
+  s += lb(22, 248, 'Doc.Header Text') + fd(141, 237, 180, 20, '', '');
+  s += lb(22, 270, 'ข้อความหักล้าง') + fd(137, 258, 354, 24, p.text, 'r');
+  s += lb(22, 291, 'เลขที่สาขา') + fd(135, 282, 40, 22, CONST.branchNo, 'r y');
+  s += pn(22, 325, 250, 238, 'รายการที่ประมวลผล');
+  s += rad(32, 351, false) + lb(48, 358, 'การจ่ายชำระเงิน') + rad(32, 373, false) + lb(48, 380, 'การรับชำระเงิน') + rad(32, 395, false) + lb(48, 402, 'ใบลดหนี้') + rad(32, 417, true, true) + lb(48, 424, 'การผ่านรายการโอนด้วยการหักล้าง');
+  s += pn(22, 566, 586, 58, 'บรรทัดรายการแรก');
+  s += lb(30, 600, 'PstKy') + fd(80, 589, 22, 22, '', '') + lb(108, 600, 'บัญชี') + fd(160, 589, 126, 20, '', '') + lb(292, 600, 'SGL Ind') + fd(344, 590, 13, 20, '', '') + lb(362, 600, 'TType') + fd(436, 589, 26, 20, '', '');
+  return canvas(972, 745, s);
+}
+/* หน้าที่ 2: เลือกรายการเปิด  (dim = ใช้เป็นพื้นหลังของ popup) */
+function scrC2(dim, raw){
+  const eiAcct = f30Data().eiAcct, R = dim ? '' : 'r';
+  let s = chrome(967, 743, MENU_FULL.concat(['วิธีใช้(H)']), 'ผ่านรายการโดยมีการหักล้าง เลือกรายการเปิด', [[36, 'ประมวลผลรายการเปิด']]);
+  if (!dim) s += AB(18, 108, 128, 30, 'ovr', '', 'border-radius:50%');
+  s += pn(20, 171, 338, 232, 'การเลือกรายการคงค้าง');
+  s += lb(30, 203, 'รหัสบริษัท') + fd(141, 194, 36, 20, '1000', 'g');
+  s += lb(30, 225, 'บัญชี') + fd(141, 216, 118, 20, eiAcct, R) + lb(30, 247, 'ประเภท บ/ช') + fd(141, 238, 16, 20, 'D', 'g');
+  s += lb(30, 269, 'แยกประเภทพิเศษ') + fd(141, 260, 76, 20, '', 'g') + chk(226, 262, true) + lb(244, 269, 'รก.คงค้างปกติ');
+  s += lb(30, 291, 'เลขที่ใบแจ้ง') + fd(141, 282, 116, 20, '', '');
+  s += chk(30, 327, true) + (dim ? '' : ov(26, 318, 80, 28)) + lb(48, 334, 'บัญชีอื่น ๆ') + chk(30, 349, false) + lb(48, 356, 'กระจายตามอายุ') + chk(30, 371, false) + lb(48, 378, 'การค้นหาโดยอัตโนมัติ');
+  s += pn(358, 171, 250, 430, 'การเลือกเพิ่มเติม');
+  const opts = ['ไม่มี', 'จำนวนเงิน', 'วันที่ครบกำหนดสุทธิ', 'เลขที่เอกสาร', 'วันผ่านรายการ', 'เขตการติดตามหนี้', 'การอ้างอิง', 'ใบสั่งการชำระเงิน', 'ใบกำกับสินค้าแบบรวม', 'ประเภทเอกสาร', 'เขตธุรกิจ', 'รหัสภาษี', 'บัญชีสาขา', 'สกุลเงิน', 'คีย์การผ่านรายการ', 'วันที่เอกสาร', 'การกำหนด', 'อื่นๆ'];
+  opts.forEach((t, i) => { const y = 203 + i * 22.2; s += rad(372, y - 7, t === 'เขตธุรกิจ', t === 'เขตธุรกิจ' && !dim) + lb(392, y, t); });
+  return raw ? s : canvas(967, 743, s);
+}
+/* หน้าที่ 3: popup บัญชีเพิ่มเติม */
+function scrC3(){
+  let s = scrC2(true, true);
+  s += AB(153, 283, 436, 388, 'popw', '') + AB(153, 283, 436, 24, 'popt', '⊡ บัญชีเพิ่มเติม') + AB(560, 287, 0, 16, 'lbl', '✕', 'color:#fff');
+  [[165, 'บัญชี'], [284, 'AccTy'], [325, 'CoCd'], [368, 'OI มาตรฐาน'], [459, 'แยกประเภทพิเศษ']].forEach(h => { s += AB(h[0], 313, 0, 16, 'lbl', h[1], 'color:#1b4fa0'); });
+  const rows = [['oth03-00', 'K'], ['oth53-00', 'K'], [ACCT_RESID, 'S']];
+  for (let i = 0; i < 8; i++) {
+    const y = 332 + i * 22, r = rows[i];
+    s += fd(163, y, 118, 20, r ? r[0] : '', '') + fd(284, y, 16, 20, r ? r[1] : '', '') + fd(325, y, 34, 20, r ? '1000' : '', '') + chk(366, y + 3, !!r) + fd(457, y, 78, 20, '', '');
+  }
+  s += ov(157, 326, 238, 82);
+  s += chk(163, 542, false) + lb(181, 549, 'บัญชีอื่น ๆ');
+  s += AB(452, 634, 94, 22, 'sbtn y', '✔ ดำเนินการต่อ') + AB(553, 634, 24, 22, 'sbtn', '✖', 'color:#c00') + ov(448, 630, 102, 30);
+  return canvas(969, 744, s);
+}
+/* หน้าที่ 4: ขอบเขตเขตธุรกิจ */
+function scrC4(){
+  const eiAcct = f30Data().eiAcct;
+  let s = chrome(967, 740, MENU_FULL.concat(['วิธีใช้(H)']), 'ผ่านรายการโดยมีการหักล้าง บันทึกหลักเกณฑ์การเลือก', [[35, 'การเลือกอื่นๆ'], [115, 'บัญชีอื่น'], [172, 'ประมวลผลรายการเปิด']]);
+  s += AB(165, 104, 132, 28, 'ovr', '', 'border-radius:50%');
+  s += pn(20, 166, 588, 122, 'บันทึกพารามิเตอร์แล้ว');
+  s += lb(30, 197, 'รหัสบริษัท') + fd(168, 188, 36, 20, '1000', 'g') + lb(30, 220, 'บัญชี') + fd(168, 211, 118, 20, eiAcct, 'g') + lb(317, 220, 'บัญชีอื่น ๆ') + fd(434, 211, 20, 20, '3', 'g');
+  s += lb(30, 242, 'ประเภท บ/ช') + fd(168, 233, 14, 20, 'D', 'g') + lb(30, 264, 'แยกประเภทพิเศษ') + fd(168, 255, 76, 20, '', 'g') + chk(316, 258, true) + lb(334, 264, 'OI มาตรฐาน');
+  s += pn(20, 320, 588, 366, 'เขตธุรกิจ');
+  s += AB(28, 345, 0, 16, 'lbl', 'จาก', 'color:#1b4fa0') + AB(246, 345, 0, 16, 'lbl', 'ถึง', 'color:#1b4fa0') + AB(428, 345, 0, 16, 'lbl', 'อักษร', 'color:#1b4fa0') + AB(490, 345, 0, 16, 'lbl', 'ค่าเริ่มต้น', 'color:#1b4fa0');
+  for (let i = 0; i < 14; i++) {
+    const y = 364 + i * 22, f = i === 0;
+    s += fd(28, y, 34, 20, f ? CONST.branchNo : '', f ? 'r' : '') + fd(245, y, 34, 20, f ? CONST.branchNo : '', f ? 'r y' : '') + chk(426, y + 4, false) + chk(489, y + 4, false);
+  }
+  return canvas(967, 740, s);
+}
+/* หน้าที่ 5: รายการเปิด */
+function scrC5(){
+  const d = f30Data();
+  let s = AB(10, 6, 944, 62, 'ttlfr', '') + AB(24, 10, 0, 24, 'ttl', 'ผ่านรายการโดยมีการหักล้าง ประมวลผลรายการเปิด');
+  s += AB(24, 42, 0, 20, 'apt', '👤') + AB(46, 42, 0, 20, 'apt', '▤') + AB(70, 42, 0, 20, 'apt', 'กระจายความแตกต่าง') + AB(180, 42, 0, 20, 'apt', 'ตัดจำหน่ายผลต่าง') + AB(272, 42, 0, 20, 'apt', '✎ ตัวเลือกในการแก้ไข') + AB(395, 42, 0, 20, 'apt', 'Ø Cash Disc. Due');
+  [[38, 'มาตรฐาน', 62], [104, 'ชำระบางส่วน', 74], [180, 'Res.Items', 62], [244, 'ภ/ษหักที่จ่าย', 76]].forEach((t, i) => { s += AB(t[0], 76, t[2], 22, 'sbtn' + (i ? '' : ' y'), esc(t[1])); });
+  s += pn(14, 106, 506, 346, 'รายการบัญชี ' + d.eiAcct + ' ' + d.first + ' (มากกว่า)');
+  [[22, 'เลขที่เอกสาร'], [104, 'ป.'], [122, 'วันที่เอก...'], [192, 'ค.'], [210, 'เข'], [246, 'วัน'], [292, 'THB ชั้นต้น'], [356, 'ส่วนลดเงินสด'], [456, '%ส่ว...']].forEach(h => { s += AB(h[0], 130, 0, 16, 'mono b', esc(h[1]), 'font-size:11.5px;'); });
+  const rows = [];
+  rows.push({ doc: '(เงินยืม)', ty: 'DR', amt: d.loan === null ? '?' : moneyShow(d.loan) });
+  d.keyed.forEach(b => rows.push({ doc: b.doc, ty: 'KR', amt: moneyShow(b.amt) + '-' }));
+  const maxRows = 14;
+  rows.slice(0, maxRows).forEach((r, i) => {
+    const y = 150 + i * 21, dt = r.ty === 'KR' ? dotDate(ST.sap.posting ? ddmmyyyy(ST.sap.posting) : '') : '';
+    s += AB(22, y, 0, 16, 'mono', esc(r.doc), 'color:#8a2a2a;font-size:11.5px;') + AB(104, y, 0, 16, 'mono', r.ty, 'color:#8a2a2a;') + AB(122, y, 0, 16, 'mono', dt, 'color:#8a2a2a;font-size:11px;') + AB(192, y, 0, 16, 'mono', r.ty === 'KR' ? '31' : '01', 'color:#8a2a2a;') + AB(210, y, 0, 16, 'mono', CONST.branchNo, 'color:#8a2a2a;') + AB(246, y, 0, 16, 'mono', r.ty === 'KR' ? '15-' : '1-', 'color:#8a2a2a;');
+    s += AB(268, y, 80, 16, 'mono', esc(r.amt), 'color:#8a2a2a;text-align:right;') + fd(356, y - 2, 94, 20, '', '') + fd(454, y - 2, 40, 20, '', '');
+  });
+  if (rows.length > maxRows) s += AB(22, 150 + maxRows * 21, 0, 16, 'mono', '⋮ (ตารางจริงยาวกว่านี้ — เลื่อนดู)', 'color:#666;font-size:11px;');
+  s += AB(12, 102, 512, 354, 'ovr2', '');
+  const bt = [[21, 22, '🔍'], [46, 22, '▤'], [70, 22, '▥'], [94, 22, '▦'], [118, 22, '🖨'], [142, 22, '⏷'], [169, 70, 'จำนวน'], [242, 74, 'รวม<>สุทธิ'], [318, 62, 'สกุลเงิน'], [392, 62, 'รายการ'], [456, 62, 'รายการ'], [526, 58, 'ส่วนลด'], [590, 58, 'ส่วนลด']];
+  bt.forEach(b => { s += AB(b[0], 470, b[1], 22, 'sbtn y', typeof b[2] === 'string' && b[2].length > 2 ? esc(b[2]) : b[2]); });
+  s += pn(18, 512, 612, 126, 'สถานะการประมวลผล');
+  s += lb(30, 552, 'จำนวนรายการ') + fd(161, 542, 50, 20, String(rows.length), 'g') + lb(30, 574, 'แสดงจากรายการ') + fd(161, 564, 50, 20, '1', '') + lb(30, 596, 'รหัสเหตุผล') + fd(161, 586, 34, 20, '', '') + lb(30, 618, 'แสดงในสกุลเงินที่หักล้าง');
+  s += lb(372, 552, 'จำนวนเงินที่บันทึก') + fd(504, 542, 100, 20, '0.00', 'g') + lb(372, 574, 'กำหนดแล้ว') + fd(504, 564, 100, 20, '0.00', 'g') + lb(372, 596, 'ผ่านรายการผลต่าง') + fd(504, 586, 100, 20, '', '') + lb(372, 618, 'ไม่ได้กำหนดไว้', 'color:#1b4fa0') + fd(504, 608, 100, 20, '0.00', 'g') + ov(366, 604, 246, 28);
+  return canvas(964, 650, s);
+}
+/* หน้าที่ 6/7: ภาพรวม */
+function scrC6(saveRed){
+  const d = f30Data(), p = f30Params(), fy = fiscal(ST.sap.posting);
+  let s = chrome(968, 745, MENU_FULL.concat(['วิธีใช้(H)']), 'ผ่านรายการโดยมีการหักล้าง แสดง ภาพรวม', [[27, '🔍'], [50, '⊞ แสดงสกุลเงิน'], [158, 'ℹ ภาษี'], [214, '↺ ริเซ็ต']], { saveRed });
+  s += lb(20, 158, 'วันที่เอกสาร') + fd(131, 148, 84, 20, dotDate(p.docDate), 'g') + lb(230, 158, 'ประเภท') + fd(313, 148, 26, 20, 'DZ', 'g') + lb(362, 158, 'รหัสบริษัท') + fd(474, 148, 34, 20, '1000', 'g');
+  s += lb(20, 181, 'วันผ่านรายการ') + fd(131, 171, 84, 20, dotDate(p.posting), 'g') + lb(237, 181, 'งวด') + fd(313, 171, 24, 20, fy.per, 'g') + lb(362, 181, 'สกุลเงิน') + fd(474, 171, 34, 20, 'THB', 'g');
+  s += lb(20, 204, 'เลขที่เอกสาร') + fd(131, 194, 84, 20, 'INTERNAL', 'g') + lb(230, 204, 'ปีบัญชี') + fd(313, 194, 52, 20, fy.fy, 'g') + lb(362, 204, 'วันที่การแปลงค่า') + fd(474, 194, 84, 20, dotDate(p.posting), 'g');
+  s += lb(20, 226, 'การอ้างอิง') + fd(131, 215, 116, 20, p.ref, '') + lb(362, 226, 'เลขที่ระหว่างบ.') + fd(474, 215, 116, 20, '', '');
+  s += lb(20, 248, 'Doc.Header Text') + fd(131, 238, 178, 20, '', '') + lb(362, 248, 'Trading part.BA') + fd(474, 237, 34, 20, '', '');
+  s += lb(20, 270, 'เลขที่สาขา') + fd(131, 260, 34, 20, CONST.branchNo, '');
+  s += pn(14, 282, 596, 322, 'รายการในสกุลเงินของเอกสาร') + ov(12, 278, 600, 330);
+  s += AB(28, 304, 0, 16, 'mono b', 'PK เขตธุรกิจ บัญชี') + AB(204, 304, 0, 16, 'mono b', 'THB') + AB(290, 304, 0, 16, 'mono b', 'จำนวนเงิน') + AB(380, 304, 0, 16, 'mono b', 'จำนวนภาษี');
+  const n = d.lines.length, h = n > 10 ? Math.floor(240 / n) : 24;
+  d.lines.forEach((ln, i) => {
+    const y = 326 + i * h;
+    s += AB(28, y, 0, 16, 'mono', String(i + 1).padStart(3, '0')) + AB(58, y, 0, 16, 'mono', ln.pk) + AB(80, y, 0, 16, 'mono', CONST.branchNo) + AB(116, y, 0, 16, 'mono', esc(ln.acct)) + AB(204, y, 80, 16, 'mono', esc(ln.desc.slice(0, 9)), 'overflow:hidden;font-size:11px;') + AB(286, y, 78, 16, 'mono', moneyShow(ln.amt) + (ln.cr ? '-' : ''), 'text-align:right;');
+  });
+  const D = r2(d.lines.filter(l => !l.cr).reduce((t, l) => t + l.amt, 0)), C = r2(d.lines.filter(l => l.cr).reduce((t, l) => t + l.amt, 0));
+  s += AB(26, 574, 0, 16, 'mono bl', 'D ' + moneyShow(D)) + AB(180, 574, 0, 16, 'mono bl', 'C ' + moneyShow(C)) + AB(420, 574, 0, 16, 'mono bl', moneyShow(Math.abs(r2(D - C)))) + AB(466, 574, 0, 16, 'mono bl', '*') + AB(490, 574, 0, 16, 'mono bl', n + ' บรรทัด รก.');
+  s += pn(14, 612, 592, 56, 'บรรทัดรายการอื่น');
+  s += lb(28, 648, 'PstKy') + fd(80, 637, 22, 22, '', 'y') + lb(112, 648, 'บัญชี') + fd(158, 637, 124, 20, '', '') + lb(288, 648, 'SGL Ind') + fd(340, 638, 13, 20, '', '') + lb(358, 648, 'TType') + fd(432, 637, 26, 20, '', '') + lb(468, 648, 'รหัสบริษัทใ') + fd(550, 637, 34, 20, '', '');
+  if (saveRed) s += AB(14, 700, 440, 24, 'stbar', 'เอกสาร <span class="dn">XXXXXXXXXX</span> ถูกผ่านรายการในรหัสบริษัท 1000') + ov(61, 698, 90, 28);
+  return canvas(968, 745, s);
+}
+const LEG = '<div class="legend"><span><i class="r"></i>กรอบแดง = ช่อง/ปุ่มที่ต้องกรอกหรือกด</span><span><i class="d"></i>ช่องสีเทา = ไม่ต้องแตะ</span></div>';
+
+/* ── ตารางรีเช็ค ── */
+function f30Check(){
+  const d = f30Data(), T0 = ST.f30.ticks;
+  const ok = '<span class="okm">✓</span>', ng = '<span class="ngm">✗</span>';
+  const issues = [];
+  if (d.loan === null) issues.push('ไม่พบยอดเงินยืม (BUDGET.gorTotal) — ตรวจไฟล์ 05');
+  if (d.missing.length) issues.push('ยังมี ' + d.missing.length + ' ใบที่ยังไม่มีเลขเอกสาร SAP (กลับไปคีย์ F-43 ให้ครบก่อน): ' + d.missing.map(m => esc(m.x.vendorName || '?')).join(', '));
+  if (d.dupDocs.length) issues.push('เลขเอกสารซ้ำกัน: ' + d.dupDocs.join(', '));
+  if (d.keyed.some(b => b.acct === '?')) issues.push('มีใบที่ยังไม่ได้เลือกประเภทผู้ขาย (OTH03/OTH53)');
+  if (!ST.sap.borrower.empId) issues.push('ยังไม่ระบุรหัสพนักงานผู้ยืม');
+  if (d.resid !== null && d.resid < -0.004) issues.push('ยอดบิลรวม ' + money(d.sum) + ' เกินเงินยืม ' + money(d.loan) + ' — ยังไม่มีภาพตัวอย่างกรณีนี้ (ต้องเบิกเพิ่ม) ให้ตรวจเอง');
+  const rows = d.lines.map((ln, i) => {
+    const id = 'L' + i;
+    return `<tr><td>${String(i + 1).padStart(3, '0')}</td><td><b>${ln.pk}</b></td><td>${CONST.branchNo}</td><td class="mn">${esc(ln.acct)}</td><td class="r">${moneyShow(ln.amt)}${ln.cr ? '-' : ''}</td><td class="mn" style="color:var(--text-soft)">${ln.doc ? esc(ln.doc) : ''}</td><td><input type="checkbox" ${T0[id] ? 'checked' : ''} onchange="f30Tick('${id}',this.checked)"></td></tr>`;
+  }).join('');
+  const nLines = d.lines.length, D = d.loan === null ? 0 : d.loan;
+  const memoRefund = (ST.gor != null && ST.grand06 != null) ? r2(ST.gor - ST.grand06) : null;
+  return `<div class="ck">
+    <div class="ckh">🔍 รีเช็คก่อนบันทึก — ระบบคำนวณบรรทัดที่ควรเห็นในหน้า "ภาพรวม"</div>
+    ${issues.length ? `<div class="notice err" style="margin:6px 0">${issues.map(i => '❌ ' + i).join('<br>')}</div>` : `<div class="notice ok" style="margin:6px 0">✅ ข้อมูลครบ: ${d.keyed.length} ใบมีเลขเอกสาร · เงินยืม ${money(d.loan)} · บิลรวม ${money(d.sum)} · ผลต่างลงบัญชี ${ACCT_RESID} = ${money(d.resid)}</div>`}
+    <table class="ckt"><thead><tr><th>#</th><th>PK</th><th>เขตธุรกิจ</th><th>บัญชี</th><th>จำนวนเงิน</th><th>เลขเอกสาร F-43</th><th>ตรงจอ</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="ckr"><b>กฎที่ต้องเห็นทุกบรรทัด</b><br>
+      ① PK: เงินยืม = <b>17</b> (1 บรรทัด) · บิลทุกใบ = <b>27</b> · ผลต่าง = <b>40</b> (บัญชี ${ACCT_RESID})<br>
+      ② เขตธุรกิจ = <b>${CONST.branchNo}</b> ทุกบรรทัด<br>
+      ③ ช่อง "จำนวนภาษี" ต้อง<b>ว่าง</b>ทุกบรรทัด (ภาษีลงไปแล้วตอน F-43)<br>
+      ④ บิลแต่ละใบ: ยอดต้องเท่ากับยอดเต็มตอน F-43 และบัญชีผู้ขาย (OTH03-00 / OTH53-00) ตรงกับตาราง
+    </div>
+    <div class="ckr"><b>กรอกตัวเลขตามจอ SAP เพื่อเทียบอัตโนมัติ</b>
+      <div class="ckin"><label>D</label><input id="ckD" placeholder="${money(D)}" value="${esc(ST.f30.chk.d)}" oninput="f30Live()">
+      <label>C</label><input id="ckC" placeholder="${money(D)}" value="${esc(ST.f30.chk.c)}" oninput="f30Live()">
+      <label>จำนวนบรรทัด</label><input id="ckN" placeholder="${nLines}" value="${esc(ST.f30.chk.n)}" oninput="f30Live()"></div>
+      <div id="ckRes" style="margin-top:6px"></div></div>
+    <div class="ckr" style="color:var(--text-soft)">ตัวเลขอ้างอิง: เงินเหลือจ่ายในบันทึกไฟล์ 11 = ${memoRefund === null ? '—' : money(memoRefund)} · ผลต่างที่ F-30 จะลง ${d.resid === null ? '—' : money(d.resid)} ${memoRefund !== null && d.resid !== null && Math.abs(memoRefund - d.resid) > 0.005 ? '<br><span class="ngm">⚠</span> สองค่านี้ต่างกัน = มีค่าใช้จ่ายที่ไม่ได้ผ่านการคีย์ F-43 รอบนี้ (เช่น วิทยากรภายใน/ใบสำคัญเจ้าหน้าที่) — ตรวจว่าตั้งใจหรือไม่' : ''}</div>
+  </div>`;
+}
+function f30Tick(id, v){ ST.f30.ticks[id] = v; }
+function f30Live(){
+  const d = f30Data(), g = id => (document.getElementById(id).value || '').replace(/,/g, '').trim();
+  ST.f30.chk = { d: document.getElementById('ckD').value, c: document.getElementById('ckC').value, n: document.getElementById('ckN').value };
+  const D = g('ckD'), C = g('ckC'), N = g('ckN'), el = document.getElementById('ckRes');
+  const cmp = (v, exp) => v === '' ? '<span style="color:var(--text-soft)">—</span>' : (Math.abs(parseFloat(v) - exp) < 0.005 ? '<span class="okm">✓ ตรง</span>' : '<span class="ngm">✗ ไม่ตรง (ควรเป็น ' + money(exp) + ')</span>');
+  const loan = d.loan === null ? 0 : d.loan;
+  el.innerHTML = 'D: ' + cmp(D, loan) + ' · C: ' + cmp(C, loan) + ' · จำนวนบรรทัด: ' + (N === '' ? '—' : (parseInt(N, 10) === d.lines.length ? '<span class="okm">✓ ตรง</span>' : '<span class="ngm">✗ ไม่ตรง (ควรเป็น ' + d.lines.length + ')</span>'));
+}
+
+/* ── สไลด์ F-30 ── */
+function slide30(){
+  const k = ST.f30.slide, d = f30Data(), p = f30Params(), cl = ST.sap.clear;
+  switch (k) {
+    case 0: return { mock: canvas(764, 120, chrome(764, 120, [], '', [], { cmd: 'F-30', cmdRed: true }) + AB(62, 82, 0, 18, 'lbl', 'พิมพ์ F-30 ในช่องคำสั่งมุมซ้ายบน แล้วกด Enter')),
+      todo: `<h4>เริ่มงานหักล้าง</h4>
+        <div class="notice warn" style="margin:0;grid-column:1/-1">ทำต่อเมื่อคีย์ F-43 ครบทุกใบแล้ว (ตอนนี้ ${d.keyed.length}/${d.keyed.length + d.missing.length} ใบมีเลขเอกสาร)${d.missing.length ? ' — ใบที่ยังขาด: ' + d.missing.map(m => esc(m.x.vendorName || '?')).join(', ') : ''}</div>
+        <div class="note">① ออกจาก SAP แล้วเข้าใหม่ด้วย user สำหรับงานหักล้าง (รหัสผ่านไม่เก็บไว้ในหน้านี้ — กรอกเอง)<br>② พิมพ์ <b>F-30</b> ในช่องคำสั่ง แล้วกด Enter</div>${T('คำสั่ง', 'F-30')}` };
+    case 1: return { mock: scrC1(),
+      todo: `<h4>หน้าหัวเอกสาร</h4>
+        <div class="keylab">✍️ 2 ช่องนี้ต้องพิมพ์ใหม่ทุกครั้ง (ตามใบหักล้างคืนเงิน)</div>
+        <div class="t"><div class="tl">วันที่เอกสาร<br><span style="font-size:10.5px">(วันที่ในใบหักล้างคืนเงิน)</span></div><div class="tv"><input type="date" class="keyin" style="font-size:15px;letter-spacing:0" value="${esc(cl.docDate || '')}" onchange="onClr('docDate',this.value)"></div></div>
+        <div class="t"><div class="tl">การอ้างอิง<br><span style="font-size:10.5px">(เลขที่ในใบหักล้างคืนเงิน)</span></div><div class="tv"><input type="text" class="keyin" style="font-size:15px" value="${esc(cl.ref || '')}" placeholder="เช่น 4/70" onchange="onClr('ref',this.value)"></div>${cl.ref ? `<button class="cp" data-c="${encodeURIComponent(cl.ref)}" onclick="doCopy(this)">คัดลอก</button>` : ''}</div>
+        ${p.docDate ? T('วันที่เอกสาร (พิมพ์ตามนี้)', p.docDate) : ''}
+        ${p.posting ? T('วันผ่านรายการ', p.posting) : '<div class="notice warn" style="margin:0">ยังไม่ได้ระบุ "วันผ่านรายการ" ด้านบนของหน้า</div>'}
+        ${T('ข้อความหักล้าง', p.text, { limit: TEXT_LIMIT })}${T('เลขที่สาขา', CONST.branchNo)}
+        <div class="note">เลือกวิทยุ <b>"การผ่านรายการโอนด้วยการหักล้าง"</b> (กรอบแดง) แล้วกดปุ่ม <b>เลือกรายการเปิด</b> (กรอบแดงบนซ้าย)</div>` };
+    case 2: return { mock: scrC2(false),
+      todo: `<h4>เลือกรายการเปิด</h4>${T('บัญชี', d.eiAcct)}
+        <div class="note">① ติ๊ก <b>"บัญชีอื่น ๆ"</b> · ② เลือกวิทยุ <b>"เขตธุรกิจ"</b> (ฝั่งขวา) · ③ กดปุ่ม <b>ประมวลผลรายการเปิด</b> (วงรีบนซ้าย)<br>รหัสบัญชี = EI0 ตามด้วยรหัสพนักงานผู้ยืม</div>` };
+    case 3: return { mock: scrC3(),
+      todo: `<h4>หน้าต่าง "บัญชีเพิ่มเติม" เด้งขึ้น</h4>
+        <div class="note">กรอก 3 แถว (กรอบแดง) แล้วกด <b>ดำเนินการต่อ</b></div>
+        ${T('แถว 1 · บัญชี / AccTy', 'oth03-00  /  K')}${T('แถว 2 · บัญชี / AccTy', 'oth53-00  /  K')}${T('แถว 3 · บัญชี / AccTy', ACCT_RESID + '  /  S')}
+        <div class="note">CoCd = 1000 และติ๊กช่อง OI มาตรฐาน ทั้ง 3 แถว</div>` };
+    case 4: return { mock: scrC4(),
+      todo: `<h4>ขอบเขต "เขตธุรกิจ"</h4>${T('จาก', CONST.branchNo)}${T('ถึง', CONST.branchNo)}
+        <div class="note">กรอกแถวแรกแถวเดียว แล้วกด <b>ประมวลผลรายการเปิด</b> (วงรีบนซ้าย)</div>` };
+    case 5: {
+      const T5 = ST.f30.ticks;
+      const li = [{ id: 'S0', t: 'เงินยืมของหลักสูตรนี้ (DR) — ยอด ' + money(d.loan) }].concat(d.keyed.map((b, i) => ({ id: 'S' + (i + 1), t: b.doc + ' — ' + money(b.amt) + ' · ' + esc(b.x.vendorName || '') })));
+      return { mock: scrC5(),
+        todo: `<h4>เลือกรายการที่จะหักล้าง</h4>
+          <div class="note">ในตาราง SAP จะมีรายการหลายรุ่นปนกัน — ให้เลือก <b>เฉพาะ ${li.length} รายการด้านล่าง</b> (เทียบ "เลขเอกสาร" กับ "ยอด") ให้ตัวหนังสือเป็น<b>สีดำ</b> แล้วดับเบิลคลิกตรวจทีละบิล (ตัวหนังสือจะเป็นสีน้ำเงิน)</div>
+          <div class="ckl">${li.map(l => `<label><input type="checkbox" ${T5[l.id] ? 'checked' : ''} onchange="f30Tick('${l.id}',this.checked)"> ${l.t}</label>`).join('')}</div>
+          <div class="notice warn" style="margin:0;grid-column:1/-1"><b>ห้ามบันทึก</b> ถ้า "ไม่ได้กำหนดไว้" (กรอบแดงล่างขวา) ≠ 0.00 → กลับไปตรวจว่าขาด/เกินรายการใด หรือเผลอเลือกรายการของหลักสูตรอื่น<br>รายการที่ไม่อยู่ในรายชื่อนี้ (เช่น ยอด 1,000.00 ประเภทเอกสาร HR) <b>ไม่ต้องเลือก</b></div>
+          <div class="note">ครบแล้วคลิกปุ่มรูปภูเขา (ไอคอนซ้ายสุดของแถบปุ่ม) เพื่อไปหน้าภาพรวม</div>` };
+    }
+    case 6: return { mock: scrC6(false), todo: f30Check() };
+    default: {
+      const dupWith = ST.rows.filter(x => !x.staffRow && rec(x.key).doc && cl.doc && rec(x.key).doc === cl.doc).length;
+      return { mock: scrC6(true),
+        todo: `<h4>บันทึก & จดเลขเอกสาร</h4>
+          <div class="note">ผลต่างล่างสุด = 0.00 → กดไอคอนแผ่นดิสก์ (กรอบแดงบนซ้าย) → จดเลข 10 หลักที่ซ้ายล่างของจอ</div>
+          <div class="keylab">✍️ พิมพ์เลขเอกสารหักล้าง SAP 10 หลัก (เลขในกรอบแดงซ้ายล่างของจอ) ลงในช่องสีเหลืองนี้</div>
+          <div style="grid-column:1/-1"><input id="clrDocIn" class="keyin" type="text" inputmode="numeric" maxlength="10" value="${esc(cl.doc || '')}" placeholder="เช่น 2000012345" oninput="onClr('doc',this.value,true)"></div>
+          ${dupWith ? '<div class="notice err" style="margin:0">❌ เลขนี้ซ้ำกับเลขเอกสารบิล F-43 — ตรวจว่าจดถูกหรือไม่</div>' : ''}
+          <div class="note">กด <b>💾 บันทึก</b> ด้านบนของหน้าเพื่อเก็บเลขไว้ในระบบ</div>` };
+    }
+  }
+}
+function onClr(f, v, noRender){ ST.sap.clear[f] = String(v).trim(); markDirty('clear'); if (!noRender) renderF30(); else updateModeTabs(); }
+function goF30(i){ ST.f30.slide = Math.max(0, Math.min(SLIDES30.length - 1, i)); renderF30(); }
+function renderF30(){
+  const st = document.getElementById('stage'), s = slide30(), k = ST.f30.slide;
+  const dots = SLIDES30.map((n, i) => `<div class="dot ${i === k ? 'on' : (i < k ? 'past' : '')}" title="${esc(n[0])}" onclick="goF30(${i})"></div>`).join('');
+  st.innerHTML = `<div class="stage-h"><div><h2>หักล้างเงินยืมกับบิล (F-30) — ทั้งหลักสูตร</h2>
+    <div class="sub">เงินยืม ${ST.gor === null || ST.gor === undefined ? '—' : moneyShow(ST.gor)} บาท · บิลที่คีย์แล้ว ${f30Data().keyed.length} ใบ</div></div></div>
+    <div class="dots">${dots}</div>
+    <div class="sub" style="margin:-8px 0 10px;font-weight:600;color:var(--navy)">ขั้นที่ ${k} / ${SLIDES30.length - 1} — ${esc(SLIDES30[k][0])}</div>
+    <div class="slide"><div>${s.mock}</div><div class="todo">${s.todo}</div></div>
+    <div class="nav"><button class="btn sec" onclick="goF30(ST.f30.slide-1)" ${k === 0 ? 'disabled' : ''}>◀ ก่อนหน้า</button><span class="mid">ใช้แป้นลูกศร ← → ได้</span>
+    <button class="btn" onclick="goF30(ST.f30.slide+1)" ${k === SLIDES30.length - 1 ? 'disabled' : ''}>ถัดไป ▶</button></div>`;
+  fitSap();
+  if (k === 6) f30Live();
+  updateModeTabs();
+}
+function setMode(m){
+  ST.mode = m;
+  document.getElementById('main').classList.toggle('solo', m === 'f30');
+  if (m === 'f30') renderF30(); else renderAll();
+  updateModeTabs();
+}
+function updateModeTabs(){
+  const b43 = document.getElementById('tab43'), b30 = document.getElementById('tab30'); if (!b43) return;
+  b43.classList.toggle('on', ST.mode !== 'f30'); b30.classList.toggle('on', ST.mode === 'f30');
+  const d = ST.sap.clear && ST.sap.clear.doc;
+  b30.textContent = '② หักล้างเงินยืม (F-30)' + (d ? ' ✓ ' + d : '');
 }
 
 function vendorPick(x, c){
