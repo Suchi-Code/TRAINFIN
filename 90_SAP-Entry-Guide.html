@@ -913,7 +913,6 @@ function f30Data(){
   const lines = [];
   lines.push({ pk: '17', acct: eiAcct, desc: first, amt: loan === null ? 0 : loan, cr: true });
   keyed.forEach(b => lines.push({ pk: '27', acct: b.acct, desc: 'จน.อื่น ๆจ่ายครั้งเดียว', amt: b.amt, doc: b.doc }));
-  if (resid !== null && resid > 0.004) lines.push({ pk: '40', acct: '000' + ACCT_RESID, desc: ACCT_RESID_DESC, amt: resid });
   const dup = {}; keyed.forEach(b => { dup[b.doc] = (dup[b.doc] || 0) + 1; });
   return { emp, first, eiAcct, keyed, missing, sum, loan, resid, lines, dupDocs: Object.keys(dup).filter(k => dup[k] > 1) };
 }
@@ -1032,7 +1031,8 @@ function scrC6(saveRed){
     s += AB(28, y, 0, 16, 'mono', String(i + 1).padStart(3, '0')) + AB(58, y, 0, 16, 'mono', ln.pk) + AB(80, y, 0, 16, 'mono', CONST.branchNo) + AB(116, y, 0, 16, 'mono', esc(ln.acct)) + AB(204, y, 80, 16, 'mono', esc(ln.desc.slice(0, 9)), 'overflow:hidden;font-size:11px;') + AB(286, y, 78, 16, 'mono', moneyShow(ln.amt) + (ln.cr ? '-' : ''), 'text-align:right;');
   });
   const D = r2(d.lines.filter(l => !l.cr).reduce((t, l) => t + l.amt, 0)), C = r2(d.lines.filter(l => l.cr).reduce((t, l) => t + l.amt, 0));
-  s += AB(26, 574, 0, 16, 'mono bl', 'D ' + moneyShow(D)) + AB(180, 574, 0, 16, 'mono bl', 'C ' + moneyShow(C)) + AB(420, 574, 0, 16, 'mono bl', moneyShow(Math.abs(r2(D - C)))) + AB(466, 574, 0, 16, 'mono bl', '*') + AB(490, 574, 0, 16, 'mono bl', n + ' บรรทัด รก.');
+  s += AB(28, 490, 0, 16, 'mono', 'SAP เพิ่มบรรทัดของระบบเองเพื่อให้ D = C (เช่น 7111004)', 'color:#666;font-size:11px;') + AB(28, 508, 0, 16, 'mono', 'ไม่ต้องตรวจ — ตรวจเฉพาะบรรทัด 17 / 27 ด้านบน', 'color:#666;font-size:11px;');
+  s += AB(26, 574, 0, 16, 'mono bl', 'D(27) ' + moneyShow(D)) + AB(220, 574, 0, 16, 'mono bl', 'C(17) ' + moneyShow(C)) + AB(466, 574, 0, 16, 'mono bl', 'ของเรา ' + n + ' บรรทัด');
   s += pn(14, 612, 592, 56, 'บรรทัดรายการอื่น');
   s += lb(28, 648, 'PstKy') + fd(80, 637, 22, 22, '', 'y') + lb(112, 648, 'บัญชี') + fd(158, 637, 124, 20, '', '') + lb(288, 648, 'SGL Ind') + fd(340, 638, 13, 20, '', '') + lb(358, 648, 'TType') + fd(432, 637, 26, 20, '', '') + lb(468, 648, 'รหัสบริษัทใ') + fd(550, 637, 34, 20, '', '');
   if (saveRed) s += AB(14, 700, 440, 24, 'stbar', 'เอกสาร <span class="dn">XXXXXXXXXX</span> ถูกผ่านรายการในรหัสบริษัท 1000') + ov(61, 698, 90, 28);
@@ -1043,36 +1043,38 @@ const LEG = '<div class="legend"><span><i class="r"></i>กรอบแดง = 
 /* ── ตารางรีเช็ค ── */
 function f30Check(){
   const d = f30Data(), T0 = ST.f30.ticks;
-  const ok = '<span class="okm">✓</span>', ng = '<span class="ngm">✗</span>';
+  const ok = '<span class="okm">✓</span>';
   const issues = [];
   if (d.loan === null) issues.push('ไม่พบยอดเงินยืม (BUDGET.gorTotal) — ตรวจไฟล์ 05');
   if (d.missing.length) issues.push('ยังมี ' + d.missing.length + ' ใบที่ยังไม่มีเลขเอกสาร SAP (กลับไปคีย์ F-43 ให้ครบก่อน): ' + d.missing.map(m => esc(m.x.vendorName || '?')).join(', '));
   if (d.dupDocs.length) issues.push('เลขเอกสารซ้ำกัน: ' + d.dupDocs.join(', '));
   if (d.keyed.some(b => b.acct === '?')) issues.push('มีใบที่ยังไม่ได้เลือกประเภทผู้ขาย (OTH03/OTH53)');
   if (!ST.sap.borrower.empId) issues.push('ยังไม่ระบุรหัสพนักงานผู้ยืม');
-  if (d.resid !== null && d.resid < -0.004) issues.push('ยอดบิลรวม ' + money(d.sum) + ' เกินเงินยืม ' + money(d.loan) + ' — ยังไม่มีภาพตัวอย่างกรณีนี้ (ต้องเบิกเพิ่ม) ให้ตรวจเอง');
+  if (d.loan !== null && d.sum - d.loan > 0.004) issues.push('ยอดบิลรวม ' + money(d.sum) + ' เกินเงินยืม ' + money(d.loan) + ' — ยังไม่มีภาพตัวอย่างกรณีนี้ ให้ตรวจเอง');
+  const g06 = ST.grand06;
+  if (g06 !== null && g06 !== undefined && Math.abs(r2(d.sum - g06)) > 0.005)
+    issues.push('ยอดบิลที่คีย์แล้วรวม <b>' + money(d.sum) + '</b> แต่ค่าใช้จ่ายรวมในไฟล์ 06 = <b>' + money(g06) + '</b> (ต่างกัน ' + money(Math.abs(r2(d.sum - g06))) + ') → มีบิลที่ยังไม่ได้คีย์/เลือกหรือไม่? ถ้าตั้งใจ (เช่น วิทยากรภายใน/ใบสำคัญเจ้าหน้าที่) ให้ข้ามได้');
   const rows = d.lines.map((ln, i) => {
     const id = 'L' + i;
     return `<tr><td>${String(i + 1).padStart(3, '0')}</td><td><b>${ln.pk}</b></td><td>${CONST.branchNo}</td><td class="mn">${esc(ln.acct)}</td><td class="r">${moneyShow(ln.amt)}${ln.cr ? '-' : ''}</td><td class="mn" style="color:var(--text-soft)">${ln.doc ? esc(ln.doc) : ''}</td><td><input type="checkbox" ${T0[id] ? 'checked' : ''} onchange="f30Tick('${id}',this.checked)"></td></tr>`;
   }).join('');
-  const nLines = d.lines.length, D = d.loan === null ? 0 : d.loan;
-  const memoRefund = (ST.gor != null && ST.grand06 != null) ? r2(ST.gor - ST.grand06) : null;
+  const loan = d.loan === null ? 0 : d.loan;
   return `<div class="ck">
-    <div class="ckh">🔍 รีเช็คก่อนบันทึก — ระบบคำนวณบรรทัดที่ควรเห็นในหน้า "ภาพรวม"</div>
-    ${issues.length ? `<div class="notice err" style="margin:6px 0">${issues.map(i => '❌ ' + i).join('<br>')}</div>` : `<div class="notice ok" style="margin:6px 0">✅ ข้อมูลครบ: ${d.keyed.length} ใบมีเลขเอกสาร · เงินยืม ${money(d.loan)} · บิลรวม ${money(d.sum)} · ผลต่างลงบัญชี ${ACCT_RESID} = ${money(d.resid)}</div>`}
+    <div class="ckh">🔍 รีเช็คก่อนบันทึก — เฉพาะบรรทัดของเรา (PK 17 และ 27)</div>
+    ${issues.length ? `<div class="notice err" style="margin:6px 0">${issues.map(i => '❌ ' + i).join('<br>')}</div>` : `<div class="notice ok" style="margin:6px 0">✅ ข้อมูลครบ: ${d.keyed.length} ใบมีเลขเอกสาร · เงินยืม ${money(d.loan)} · บิลรวม ${money(d.sum)}</div>`}
     <table class="ckt"><thead><tr><th>#</th><th>PK</th><th>เขตธุรกิจ</th><th>บัญชี</th><th>จำนวนเงิน</th><th>เลขเอกสาร F-43</th><th>ตรงจอ</th></tr></thead><tbody>${rows}</tbody></table>
-    <div class="ckr"><b>กฎที่ต้องเห็นทุกบรรทัด</b><br>
-      ① PK: เงินยืม = <b>17</b> (1 บรรทัด) · บิลทุกใบ = <b>27</b> · ผลต่าง = <b>40</b> (บัญชี ${ACCT_RESID})<br>
+    <div class="ckr" style="color:var(--text-soft)">บรรทัดที่ SAP เพิ่มให้เอง (เช่น 7111004) และรายการอื่นที่ไม่ใช่ของเรา (เช่น ยอด 1,000.00 ประเภท HR) ไม่นับ — D/C ที่มุมล่างของหน้าจอรวมบรรทัดเหล่านั้นด้วย จึงไม่ใช้เป็นตัวชี้ว่าบิลครบ</div>
+    <div class="ckr"><b>กฎที่ต้องเห็นทุกบรรทัดของเรา</b><br>
+      ① PK: เงินยืม = <b>17</b> (1 บรรทัด) · บิลทุกใบ = <b>27</b><br>
       ② เขตธุรกิจ = <b>${CONST.branchNo}</b> ทุกบรรทัด<br>
       ③ ช่อง "จำนวนภาษี" ต้อง<b>ว่าง</b>ทุกบรรทัด (ภาษีลงไปแล้วตอน F-43)<br>
-      ④ บิลแต่ละใบ: ยอดต้องเท่ากับยอดเต็มตอน F-43 และบัญชีผู้ขาย (OTH03-00 / OTH53-00) ตรงกับตาราง
+      ④ บิลแต่ละใบ: ยอดเท่ากับยอดเต็มตอน F-43 และบัญชีผู้ขาย (OTH03-00 / OTH53-00) ตรงกับตาราง
     </div>
     <div class="ckr"><b>กรอกตัวเลขตามจอ SAP เพื่อเทียบอัตโนมัติ</b>
-      <div class="ckin"><label>D</label><input id="ckD" placeholder="${money(D)}" value="${esc(ST.f30.chk.d)}" oninput="f30Live()">
-      <label>C</label><input id="ckC" placeholder="${money(D)}" value="${esc(ST.f30.chk.c)}" oninput="f30Live()">
-      <label>จำนวนบรรทัด</label><input id="ckN" placeholder="${nLines}" value="${esc(ST.f30.chk.n)}" oninput="f30Live()"></div>
+      <div class="ckin"><label>เครดิต PK 17</label><input id="ckC" placeholder="${money(loan)}" value="${esc(ST.f30.chk.c)}" oninput="f30Live()">
+      <label>เดบิต PK 27 รวม</label><input id="ckD" placeholder="${money(d.sum)}" value="${esc(ST.f30.chk.d)}" oninput="f30Live()">
+      <label>จำนวนบรรทัด 17+27</label><input id="ckN" placeholder="${d.lines.length}" value="${esc(ST.f30.chk.n)}" oninput="f30Live()"></div>
       <div id="ckRes" style="margin-top:6px"></div></div>
-    <div class="ckr" style="color:var(--text-soft)">ตัวเลขอ้างอิง: เงินเหลือจ่ายในบันทึกไฟล์ 11 = ${memoRefund === null ? '—' : money(memoRefund)} · ผลต่างที่ F-30 จะลง ${d.resid === null ? '—' : money(d.resid)} ${memoRefund !== null && d.resid !== null && Math.abs(memoRefund - d.resid) > 0.005 ? '<br><span class="ngm">⚠</span> สองค่านี้ต่างกัน = มีค่าใช้จ่ายที่ไม่ได้ผ่านการคีย์ F-43 รอบนี้ (เช่น วิทยากรภายใน/ใบสำคัญเจ้าหน้าที่) — ตรวจว่าตั้งใจหรือไม่' : ''}</div>
   </div>`;
 }
 function f30Tick(id, v){ ST.f30.ticks[id] = v; }
@@ -1082,7 +1084,7 @@ function f30Live(){
   const D = g('ckD'), C = g('ckC'), N = g('ckN'), el = document.getElementById('ckRes');
   const cmp = (v, exp) => v === '' ? '<span style="color:var(--text-soft)">—</span>' : (Math.abs(parseFloat(v) - exp) < 0.005 ? '<span class="okm">✓ ตรง</span>' : '<span class="ngm">✗ ไม่ตรง (ควรเป็น ' + money(exp) + ')</span>');
   const loan = d.loan === null ? 0 : d.loan;
-  el.innerHTML = 'D: ' + cmp(D, loan) + ' · C: ' + cmp(C, loan) + ' · จำนวนบรรทัด: ' + (N === '' ? '—' : (parseInt(N, 10) === d.lines.length ? '<span class="okm">✓ ตรง</span>' : '<span class="ngm">✗ ไม่ตรง (ควรเป็น ' + d.lines.length + ')</span>'));
+  el.innerHTML = 'เดบิต 27: ' + cmp(D, d.sum) + ' · เครดิต 17: ' + cmp(C, loan) + ' · จำนวนบรรทัด 17+27: ' + (N === '' ? '—' : (parseInt(N, 10) === d.lines.length ? '<span class="okm">✓ ตรง</span>' : '<span class="ngm">✗ ไม่ตรง (ควรเป็น ' + d.lines.length + ')</span>'));
 }
 
 /* ── สไลด์ F-30 ── */
@@ -1128,7 +1130,7 @@ function slide30(){
       const dupWith = ST.rows.filter(x => !x.staffRow && rec(x.key).doc && cl.doc && rec(x.key).doc === cl.doc).length;
       return { mock: scrC6(true),
         todo: `<h4>บันทึก & จดเลขเอกสาร</h4>
-          <div class="note">ผลต่างล่างสุด = 0.00 → กดไอคอนแผ่นดิสก์ (กรอบแดงบนซ้าย) → จดเลข 10 หลักที่ซ้ายล่างของจอ</div>
+          <div class="note">ผลต่างล่างสุดของหน้าจอเป็น 0.00 → กดไอคอนแผ่นดิสก์ (กรอบแดงบนซ้าย) → จดเลข 10 หลักที่ซ้ายล่างของจอ</div>
           <div class="keylab">✍️ พิมพ์เลขเอกสารหักล้าง SAP 10 หลัก (เลขในกรอบแดงซ้ายล่างของจอ) ลงในช่องสีเหลืองนี้</div>
           <div style="grid-column:1/-1"><input id="clrDocIn" class="keyin" type="text" inputmode="numeric" maxlength="10" value="${esc(cl.doc || '')}" placeholder="เช่น 2000012345" oninput="onClr('doc',this.value,true)"></div>
           ${dupWith ? '<div class="notice err" style="margin:0">❌ เลขนี้ซ้ำกับเลขเอกสารบิล F-43 — ตรวจว่าจดถูกหรือไม่</div>' : ''}
