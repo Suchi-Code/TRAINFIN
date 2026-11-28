@@ -1101,14 +1101,20 @@ function pickVendor(pickId){
   if(!v || !rowId) return;
   const set = (field, val) => { const el = document.getElementById(`${rowId}_${field}`); if(el && val) el.value = val; };
   // มีชื่อ → เติมทุกช่อง (ร้านค้า/บริษัท) / ไม่มีชื่อ → เติมเฉพาะที่อยู่ (เช่น วิทยากรภายในคนละคนแต่ที่อยู่เดียวกัน)
+  // ✅ ข้อมูลเก่าใน Sheet ที่ถูกแปลงเป็นตัวเลขจน 0 นำหน้าหาย → เติม 0 คืนเฉพาะค่าที่เป็นตัวเลขล้วนและสั้นกว่ามาตรฐาน
+  // (ค่าข้อความเช่น "สาขาที่ 00172" ไม่ถูกแตะ)
+  const padDigits = (val, len) => {
+    const t = String(val ?? '').trim();
+    return (/^\d+$/.test(t) && t.length < len) ? t.padStart(len, '0') : t;
+  };
   if(v.name) set('name', v.name);
-  set('branch', v.branch);
-  set('taxid', v.taxid);
+  set('branch', padDigits(v.branch, 5));
+  set('taxid', padDigits(v.taxid, 13));
   set('addr1', v.addr1);
   set('tambon', v.tambon);
   set('amphoe', v.amphoe);
   set('province', v.province);
-  set('zip', v.zip);
+  set('zip', padDigits(v.zip, 5));
   const overlay = document.getElementById('vendor-picker-overlay');
   if(overlay) overlay.style.display = 'none';
 }
